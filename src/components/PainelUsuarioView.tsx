@@ -958,8 +958,8 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
 
       {/* MODAL DE CADASTRO RÁPIDO DE NOVO PACIENTE (GLASSMORPHISM) */}
       {modalNovoPaciente && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-md overflow-y-auto animate-fadeIn">
-          <div className="glass-card w-full max-w-md p-5 sm:p-7 space-y-4 bg-white/95 dark:bg-slate-900/90 border border-white/20 shadow-2xl max-h-[90vh] overflow-y-auto my-auto">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-4 bg-black/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="glass-card w-full max-w-md p-5 sm:p-7 space-y-4 bg-white/95 dark:bg-slate-900/90 border border-white/20 shadow-2xl max-h-[85vh] overflow-y-auto mb-8 sm:mb-12">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl glass-button flex items-center justify-center text-teal-700 dark:text-teal-400">
@@ -1048,8 +1048,8 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
 
       {/* MODAL DE EDIÇÃO DE PERFIL / CLÍNICA (ESTILO GLASSMORPHISM) */}
       {modalEditarPerfil && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-md overflow-y-auto animate-fadeIn">
-          <div className="glass-card w-full max-w-lg p-5 sm:p-8 space-y-5 bg-white/95 dark:bg-slate-900/90 border border-white/20 shadow-2xl max-h-[90vh] overflow-y-auto my-auto">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-4 bg-black/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="glass-card w-full max-w-lg p-5 sm:p-8 space-y-5 bg-white/95 dark:bg-slate-900/90 border border-white/20 shadow-2xl max-h-[85vh] overflow-y-auto mb-8 sm:mb-12">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl glass-button flex items-center justify-center text-teal-700 dark:text-teal-400">

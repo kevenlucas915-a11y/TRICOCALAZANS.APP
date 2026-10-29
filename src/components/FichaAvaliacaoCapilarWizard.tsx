@@ -1741,8 +1741,8 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
 
       {/* MODAL DE SUCESSO E DOWNLOAD / COMPARTILHAMENTO DO PDF */}
       {modalSucessoAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 shadow-2xl border border-teal-200 dark:border-teal-800 space-y-5 text-center">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-8 sm:pt-14 p-4 bg-black/75 backdrop-blur-sm overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 shadow-2xl border border-teal-200 dark:border-teal-800 space-y-5 text-center mb-8 sm:mb-12">
             <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-xs">
               <CheckCircle2 className="w-8 h-8" />
             </div>

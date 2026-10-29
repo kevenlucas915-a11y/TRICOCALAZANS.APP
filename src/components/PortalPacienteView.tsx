@@ -1057,11 +1057,11 @@ export const PortalPacienteView: React.FC<PortalPacienteViewProps> = ({
       {/* MODAL DE FOTO AMPLIADA */}
       {fotoModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn"
           onClick={() => setFotoModal(null)}
         >
           <div
-            className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col"
+            className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col mb-8 sm:mb-12"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">

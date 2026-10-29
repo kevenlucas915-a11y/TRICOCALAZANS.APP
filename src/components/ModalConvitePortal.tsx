@@ -100,11 +100,11 @@ export const ModalConvitePortal: React.FC<ModalConvitePortalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto animate-fadeIn"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 bg-slate-950/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn"
       onClick={onClose}
     >
       <div 
-        className="w-full max-w-lg bg-white dark:bg-[#071918] rounded-3xl shadow-2xl border border-teal-200/80 dark:border-teal-500/30 overflow-hidden flex flex-col p-6 space-y-5 my-auto"
+        className="w-full max-w-lg bg-white dark:bg-[#071918] rounded-3xl shadow-2xl border border-teal-200/80 dark:border-teal-500/30 overflow-hidden flex flex-col p-6 space-y-5 mb-8 sm:mb-12"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabeçalho */}

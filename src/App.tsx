@@ -119,6 +119,25 @@ export default function App() {
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, []);
 
+  // Trava de rolagem do fundo e garantia de visualização no topo para todos os modais
+  useEffect(() => {
+    const handleCheckModais = () => {
+      const modal = document.querySelector('.fixed.inset-0.z-50, .fixed.inset-0.z-60, .fixed.inset-0.z-\\[100\\], .modal-viewport-top');
+      if (modal) {
+        document.body.classList.add('modal-open');
+      } else {
+        document.body.classList.remove('modal-open');
+      }
+    };
+
+    const observer = new MutationObserver(handleCheckModais);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      document.body.classList.remove('modal-open');
+    };
+  }, []);
+
   const [gerenciadorImagensAberto, setGerenciadorImagensAberto] = useState<boolean>(false);
 
   // Monitoramento em tempo real do status de administrador (sem recarregar a página)

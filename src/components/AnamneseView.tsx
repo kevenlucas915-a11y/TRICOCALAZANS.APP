@@ -719,9 +719,9 @@ export const AnamneseView: React.FC<AnamneseViewProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 animate-fadeIn pb-24">
-      {/* NOTIFICAÇÃO TOAST */}
+      {/* NOTIFICAÇÃO TOAST FLUTUANTE NO TOPO */}
       {notificacao && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-2xl glass-card flex items-center gap-3 text-xs font-semibold shadow-2xl animate-fadeIn ${
+        <div className={`fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-[92vw] p-4 rounded-2xl glass-card flex items-center gap-3 text-xs font-semibold shadow-2xl animate-fadeIn ${
           notificacao.tipo === 'sucesso' 
             ? 'border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' 
             : 'border-rose-500/40 text-rose-600 dark:text-rose-400 bg-rose-500/10'
@@ -1909,8 +1909,8 @@ export const AnamneseView: React.FC<AnamneseViewProps> = ({
       {/* MODAL: VISUALIZAÇÃO COMPLETA & IMPRESSÃO DA ANAMNESE PREENCHIDA */}
       {/* ======================================================================== */}
       {respostaVisualizacao && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto animate-fadeIn">
-          <div className="glass-card max-w-3xl w-full max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-8 space-y-6 shadow-2xl my-auto">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="glass-card max-w-3xl w-full max-h-[85vh] overflow-y-auto rounded-3xl p-5 sm:p-8 space-y-6 shadow-2xl mb-8 sm:mb-12">
             {/* Header da Visualização */}
             <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-200/60 dark:border-white/[0.08]">
               <div>
@@ -2390,10 +2390,10 @@ export const AnamneseView: React.FC<AnamneseViewProps> = ({
       {/* MODAL: CADASTRO RÁPIDO DE PACIENTE */}
       {/* ======================================================================== */}
       {modalNovoPaciente && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
           <form 
             onSubmit={handleCadastrarNovoPacienteRapido}
-            className="glass-card max-w-md w-full rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto my-auto"
+            className="glass-card max-w-md w-full rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto mb-8 sm:mb-12"
           >
             <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-white/[0.08]">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -2462,10 +2462,10 @@ export const AnamneseView: React.FC<AnamneseViewProps> = ({
       {/* MODAL: REGISTRAR SESSÃO / FOLHA DE EVOLUÇÃO NA FICHA */}
       {/* ======================================================================== */}
       {modalNovaSessaoAberto && respostaVisualizacao && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
           <form 
             onSubmit={handleSalvarNovaSessao}
-            className="glass-card max-w-lg w-full rounded-3xl p-5 sm:p-7 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto my-auto"
+            className="glass-card max-w-lg w-full rounded-3xl p-5 sm:p-7 space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto mb-8 sm:mb-12"
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-200/60 dark:border-white/[0.08]">
               <div>
@@ -2599,8 +2599,8 @@ export const AnamneseView: React.FC<AnamneseViewProps> = ({
       {/* MODAL: LIMITE DE ANAMNESES DO PLANO STARTER */}
       {/* ======================================================================== */}
       {modalLimitePlano && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto animate-fadeIn">
-          <div className="glass-card max-w-md w-full rounded-3xl p-6 sm:p-7 space-y-4 shadow-2xl my-auto text-center">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="glass-card max-w-md w-full rounded-3xl p-6 sm:p-7 space-y-4 shadow-2xl mb-8 sm:mb-12 text-center">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-600 dark:text-amber-400">
               <Lock className="w-6 h-6" />
             </div>
@@ -2632,8 +2632,8 @@ export const AnamneseView: React.FC<AnamneseViewProps> = ({
       {/* MODAL: PERSONALIZAR LOGO EM PNG NO DOCUMENTO EM PDF */}
       {/* ======================================================================== */}
       {modalLogoAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto animate-fadeIn">
-          <div className="glass-card max-w-md w-full rounded-3xl p-6 sm:p-7 space-y-4 shadow-2xl my-auto">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="glass-card max-w-md w-full rounded-3xl p-6 sm:p-7 space-y-4 shadow-2xl mb-8 sm:mb-12">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200/60 dark:border-white/[0.08]">
               <div>
                 <span className="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 text-[10px] font-bold uppercase">

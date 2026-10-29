@@ -981,21 +981,21 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 animate-fadeIn pb-24">
-      {/* Toast de Alerta */}
+      {/* Toast de Alerta Flutuante Ancorado no Topo */}
       {mensagemStatus && (
-        <div className={`fixed top-20 right-4 z-50 px-4 py-3 rounded-2xl shadow-xl border flex items-center gap-2.5 text-xs font-semibold animate-fadeIn ${
+        <div className={`fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-[92vw] px-4 py-3 rounded-2xl shadow-2xl border flex items-center gap-2.5 text-xs font-semibold animate-fadeIn ${
           mensagemStatus.tipo === 'sucesso' 
             ? 'bg-emerald-50 border-emerald-300 text-emerald-800 dark:bg-emerald-950 dark:border-emerald-700 dark:text-emerald-200' 
             : 'bg-rose-50 border-rose-300 text-rose-800 dark:bg-rose-950 dark:border-rose-700 dark:text-rose-200'
         }`}>
-          {mensagemStatus.tipo === 'sucesso' ? <Check className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-rose-600" />}
+          {mensagemStatus.tipo === 'sucesso' ? <Check className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
           <span>{mensagemStatus.texto}</span>
         </div>
       )}
 
-      {/* CONFIRMAÇÃO EXPLÍCITA DE SALVAMENTO NO BANCO DE DADOS (COM TEMPO DE RESPOSTA) */}
+      {/* CONFIRMAÇÃO EXPLÍCITA DE SALVAMENTO NO BANCO DE DADOS (FLUTUANTE NO TOPO DA TELA) */}
       {confirmacaoBanco && confirmacaoBanco.visivel && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 dark:from-emerald-950/70 dark:via-teal-950/50 dark:to-emerald-950/70 border-2 border-emerald-500/70 text-emerald-950 dark:text-emerald-100 flex items-center justify-between gap-3 shadow-lg animate-fadeIn">
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-2xl w-[92vw] p-4 sm:p-5 rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-2 border-emerald-500 text-emerald-950 dark:text-emerald-100 flex items-center justify-between gap-3 shadow-2xl animate-fadeIn">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
               <CheckCircle2 className="w-6 h-6 text-white" />
@@ -2842,8 +2842,8 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
 
       {/* MODAL: DETALHES DO ACHADO OU INFLAMAÇÃO */}
       {modalAchadoAberto && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden mb-8 sm:mb-12">
             {/* Cabeçalho Fixo no Topo */}
             <div className="p-4 sm:p-5 border-b border-stone-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-stone-50/70 dark:bg-slate-950/70">
               <h3 className="text-sm sm:text-base font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
@@ -3040,8 +3040,8 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
 
       {/* MODAL: HISTÓRICO DE SESSÕES */}
       {historicoAberto && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl max-h-[88vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden mb-8 sm:mb-12">
             <div className="p-5 border-b border-stone-200 dark:border-slate-800 flex items-center justify-between bg-stone-50 dark:bg-slate-950">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950 flex items-center justify-center text-rose-700 dark:text-rose-300">
@@ -3162,8 +3162,8 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
 
       {/* MODAL: EMISSÃO E IMPRESSÃO DE LAUDO */}
       {modalLaudoAberto && imagemUsuarioUrl && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="bg-white text-stone-900 border border-stone-200 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto print:p-0 print:border-none print:shadow-none">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="bg-white text-stone-900 border border-stone-200 rounded-3xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden mb-8 sm:mb-12 print:p-0 print:border-none print:shadow-none">
             <div className="p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50 print:hidden">
               <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-rose-700" />
@@ -3322,8 +3322,8 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
 
       {/* MODAL: RETORNAR CASO A CAPTURA FEITA NÃO SEJA VÁLIDA NA BANCADA */}
       {modalRetornarCapturaInvalida && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden my-auto p-5 sm:p-6 space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden mb-8 sm:mb-12 p-5 sm:p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                 <AlertCircle className="w-5 h-5" />

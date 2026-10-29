@@ -639,8 +639,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSucesso, onContinua
       {/* MODAL RECUPERAÇÃO DE SENHA */}
       {/* ========================================================================= */}
       {modalRecuperacao && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md bg-white dark:bg-[#0B1516] rounded-3xl p-6 shadow-2xl border border-teal-200/70 dark:border-teal-500/30 space-y-4">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-8 sm:pt-14 p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="w-full max-w-md bg-white dark:bg-[#0B1516] rounded-3xl p-6 shadow-2xl border border-teal-200/70 dark:border-teal-500/30 space-y-4 mb-8 sm:mb-12">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-white/[0.08]">
               <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                 <KeyRound className="w-4 h-4 text-teal-700 dark:text-teal-400" />

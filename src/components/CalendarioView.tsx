@@ -398,9 +398,9 @@ export const CalendarioView: React.FC<CalendarioViewProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 animate-fadeIn pb-24">
-      {/* NOTIFICAÇÃO TOAST */}
+      {/* NOTIFICAÇÃO TOAST FLUTUANTE NO TOPO */}
       {notificacao && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-2xl glass-card flex items-center gap-3 text-xs font-semibold shadow-2xl animate-fadeIn ${
+        <div className={`fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-[92vw] p-4 rounded-2xl glass-card flex items-center gap-3 text-xs font-semibold shadow-2xl animate-fadeIn ${
           notificacao.tipo === 'sucesso' 
             ? 'border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' 
             : 'border-rose-500/40 text-rose-600 dark:text-rose-400 bg-rose-500/10'
@@ -771,9 +771,9 @@ export const CalendarioView: React.FC<CalendarioViewProps> = ({
       {/* 4. MODAL / CARD DE AGENDAMENTO COM SELEÇÃO DO MOTIVO */}
       {/* ========================================================================= */}
       {modalAgendamentoAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
           <div 
-            className="w-full max-w-2xl bg-white dark:bg-[#071918] rounded-3xl shadow-2xl border border-teal-200/70 dark:border-teal-500/30 overflow-hidden flex flex-col max-h-[92vh] my-auto animate-scaleUp"
+            className="w-full max-w-2xl bg-white dark:bg-[#071918] rounded-3xl shadow-2xl border border-teal-200/70 dark:border-teal-500/30 overflow-hidden flex flex-col max-h-[88vh] mb-8 sm:mb-12 animate-scaleUp"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabeçalho do Modal */}
@@ -1046,8 +1046,8 @@ export const CalendarioView: React.FC<CalendarioViewProps> = ({
       {/* 5. MODAL CADASTRO RÁPIDO DE PACIENTE */}
       {/* ========================================================================= */}
       {modalNovoPaciente && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto animate-fadeIn">
-          <div className="w-full max-w-md bg-white dark:bg-[#071918] rounded-3xl p-5 sm:p-6 shadow-2xl border border-teal-200/70 dark:border-teal-500/30 space-y-4 max-h-[90vh] overflow-y-auto my-auto">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="w-full max-w-md bg-white dark:bg-[#071918] rounded-3xl p-5 sm:p-6 shadow-2xl border border-teal-200/70 dark:border-teal-500/30 space-y-4 max-h-[85vh] overflow-y-auto mb-8 sm:mb-12">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-white/[0.08]">
               <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                 <UserPlus className="w-4 h-4 text-teal-700 dark:text-teal-400" />

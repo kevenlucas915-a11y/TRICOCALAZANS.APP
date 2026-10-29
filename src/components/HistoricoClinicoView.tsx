@@ -1300,8 +1300,8 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
       {/* MODAL: NOVO PROTOCOLO TERAPÊUTICO */}
       {/* ========================================================================= */}
       {modalNovoProtocoloAberto && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl p-5 sm:p-7 space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto my-auto">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl p-5 sm:p-7 space-y-5 shadow-2xl max-h-[88vh] overflow-y-auto mb-8 sm:mb-12">
             <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-3.5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 flex items-center justify-center border border-teal-200/60 dark:border-teal-800 shrink-0">
@@ -1500,8 +1500,8 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
       {/* MODAL: REGISTRAR SESSÃO REALIZADA NO PROTOCOLO */}
       {/* ========================================================================= */}
       {modalRegistrarSessaoAberto.aberto && modalRegistrarSessaoAberto.protocolo && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-5 sm:p-6 space-y-4 shadow-2xl my-auto">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-5 sm:p-6 space-y-4 shadow-2xl mb-8 sm:mb-12 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-3">
               <div>
                 <h3 className="text-base font-bold text-stone-900 dark:text-slate-100">
@@ -1586,8 +1586,8 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
       {/* MODAL: VISUALIZAR FICHA COMPLETA */}
       {/* ========================================================================= */}
       {modalFichaDetalhada && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl p-5 sm:p-7 space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto my-auto text-xs">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl p-5 sm:p-7 space-y-5 shadow-2xl max-h-[88vh] overflow-y-auto mb-8 sm:mb-12 text-xs">
             <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-3.5">
               <div className="space-y-0.5">
                 <span className="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 font-bold text-[10px]">
@@ -1709,8 +1709,8 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
       {/* MODAL DE CONFIRMAÇÃO: EXCLUIR PROTOCOLO */}
       {/* ========================================================================= */}
       {protocoloParaExcluirId && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 space-y-4 shadow-2xl text-center">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-8 sm:pt-14 p-4 overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 space-y-4 shadow-2xl mb-8 sm:mb-12 text-center">
             <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
               <Trash2 className="w-6 h-6" />
             </div>

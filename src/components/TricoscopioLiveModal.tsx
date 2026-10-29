@@ -234,8 +234,8 @@ export const TricoscopioLiveModal: React.FC<TricoscopioLiveModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-6 overflow-y-auto animate-fadeIn">
-      <div className="bg-stone-900 border border-stone-800 rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden text-stone-100 my-auto">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
+      <div className="bg-stone-900 border border-stone-800 rounded-3xl w-full max-w-4xl max-h-[88vh] flex flex-col shadow-2xl overflow-hidden text-stone-100 mb-8 sm:mb-12">
         
         {/* Cabeçalho do Modal */}
         <div className="p-4 sm:p-5 border-b border-stone-800 bg-stone-950 flex items-center justify-between">

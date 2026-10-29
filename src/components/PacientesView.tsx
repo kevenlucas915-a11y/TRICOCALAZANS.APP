@@ -757,14 +757,14 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Toast de Alerta */}
+      {/* Toast de Alerta Flutuante no Topo Centralizado */}
       {alerta && (
-        <div className={`fixed top-20 right-5 z-50 px-4 py-2.5 rounded-2xl shadow-xl text-xs font-semibold flex items-center gap-2 border transition-all ${
+        <div className={`fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-[92vw] px-5 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-semibold flex items-center gap-2.5 border backdrop-blur-md transition-all animate-fadeIn ${
           alerta.tipo === 'sucesso' 
-            ? 'bg-emerald-500 text-white border-emerald-600' 
-            : 'bg-rose-600 text-white border-rose-700'
+            ? 'bg-emerald-500/95 text-white border-emerald-400 shadow-emerald-500/20' 
+            : 'bg-rose-600/95 text-white border-rose-400 shadow-rose-600/20'
         }`}>
-          {alerta.tipo === 'sucesso' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+          {alerta.tipo === 'sucesso' ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
           <span>{alerta.texto}</span>
         </div>
       )}
@@ -2400,8 +2400,8 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
       {/* MODAL: CADASTRAR OU EDITAR PACIENTE */}
       {modalPacienteAberto && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-lg p-5 sm:p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto my-auto">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-lg p-5 sm:p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto mb-8 sm:mb-12">
             <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-3">
               <h3 className="text-base font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
                 <UserCheck className="w-5 h-5 text-rose-700" />
@@ -2575,8 +2575,8 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
       {/* MODAL: REGISTRAR NOVA CONSULTA COM REGISTROS FOTOGRÁFICOS, DATA E ANOTAÇÕES */}
       {modalConsultaAberto && pacienteAtivo && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl p-5 sm:p-7 space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto my-auto">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl p-5 sm:p-7 space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto mb-8 sm:mb-12">
             <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-3.5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 flex items-center justify-center border border-teal-200/60 dark:border-teal-800 shrink-0">
@@ -2831,7 +2831,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
       {modalFotoAmpliada && (
         <div 
           onClick={() => setModalFotoAmpliada(null)}
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-start pt-4 sm:pt-8 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn"
         >
           <div 
             onClick={(e) => e.stopPropagation()}
@@ -2905,7 +2905,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
       {/* MODAL DE TRANSIÇÃO DO FLUXO: APÓS CRIAR NOVO PACIENTE */}
       {modalProximoPassoFluxo.aberto && modalProximoPassoFluxo.paciente && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-8 sm:pt-14 p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto overscroll-contain animate-fadeIn">
           <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 shadow-2xl border border-teal-500/40 space-y-5 text-center">
             <div className="w-16 h-16 rounded-3xl bg-teal-500/10 text-teal-700 dark:text-teal-400 flex items-center justify-center mx-auto shadow-xs">
               <UserCheck className="w-8 h-8" />
@@ -2968,7 +2968,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
       {/* MODAL DE CONFIRMAÇÃO: EXCLUIR PACIENTE */}
       {pacienteParaExcluir && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-8 sm:pt-14 p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto overscroll-contain animate-fadeIn">
           <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 shadow-2xl border border-rose-200 dark:border-rose-900/60 space-y-4">
             <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 flex items-center justify-center">
               <Trash2 className="w-6 h-6" />
@@ -3024,7 +3024,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
       {/* MODAL DE CONFIRMAÇÃO: EXCLUIR CONSULTA */}
       {consultaParaExcluirId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-8 sm:pt-14 p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto overscroll-contain animate-fadeIn">
           <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-stone-200 dark:border-slate-800 space-y-4">
             <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center">
               <Trash2 className="w-5 h-5" />
@@ -3060,7 +3060,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
       {/* MODAL DE CONFIRMAÇÃO: EXCLUIR PRODUTO INDICADO */}
       {produtoParaExcluirId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-8 sm:pt-14 p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto overscroll-contain animate-fadeIn">
           <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-stone-200 dark:border-slate-800 space-y-4">
             <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center">
               <Trash2 className="w-5 h-5" />
@@ -3096,8 +3096,8 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
       {/* MODAL: UPLOAD DE FOTOGRAFIA CLÍNICA GLOBAL */}
       {modalFotoGlobalUploadAberto && pacienteAtivo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fadeIn overflow-y-auto">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 shadow-2xl border border-teal-500/30 space-y-5 my-8">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 bg-black/75 backdrop-blur-sm animate-fadeIn overflow-y-auto overscroll-contain">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 shadow-2xl border border-teal-500/30 space-y-5 mb-8 sm:mb-12">
             <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-2xl bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 flex items-center justify-center border border-teal-200 dark:border-teal-800">
@@ -3295,7 +3295,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
       {/* MODAL DE VISUALIZAÇÃO AMPLIADA DA FOTO GLOBAL */}
       {modalFotoGlobalAmpliada && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-4 sm:pt-8 p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto overscroll-contain">
           <div className="relative max-w-4xl w-full bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
               <div className="space-y-0.5">
@@ -3344,7 +3344,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
       {/* MODAL DE CONFIRMAÇÃO: EXCLUIR FOTO GLOBAL */}
       {fotoGlobalParaExcluirId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-8 sm:pt-14 p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto overscroll-contain animate-fadeIn">
           <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-stone-200 dark:border-slate-800 space-y-4">
             <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center">
               <Trash2 className="w-5 h-5" />
