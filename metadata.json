@@ -1,0 +1,6 @@
+{
+  "name": "Assistente Visual de Tricoscopia",
+  "description": "Manual digital de apoio à tricoscopia e atlas visual de casos e achados tricoscópicos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

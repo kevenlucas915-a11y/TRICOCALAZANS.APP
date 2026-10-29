@@ -1,0 +1,239 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =========================================================================
+   SISTEMA DE DESIGN GLASSMORPHISM CLEAN & ELEGANTE
+   Inspirado em dashboards de alta precisão (Glassmorphism, superfícies translúcidas,
+   bordas especulares sutis e tipografia refinada Plus Jakarta Sans)
+   ========================================================================= */
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  letter-spacing: -0.011em;
+}
+
+/* Fundo no Modo Escuro: Profundo, com sutil difusão de luz ambiente verde-petróleo (#0F766E) */
+html.dark body {
+  background-color: #0A0F11;
+  background-image: 
+    radial-gradient(circle at 18% 12%, rgba(15, 118, 110, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 82% 18%, rgba(20, 184, 166, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 50% 65%, rgba(13, 148, 136, 0.05) 0%, transparent 50%);
+  background-attachment: fixed;
+  color: #F8FAFC;
+}
+
+/* Fundo no Modo Claro: Clean, etéreo, com névoa translúcida verde-petróleo */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #F4F8F8;
+  background-image: 
+    radial-gradient(circle at 15% 10%, rgba(204, 251, 241, 0.55) 0%, transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(240, 253, 250, 0.65) 0%, transparent 40%);
+  background-attachment: fixed;
+  color: #0F172A;
+}
+
+/* =========================================================================
+   UTILITÁRIOS DE GLASSMORPHISM
+   ========================================================================= */
+
+/* Card de Vidro Fosco de Alta Fidelidade */
+.glass-card {
+  position: relative;
+  border-radius: 1.5rem;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Modo Escuro */
+html.dark .glass-card {
+  background: rgba(15, 20, 32, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 12px 36px -4px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+html.dark .glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Modo Claro */
+.glass-card {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 
+    0 10px 30px -5px rgba(15, 23, 42, 0.05),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+}
+
+.glass-card:hover {
+  border-color: rgba(203, 213, 225, 0.95);
+}
+
+/* Barra de Navegação Flutuante de Vidro */
+.glass-header {
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+html.dark .glass-header {
+  background: rgba(10, 13, 20, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.82);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03);
+}
+
+/* Sidebar com Gradiente Verde-Petróleo / Teal de Alta Densidade (#0F766E) e Zero Transparência Inconveniente */
+.sidebar-teal-gradient {
+  background: linear-gradient(180deg, #F0FDFA 0%, #F6FCFB 45%, #E6F7F5 100%);
+  border-right: 1px solid rgba(15, 118, 110, 0.2);
+  box-shadow: 6px 0 32px -4px rgba(15, 118, 110, 0.08);
+}
+
+html.dark .sidebar-teal-gradient {
+  background: linear-gradient(180deg, #071918 0%, #051413 50%, #081D1B 100%);
+  border-right: 1px solid rgba(20, 184, 166, 0.22);
+  box-shadow: 8px 0 36px -4px rgba(0, 0, 0, 0.65);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+html.dark .glass-panel {
+  background: rgba(8, 20, 22, 0.97);
+}
+
+/* Input de Vidro Fosco (Type to search...) */
+.glass-input {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.2s ease;
+  border-radius: 1rem;
+}
+
+html.dark .glass-input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #F8FAFC;
+}
+
+html.dark .glass-input:focus {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.25);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+}
+
+.glass-input {
+  background: rgba(241, 245, 249, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  color: #0F172A;
+}
+
+.glass-input:focus {
+  background: #FFFFFF;
+  border-color: rgba(148, 163, 184, 0.8);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.15);
+}
+
+/* Botões de Ação de Vidro Fosco */
+.glass-button {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 0.875rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html.dark .glass-button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #E2E8F0;
+}
+
+html.dark .glass-button:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+}
+
+.glass-button {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  color: #334155;
+}
+
+.glass-button:hover {
+  background: #FFFFFF;
+  border-color: rgba(203, 213, 225, 1);
+  color: #0F172A;
+}
+
+/* Indicador de Status / Live Dot */
+.glass-badge {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 9999px;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Números Tabulares Precisos */
+.tabular-numbers {
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Animações Sutis */
+@keyframes fadeInSubtle {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeInSubtle 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Barras de Rolagem Sutis */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}

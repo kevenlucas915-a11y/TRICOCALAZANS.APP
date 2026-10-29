@@ -1,0 +1,401 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Health / connection test document
+    match /test/connection {
+      allow read: if true;
+    }
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['kevenlucas915@gmail.com'];
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-\\.]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isPaciente() {
+      return request.auth != null && exists(/databases/$(database)/documents/pacientes_usuarios/$(request.auth.uid)) && !isAdmin();
+    }
+
+    function isValidCasoImagem(data) {
+      return data.keys().hasAll(['casoId', 'nomeArquivo', 'tamanhoBytes', 'dataUrl']) &&
+             data.keys().hasOnly(['casoId', 'nomeArquivo', 'tamanhoBytes', 'dataUrl', 'storagePath', 'updatedAt']) &&
+             data.casoId is string && data.casoId.size() <= 128 &&
+             data.nomeArquivo is string && data.nomeArquivo.size() <= 255 &&
+             data.tamanhoBytes is number && data.tamanhoBytes >= 0 && data.tamanhoBytes <= 10000000 &&
+             data.dataUrl is string && data.dataUrl.size() <= 900000 &&
+             (!('storagePath' in data) || (data.storagePath is string && data.storagePath.size() <= 300 && data.storagePath.matches('^atlas/[a-zA-Z0-9_\\-]+/[a-zA-Z0-9_\\-\\.]+\\.jpg$'))) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidCapturaPaciente(data, docId) {
+      return data.keys().hasAll(['id', 'nomePaciente', 'dataCaptura', 'casoReferenciaId']) &&
+             data.keys().hasOnly(['id', 'nomePaciente', 'dataCaptura', 'casoReferenciaId', 'imagemUrl', 'imagemPath', 'imagemDataUrl', 'anotacoes', 'userId', 'pacienteUid', 'pacienteId', 'paciente_id', 'area', 'liberadoPaciente', 'createdAt', 'updatedAt']) &&
+             (('imagemUrl' in data) || ('imagemDataUrl' in data)) &&
+             data.id == docId &&
+             (request.auth == null || !('userId' in data) || data.userId == request.auth.uid || isAdmin()) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.nomePaciente is string && data.nomePaciente.size() <= 200 &&
+             data.dataCaptura is string && data.dataCaptura.size() <= 64 &&
+             data.casoReferenciaId is string && data.casoReferenciaId.size() <= 128 &&
+             (!('userId' in data) || data.userId == null || (data.userId is string && data.userId.size() <= 128)) &&
+             (!('pacienteUid' in data) || data.pacienteUid == null || (data.pacienteUid is string && data.pacienteUid.size() <= 128)) &&
+             (!('pacienteId' in data) || data.pacienteId == null || (data.pacienteId is string && data.pacienteId.size() <= 128)) &&
+             (!('paciente_id' in data) || data.paciente_id == null || (data.paciente_id is string && data.paciente_id.size() <= 128)) &&
+             (!('area' in data) || (data.area is string && data.area.size() <= 200)) &&
+             (!('liberadoPaciente' in data) || (data.liberadoPaciente is bool)) &&
+             (!('imagemUrl' in data) || (data.imagemUrl is string && data.imagemUrl.size() <= 1048576)) &&
+             (!('imagemPath' in data) || (data.imagemPath is string && data.imagemPath.size() <= 300)) &&
+             (!('imagemDataUrl' in data) || (data.imagemDataUrl is string && data.imagemDataUrl.size() <= 1048576)) &&
+             (!('anotacoes' in data) || (data.anotacoes is string && data.anotacoes.size() <= 500000)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidPaciente(data) {
+      return data.keys().hasAll(['id', 'nome']) &&
+             data.keys().hasOnly(['id', 'nome', 'telefone', 'email', 'dataNascimento', 'genero', 'queixaPrincipal', 'historicoClinico', 'userId', 'profissionalUid', 'pacienteUid', 'portalAtivo', 'portalConviteToken', 'portalConviteExpiraEm', 'portalAtivadoEm', 'consentimentoIaExames', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.nome is string && data.nome.size() <= 200 &&
+             (!('telefone' in data) || (data.telefone is string && data.telefone.size() <= 50)) &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
+             (!('dataNascimento' in data) || (data.dataNascimento is string && data.dataNascimento.size() <= 30)) &&
+             (!('genero' in data) || (data.genero is string && data.genero.size() <= 30)) &&
+             (!('queixaPrincipal' in data) || (data.queixaPrincipal is string && data.queixaPrincipal.size() <= 1000)) &&
+             (!('historicoClinico' in data) || (data.historicoClinico is string && data.historicoClinico.size() <= 3000)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 128)) &&
+             (!('profissionalUid' in data) || (data.profissionalUid is string && data.profissionalUid.size() <= 128)) &&
+             (!('pacienteUid' in data) || (data.pacienteUid is string && data.pacienteUid.size() <= 128)) &&
+             (!('portalAtivo' in data) || (data.portalAtivo is bool)) &&
+             (!('portalConviteToken' in data) || (data.portalConviteToken is string && data.portalConviteToken.size() <= 128)) &&
+             (!('portalConviteExpiraEm' in data) || (data.portalConviteExpiraEm is string && data.portalConviteExpiraEm.size() <= 64)) &&
+             (!('portalAtivadoEm' in data) || (data.portalAtivadoEm is string && data.portalAtivadoEm.size() <= 64)) &&
+             (!('consentimentoIaExames' in data) || (data.consentimentoIaExames is map)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidProdutoIndicado(data) {
+      return data.keys().hasAll(['id', 'pacienteId', 'nome', 'comoUsar']) &&
+             data.keys().hasOnly(['id', 'pacienteId', 'profissionalUid', 'pacienteUid', 'nome', 'comoUsar', 'observacao', 'liberadoPaciente', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.pacienteId is string && data.pacienteId.size() <= 128 &&
+             (!('profissionalUid' in data) || (data.profissionalUid is string && data.profissionalUid.size() <= 128)) &&
+             data.nome is string && data.nome.size() <= 200 &&
+             data.comoUsar is string && data.comoUsar.size() <= 3000 &&
+             (!('pacienteUid' in data) || (data.pacienteUid is string && data.pacienteUid.size() <= 128)) &&
+             (!('observacao' in data) || (data.observacao is string && data.observacao.size() <= 3000)) &&
+             (!('liberadoPaciente' in data) || (data.liberadoPaciente is bool)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidConsultaRegistro(data) {
+      return data.keys().hasAll(['id', 'pacienteId', 'data', 'area']) &&
+             data.keys().hasOnly(['id', 'userId', 'profissionalUid', 'pacienteId', 'pacienteUid', 'pacienteNome', 'data', 'area', 'tipoConsulta', 'titulo', 'anotacoes', 'fotos', 'queixaEvolucao', 'condutaTratamento', 'sessionId', 'imagemUrl', 'imagemDataUrl', 'totalFios', 'totalUF', 'ostiosVazios', 'focosInflamacao', 'achadosCount', 'achadosResumo', 'achadosLiberados', 'liberadoPaciente', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.pacienteId is string && data.pacienteId.size() <= 128 &&
+             data.data is string && data.data.size() <= 30 &&
+             data.area is string && data.area.size() <= 100 &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 128)) &&
+             (!('profissionalUid' in data) || (data.profissionalUid is string && data.profissionalUid.size() <= 128)) &&
+             (!('pacienteUid' in data) || (data.pacienteUid is string && data.pacienteUid.size() <= 128)) &&
+             (!('pacienteNome' in data) || (data.pacienteNome is string && data.pacienteNome.size() <= 200)) &&
+             (!('tipoConsulta' in data) || (data.tipoConsulta is string && data.tipoConsulta.size() <= 200)) &&
+             (!('titulo' in data) || (data.titulo is string && data.titulo.size() <= 200)) &&
+             (!('anotacoes' in data) || (data.anotacoes is string && data.anotacoes.size() <= 50000)) &&
+             (!('fotos' in data) || (data.fotos is list && data.fotos.size() <= 30)) &&
+             (!('queixaEvolucao' in data) || (data.queixaEvolucao is string && data.queixaEvolucao.size() <= 5000)) &&
+             (!('condutaTratamento' in data) || (data.condutaTratamento is string && data.condutaTratamento.size() <= 5000)) &&
+             (!('sessionId' in data) || (data.sessionId is string && data.sessionId.size() <= 128)) &&
+             (!('imagemUrl' in data) || (data.imagemUrl is string && data.imagemUrl.size() <= 1048576)) &&
+             (!('imagemDataUrl' in data) || (data.imagemDataUrl is string && data.imagemDataUrl.size() <= 1048576)) &&
+             (!('totalFios' in data) || (data.totalFios is number)) &&
+             (!('totalUF' in data) || (data.totalUF is number)) &&
+             (!('ostiosVazios' in data) || (data.ostiosVazios is number)) &&
+             (!('focosInflamacao' in data) || (data.focosInflamacao is number)) &&
+             (!('achadosCount' in data) || (data.achadosCount is number)) &&
+             (!('achadosResumo' in data) || (data.achadosResumo is string && data.achadosResumo.size() <= 2000)) &&
+             (!('achadosLiberados' in data) || (data.achadosLiberados is string && data.achadosLiberados.size() <= 10000)) &&
+             (!('liberadoPaciente' in data) || (data.liberadoPaciente is bool)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidFotoGlobal(data) {
+      return data.keys().hasAll(['id', 'pacienteId', 'data', 'angulo', 'imagemUrl']) &&
+             data.keys().hasOnly(['id', 'pacienteId', 'pacienteNome', 'userId', 'profissionalUid', 'pacienteUid', 'data', 'angulo', 'imagemUrl', 'imagemPath', 'observacoes', 'liberadoPaciente', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.pacienteId is string && data.pacienteId.size() <= 128 &&
+             data.data is string && data.data.size() <= 30 &&
+             data.angulo is string && data.angulo.size() <= 100 &&
+             data.imagemUrl is string && data.imagemUrl.size() <= 1048576 &&
+             (!('pacienteNome' in data) || (data.pacienteNome is string && data.pacienteNome.size() <= 200)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 128)) &&
+             (!('profissionalUid' in data) || (data.profissionalUid is string && data.profissionalUid.size() <= 128)) &&
+             (!('pacienteUid' in data) || (data.pacienteUid is string && data.pacienteUid.size() <= 128)) &&
+             (!('imagemPath' in data) || (data.imagemPath is string && data.imagemPath.size() <= 300)) &&
+             (!('observacoes' in data) || (data.observacoes is string && data.observacoes.size() <= 5000)) &&
+             (!('liberadoPaciente' in data) || (data.liberadoPaciente is bool)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidProtocoloPaciente(data) {
+      return data.keys().hasAll(['id', 'pacienteId', 'titulo', 'objetivo']) &&
+             data.keys().hasOnly(['id', 'pacienteId', 'pacienteNome', 'userId', 'profissionalUid', 'pacienteUid', 'titulo', 'objetivo', 'categoria', 'status', 'dataInicio', 'previsaoTermino', 'frequencia', 'totalSessoesPlanejadas', 'sessoesRealizadas', 'etapasProcedimento', 'produtosHomeCare', 'observacoes', 'liberadoPaciente', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.pacienteId is string && data.pacienteId.size() <= 128 &&
+             data.titulo is string && data.titulo.size() <= 200 &&
+             data.objetivo is string && data.objetivo.size() <= 2000 &&
+             (!('pacienteNome' in data) || (data.pacienteNome is string && data.pacienteNome.size() <= 200)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 128)) &&
+             (!('profissionalUid' in data) || (data.profissionalUid is string && data.profissionalUid.size() <= 128)) &&
+             (!('pacienteUid' in data) || (data.pacienteUid is string && data.pacienteUid.size() <= 128)) &&
+             (!('categoria' in data) || (data.categoria is string && data.categoria.size() <= 50)) &&
+             (!('status' in data) || (data.status is string && data.status.size() <= 50)) &&
+             (!('dataInicio' in data) || (data.dataInicio is string && data.dataInicio.size() <= 50)) &&
+             (!('previsaoTermino' in data) || (data.previsaoTermino is string && data.previsaoTermino.size() <= 50)) &&
+             (!('frequencia' in data) || (data.frequencia is string && data.frequencia.size() <= 100)) &&
+             (!('totalSessoesPlanejadas' in data) || (data.totalSessoesPlanejadas is number)) &&
+             (!('sessoesRealizadas' in data) || (data.sessoesRealizadas is list)) &&
+             (!('etapasProcedimento' in data) || (data.etapasProcedimento is string && data.etapasProcedimento.size() <= 10000)) &&
+             (!('produtosHomeCare' in data) || (data.produtosHomeCare is string && data.produtosHomeCare.size() <= 10000)) &&
+             (!('observacoes' in data) || (data.observacoes is string && data.observacoes.size() <= 5000)) &&
+             (!('liberadoPaciente' in data) || (data.liberadoPaciente is bool)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidConvitePaciente(data) {
+      return data.keys().hasAll(['id', 'token', 'pacienteId', 'profissionalUid', 'status', 'expiraEm']) &&
+             data.keys().hasOnly(['id', 'token', 'pacienteId', 'pacienteNome', 'pacienteTelefone', 'pacienteEmail', 'profissionalUid', 'profissionalNome', 'nomeClinica', 'status', 'expiraEm', 'usadoEm', 'pacienteUid', 'createdAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.token is string && data.token.size() <= 128 &&
+             data.pacienteId is string && data.pacienteId.size() <= 128 &&
+             data.profissionalUid is string && data.profissionalUid.size() <= 128 &&
+             data.status is string && data.status.size() <= 30 &&
+             data.expiraEm is string && data.expiraEm.size() <= 64 &&
+             (!('pacienteNome' in data) || (data.pacienteNome is string && data.pacienteNome.size() <= 200)) &&
+             (!('pacienteTelefone' in data) || (data.pacienteTelefone is string && data.pacienteTelefone.size() <= 50)) &&
+             (!('pacienteEmail' in data) || (data.pacienteEmail is string && data.pacienteEmail.size() <= 200)) &&
+             (!('profissionalNome' in data) || (data.profissionalNome is string && data.profissionalNome.size() <= 200)) &&
+             (!('nomeClinica' in data) || (data.nomeClinica is string && data.nomeClinica.size() <= 200)) &&
+             (!('usadoEm' in data) || (data.usadoEm is string && data.usadoEm.size() <= 64)) &&
+             (!('pacienteUid' in data) || (data.pacienteUid is string && data.pacienteUid.size() <= 128)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    function isValidPacienteUsuario(data) {
+      return data.keys().hasAll(['uid', 'pacienteId', 'profissionalUid', 'papel', 'email', 'nome']) &&
+             data.keys().hasOnly(['uid', 'pacienteId', 'profissionalUid', 'papel', 'email', 'nome', 'telefone', 'createdAt', 'updatedAt']) &&
+             data.uid is string && data.uid.size() <= 128 &&
+             data.pacienteId is string && data.pacienteId.size() <= 128 &&
+             data.profissionalUid is string && data.profissionalUid.size() <= 128 &&
+             data.papel == 'paciente' &&
+             data.email is string && data.email.size() <= 200 &&
+             data.nome is string && data.nome.size() <= 200 &&
+             (!('telefone' in data) || (data.telefone is string && data.telefone.size() <= 50)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidModeloAnamnese(data) {
+      return data.keys().hasAll(['id', 'titulo']) &&
+             data.keys().hasOnly(['id', 'titulo', 'descricao', 'categoria', 'isPadrao', 'perguntasJson', 'userId', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.titulo is string && data.titulo.size() <= 200 &&
+             (!('descricao' in data) || (data.descricao is string && data.descricao.size() <= 2000)) &&
+             (!('categoria' in data) || (data.categoria is string && data.categoria.size() <= 100)) &&
+             (!('isPadrao' in data) || (data.isPadrao is bool)) &&
+             (!('perguntasJson' in data) || (data.perguntasJson is string && data.perguntasJson.size() <= 100000)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 128)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidRespostaAnamnese(data) {
+      return data.keys().hasAll(['id', 'modeloId', 'pacienteId']) &&
+             data.keys().hasOnly(['id', 'modeloId', 'modeloTitulo', 'pacienteId', 'pacienteNome', 'userId', 'respostasJson', 'anotacoesEspecialista', 'dataPreenchimento', 'status', 'dadosFichaJson', 'sessoesJson', 'assinaturaUrl', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.modeloId is string && data.modeloId.size() <= 128 &&
+             data.pacienteId is string && data.pacienteId.size() <= 128 &&
+             (!('modeloTitulo' in data) || (data.modeloTitulo is string && data.modeloTitulo.size() <= 200)) &&
+             (!('pacienteNome' in data) || (data.pacienteNome is string && data.pacienteNome.size() <= 200)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 128)) &&
+             (!('status' in data) || (data.status in ['rascunho', 'finalizada'])) &&
+             (!('respostasJson' in data) || (data.respostasJson is string && data.respostasJson.size() <= 100000)) &&
+             (!('dadosFichaJson' in data) || (data.dadosFichaJson is string && data.dadosFichaJson.size() <= 200000)) &&
+             (!('sessoesJson' in data) || (data.sessoesJson is string && data.sessoesJson.size() <= 100000)) &&
+             (!('assinaturaUrl' in data) || (data.assinaturaUrl is string && data.assinaturaUrl.size() <= 500000)) &&
+             (!('anotacoesEspecialista' in data) || (data.anotacoesEspecialista is string && data.anotacoesEspecialista.size() <= 10000)) &&
+             (!('dataPreenchimento' in data) || (data.dataPreenchimento is string && data.dataPreenchimento.size() <= 64)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidUsuarioProfissional(data) {
+      return data.keys().hasAll(['uid', 'nome', 'email']) &&
+             data.keys().hasOnly(['uid', 'papel', 'nome', 'email', 'telefone', 'endereco', 'nomeDoEspaco', 'titulo', 'registro', 'clinica', 'fotoUrl', 'senhaAlteradaEm', 'planoId', 'planoStatus', 'planoCiclo', 'planoValidade', 'planoIniciadoEm', 'planoMetodo', 'createdAt', 'updatedAt']) &&
+             data.uid is string && data.uid.size() <= 128 &&
+             data.nome is string && data.nome.size() <= 200 &&
+             data.email is string && data.email.size() <= 200 &&
+             (!('papel' in data) || (data.papel is string && data.papel.size() <= 30)) &&
+             (!('telefone' in data) || (data.telefone is string && data.telefone.size() <= 50)) &&
+             (!('endereco' in data) || (data.endereco is string && data.endereco.size() <= 300)) &&
+             (!('nomeDoEspaco' in data) || (data.nomeDoEspaco is string && data.nomeDoEspaco.size() <= 200)) &&
+             (!('titulo' in data) || (data.titulo is string && data.titulo.size() <= 100)) &&
+             (!('registro' in data) || data.registro == null || (data.registro is string && data.registro.size() <= 100)) &&
+             (!('clinica' in data) || (data.clinica is string && data.clinica.size() <= 200)) &&
+             (!('fotoUrl' in data) || (data.fotoUrl is string && data.fotoUrl.size() <= 1000)) &&
+             (!('senhaAlteradaEm' in data) || (data.senhaAlteradaEm is string && data.senhaAlteradaEm.size() <= 64)) &&
+             (!('planoId' in data) || (data.planoId is string && data.planoId.size() <= 50)) &&
+             (!('planoStatus' in data) || (data.planoStatus is string && data.planoStatus.size() <= 50)) &&
+             (!('planoCiclo' in data) || (data.planoCiclo is string && data.planoCiclo.size() <= 30)) &&
+             (!('planoValidade' in data) || (data.planoValidade is string && data.planoValidade.size() <= 64)) &&
+             (!('planoIniciadoEm' in data) || (data.planoIniciadoEm is string && data.planoIniciadoEm.size() <= 64)) &&
+             (!('planoMetodo' in data) || (data.planoMetodo is string && data.planoMetodo.size() <= 30)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidAgendamento(data) {
+      return data.keys().hasAll(['id', 'pacienteId', 'pacienteNome', 'data', 'horario']) &&
+             data.keys().hasOnly(['id', 'userId', 'pacienteId', 'pacienteUid', 'pacienteNome', 'pacienteTelefone', 'data', 'horario', 'duracaoMinutos', 'motivoId', 'motivoTitulo', 'motivoCor', 'status', 'observacoes', 'lembreteNotificado', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.pacienteId is string && data.pacienteId.size() <= 128 &&
+             data.pacienteNome is string && data.pacienteNome.size() <= 200 &&
+             data.data is string && data.data.size() <= 30 &&
+             data.horario is string && data.horario.size() <= 30 &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 128)) &&
+             (!('pacienteUid' in data) || (data.pacienteUid is string && data.pacienteUid.size() <= 128)) &&
+             (!('pacienteTelefone' in data) || (data.pacienteTelefone is string && data.pacienteTelefone.size() <= 50)) &&
+             (!('duracaoMinutos' in data) || (data.duracaoMinutos is number && data.duracaoMinutos >= 0 && data.duracaoMinutos <= 1440)) &&
+             (!('motivoId' in data) || (data.motivoId is string && data.motivoId.size() <= 100)) &&
+             (!('motivoTitulo' in data) || (data.motivoTitulo is string && data.motivoTitulo.size() <= 200)) &&
+             (!('motivoCor' in data) || (data.motivoCor is string && data.motivoCor.size() <= 50)) &&
+             (!('status' in data) || (data.status is string && data.status.size() <= 50)) &&
+             (!('observacoes' in data) || (data.observacoes is string && data.observacoes.size() <= 5000)) &&
+             (!('lembreteNotificado' in data) || (data.lembreteNotificado is bool)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    match /caso_imagens/{casoId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidId(casoId) && isValidCasoImagem(incoming());
+      allow delete: if isAdmin() && isValidId(casoId);
+    }
+
+    match /capturas_paciente/{capturaId} {
+      allow get, list: if true;
+      allow create: if isValidId(capturaId) && isValidCapturaPaciente(incoming(), capturaId) && (request.auth == null || !('userId' in incoming()) || incoming().userId == request.auth.uid || isAdmin());
+      allow update: if isValidId(capturaId) && isValidCapturaPaciente(incoming(), capturaId) && (request.auth == null || !('userId' in incoming()) || incoming().userId == request.auth.uid || isAdmin());
+      allow delete: if isValidId(capturaId) && (request.auth == null || !('userId' in existing()) || existing().userId == request.auth.uid || isAdmin());
+    }
+
+    match /pacientes/{pacienteId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(pacienteId) && isValidPaciente(incoming());
+      allow delete: if isValidId(pacienteId) && (request.auth == null || !('userId' in existing()) || existing().userId == request.auth.uid || existing().profissionalUid == request.auth.uid || isAdmin());
+    }
+
+    match /convites_pacientes/{token} {
+      allow get: if isValidId(token);
+      allow list: if request.auth != null && resource.data.profissionalUid == request.auth.uid;
+      allow create: if request.auth != null && !isPaciente() && isValidId(token) && isValidConvitePaciente(incoming()) && incoming().profissionalUid == request.auth.uid;
+      allow update: if request.auth != null && isValidId(token) && (
+        (existing().profissionalUid == request.auth.uid) ||
+        (incoming().diff(existing()).affectedKeys().hasOnly(['status', 'usadoEm', 'pacienteUid']) && incoming().status == 'usado' && incoming().pacienteUid == request.auth.uid)
+      );
+      allow delete: if request.auth != null && !isPaciente() && isValidId(token) && existing().profissionalUid == request.auth.uid;
+    }
+
+    match /pacientes_usuarios/{uid} {
+      allow get: if request.auth != null && (request.auth.uid == uid || resource.data.profissionalUid == request.auth.uid);
+      allow list: if request.auth != null && resource.data.profissionalUid == request.auth.uid;
+      allow create: if request.auth != null && request.auth.uid == uid && isValidId(uid) && isValidPacienteUsuario(incoming()) && incoming().uid == uid && incoming().papel == 'paciente';
+      allow update: if request.auth != null && request.auth.uid == uid && isValidId(uid) && isValidPacienteUsuario(incoming()) && existing().uid == uid && incoming().papel == 'paciente';
+      allow delete: if false;
+    }
+
+    match /produtos_paciente/{produtoId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(produtoId) && isValidProdutoIndicado(incoming()) && (request.auth == null || !isPaciente() || isAdmin());
+      allow delete: if isValidId(produtoId) && (request.auth == null || !isPaciente() || isAdmin());
+    }
+
+    match /protocolos_paciente/{protocoloId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(protocoloId) && isValidProtocoloPaciente(incoming()) && (request.auth == null || !isPaciente() || isAdmin());
+      allow delete: if isValidId(protocoloId) && (request.auth == null || !isPaciente() || isAdmin());
+    }
+
+    match /fotos_globais_paciente/{fotoId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(fotoId) && isValidFotoGlobal(incoming()) && (request.auth == null || !isPaciente() || isAdmin());
+      allow delete: if isValidId(fotoId) && (request.auth == null || !isPaciente() || isAdmin());
+    }
+
+    match /consultas_paciente/{consultaId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(consultaId) && isValidConsultaRegistro(incoming());
+      allow delete: if isValidId(consultaId) && (request.auth == null || !('userId' in existing()) || existing().profissionalUid == request.auth.uid || existing().userId == request.auth.uid || isAdmin());
+    }
+
+    match /modelos_anamnese/{modeloId} {
+      allow read: if true;
+      allow create, update: if isValidId(modeloId) && isValidModeloAnamnese(incoming()) && (request.auth == null || !isPaciente() || isAdmin());
+      allow delete: if isValidId(modeloId) && (request.auth == null || !isPaciente() || isAdmin());
+    }
+
+    match /respostas_anamnese/{respostaId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(respostaId) && isValidRespostaAnamnese(incoming()) && (request.auth == null || !isPaciente() || isAdmin());
+      allow delete: if isValidId(respostaId) && (request.auth == null || !isPaciente() || isAdmin());
+    }
+
+    match /usuarios_profissionais/{uid} {
+      allow read: if isValidId(uid);
+      allow write: if request.auth != null && !isPaciente() && request.auth.uid == uid && isValidId(uid) && isValidUsuarioProfissional(incoming());
+    }
+
+    match /agendamentos/{agendamentoId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(agendamentoId) && isValidAgendamento(incoming()) && (request.auth == null || !isPaciente() || isAdmin());
+      allow delete: if isValidId(agendamentoId) && (request.auth == null || !isPaciente() || isAdmin());
+    }
+
+    match /exames_laboratoriais/{exameId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(exameId) && (request.auth == null || (!isPaciente() && incoming().userId == request.auth.uid) || isAdmin());
+      allow delete: if isValidId(exameId) && (request.auth == null || (!isPaciente() && existing().userId == request.auth.uid) || isAdmin());
+    }
+
+    // Registro de uso de IA: leitura só pelo próprio usuário; escrita false (restrita ao backend)
+    match /uso_ia/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+    match /uso_ia/{uid}/meses/{mes} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+  }
+}
