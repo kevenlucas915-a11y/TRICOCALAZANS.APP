@@ -374,6 +374,47 @@ export default function App() {
     );
   }
 
+  // TELA DE LOGIN TOTALMENTE ISOLADA (SEM SIDEBAR, SEM TOPBAR, ACESSO RESTRITO)
+  if (!estaAutenticado || telaAtiva === 'login') {
+    return (
+      <div className={`min-h-screen ${isDark ? 'dark bg-[#030e0d]' : 'bg-slate-50'} flex flex-col font-sans transition-colors relative`}>
+        {/* Controles de Topo: Alternador de Tema e Portal do Paciente */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2.5 z-20">
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.history) {
+                window.history.pushState({}, '', '/area-do-cliente');
+              }
+              setTelaAtiva('area-do-cliente');
+            }}
+            className="text-xs px-3.5 py-2 rounded-xl text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/60 font-semibold transition-all border border-teal-200/70 dark:border-teal-800/50 flex items-center gap-2 glass-card shadow-xs"
+          >
+            <Heart className="w-3.5 h-3.5 text-rose-500" />
+            <span className="hidden sm:inline">Área do Paciente</span>
+          </button>
+
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white glass-button transition-colors"
+            title={isDark ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
+          >
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+          </button>
+        </div>
+
+        {/* Formulário de Login / Cadastro Centralizado */}
+        <main className="flex-1 flex items-center justify-center">
+          <LoginView
+            onLoginSucesso={() => {
+              setTelaAtiva('painel');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen text-slate-800 dark:text-slate-100 flex flex-col lg:flex-row font-sans selection:bg-teal-500/20 selection:text-teal-900 dark:selection:bg-teal-500/30 dark:selection:text-teal-200 transition-colors">
       {/* OVERLAY PARA MOBILE QUANDO SIDEBAR ESTIVER ABERTA */}
@@ -846,7 +887,6 @@ export default function App() {
                 {telaAtiva === 'pacientes' && 'Prontuário de Pacientes'}
                 {telaAtiva === 'achados' && 'Busca por Achado Tricoscópico'}
                 {telaAtiva === 'comparador' && 'Comparador de Exames'}
-                {telaAtiva === 'login' && 'Autenticação do Especialista'}
               </h2>
               <p className="text-[10px] text-slate-400 hidden sm:block">
                 Sistema Digital de Análise e Apoio Dermatológico
@@ -1043,19 +1083,6 @@ export default function App() {
 
         {/* Conteúdo Principal Dinâmico Conforme Tela Ativa */}
         <main className="flex-1 pb-16">
-          {telaAtiva === 'login' && (
-            <LoginView
-              onLoginSucesso={() => {
-                setTelaAtiva('painel');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onContinuarComoVisitante={() => {
-                setTelaAtiva('atlas');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            />
-          )}
-
           {telaAtiva === 'painel' && (
             <PainelUsuarioView
               onNavegarPara={(tela) => {
