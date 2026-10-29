@@ -1010,8 +1010,8 @@ export const ExamesView: React.FC<ExamesViewProps> = ({
       {/* MODAL: NOVO EXAME / CONFERÊNCIA EDITÁVEL COM O LAUDO AO LADO */}
       {/* ========================================================================= */}
       {modalNovoAberto && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto overscroll-contain animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-stone-200 dark:border-slate-800 shadow-2xl w-full max-w-5xl max-h-[88vh] flex flex-col overflow-hidden mb-8 sm:mb-12">
+        <div className="fixed inset-0 z-50 flex justify-center items-start p-3 sm:p-6 bg-black/75 overflow-y-auto animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-stone-200 dark:border-slate-800 shadow-2xl w-full max-w-5xl flex flex-col overflow-hidden my-4 sm:my-8">
             {/* Topo do Modal */}
             <div className="px-6 py-4 border-b border-stone-100 dark:border-slate-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
@@ -1320,8 +1320,8 @@ export const ExamesView: React.FC<ExamesViewProps> = ({
       {/* MODAL: GERAR CARTA DE ENCAMINHAMENTO */}
       {/* ========================================================================= */}
       {modalCartaAberto && exameAtivo && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-4 bg-black/75 backdrop-blur-sm overflow-y-auto overscroll-contain animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-stone-200 dark:border-slate-800 shadow-2xl w-full max-w-lg p-6 space-y-4 mb-8 sm:mb-12">
+        <div className="fixed inset-0 z-50 flex justify-center items-start p-4 bg-black/75 overflow-y-auto animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-stone-200 dark:border-slate-800 shadow-2xl w-full max-w-lg p-6 space-y-4 my-6 sm:my-10">
             <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
                 <Send className="w-5 h-5 text-teal-700" />

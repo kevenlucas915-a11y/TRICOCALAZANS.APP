@@ -241,33 +241,26 @@ html.dark .glass-button:hover {
 /* =========================================================================
    SISTEMA DE MODAIS E POP-UPS ANCORADOS NO TOPO VISÍVEL
    Garante que todo modal abra imediatamente na altura dos olhos,
-   sem ficar "perdido no meio" e sem exigir rolagem para encontrar o topo.
+   sem ficar "perdido no meio" e sem travar a rolagem.
    ========================================================================= */
 
-/* Overlays de modal com scroll suave interno e ancoragem no topo */
+/* Overlays de modal com scroll suave nativo e ancoragem no topo */
 .modal-viewport-top {
   position: fixed !important;
   inset: 0 !important;
-  z-index: 100 !important;
+  z-index: 50 !important;
   display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  padding: 1rem 0.75rem 2.5rem 0.75rem !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  padding: 1rem 0.75rem 3rem 0.75rem !important;
   overflow-y: auto !important;
-  overscroll-behavior: contain !important;
   -webkit-overflow-scrolling: touch !important;
 }
 
 @media (min-width: 640px) {
   .modal-viewport-top {
     padding-top: 2rem !important;
-    padding-bottom: 3rem !important;
+    padding-bottom: 3.5rem !important;
   }
-}
-
-/* Trava de scroll no body durante modais abertos */
-body.modal-open {
-  overflow: hidden !important;
 }
 

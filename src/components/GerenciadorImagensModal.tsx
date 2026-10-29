@@ -198,8 +198,8 @@ export const GerenciadorImagensModal: React.FC<GerenciadorImagensModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
-      <div className="bg-white dark:bg-slate-900 border border-stone-200/90 dark:border-slate-800 rounded-3xl w-full max-w-5xl max-h-[88vh] flex flex-col shadow-2xl overflow-hidden mb-8 sm:mb-12">
+    <div className="fixed inset-0 z-50 bg-black/75 flex justify-center items-start p-2.5 sm:p-6 overflow-y-auto animate-fadeIn">
+      <div className="bg-white dark:bg-slate-900 border border-stone-200/90 dark:border-slate-800 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden my-4 sm:my-8 flex flex-col">
         {/* Header do Modal */}
         <div className="p-5 sm:p-6 border-b border-stone-200/90 dark:border-slate-800 flex items-center justify-between bg-stone-50/70 dark:bg-slate-950/70">
           <div className="flex items-center gap-3.5">

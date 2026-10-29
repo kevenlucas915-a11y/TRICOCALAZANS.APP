@@ -201,9 +201,9 @@ export const ModalConfigurarStripe: React.FC<ModalConfigurarStripeProps> = ({
   const webhookUrl = config?.webhookUrl || `${window.location.origin}/api/stripe/webhook`;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex justify-center items-start p-3 sm:p-6 bg-slate-950/80 overflow-y-auto animate-fadeIn">
       <div 
-        className="w-full max-w-2xl bg-white dark:bg-[#071918] rounded-3xl shadow-2xl border border-teal-200/80 dark:border-teal-500/30 overflow-hidden flex flex-col mb-8 sm:mb-12 max-h-[88vh]"
+        className="w-full max-w-2xl bg-white dark:bg-[#071918] rounded-3xl shadow-2xl border border-teal-200/80 dark:border-teal-500/30 overflow-hidden flex flex-col my-4 sm:my-8"
         onClick={(e) => e.stopPropagation()}
       >
         {/* CABEÇALHO */}

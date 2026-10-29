@@ -920,8 +920,8 @@ export const ComparadorPacienteView: React.FC<ComparadorPacienteViewProps> = ({
       {/* MODAL SELETOR DE IMAGEM (PARA ESCOLHER LADO A OU LADO B) */}
       {/* ========================================================================= */}
       {modalSeletorAberto && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-5 overflow-y-auto overscroll-contain animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl p-5 sm:p-6 space-y-4 shadow-2xl max-h-[88vh] overflow-y-auto mb-8 sm:mb-12">
+        <div className="fixed inset-0 z-50 bg-black/75 flex justify-center items-start p-3 sm:p-5 overflow-y-auto animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl p-5 sm:p-6 space-y-4 shadow-2xl my-4 sm:my-8">
             {/* Header do Modal */}
             <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-3">
               <div>

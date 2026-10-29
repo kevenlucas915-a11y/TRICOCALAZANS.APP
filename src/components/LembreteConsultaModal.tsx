@@ -36,9 +36,9 @@ export const LembreteConsultaModal: React.FC<LembreteConsultaModalProps> = ({
   if (!isOpen || agendamentosHoje.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex justify-center items-start p-2.5 sm:p-4 bg-slate-950/80 overflow-y-auto animate-fadeIn">
       <div 
-        className="w-full max-w-xl bg-white dark:bg-[#071918] rounded-3xl shadow-2xl border border-teal-200/70 dark:border-teal-500/30 overflow-hidden flex flex-col max-h-[85vh] mb-8 sm:mb-12 animate-scaleUp"
+        className="w-full max-w-xl bg-white dark:bg-[#071918] rounded-3xl shadow-2xl border border-teal-200/70 dark:border-teal-500/30 overflow-hidden flex flex-col my-4 sm:my-8 animate-scaleUp"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Topo do Lembrete com Gradiente Verde-Petróleo */}

@@ -2842,8 +2842,8 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
 
       {/* MODAL: DETALHES DO ACHADO OU INFLAMAÇÃO */}
       {modalAchadoAberto && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden mb-8 sm:mb-12">
+        <div className="fixed inset-0 z-50 bg-black/75 flex justify-center items-start p-3 sm:p-6 overflow-y-auto animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-md shadow-2xl my-4 sm:my-8 flex flex-col overflow-hidden">
             {/* Cabeçalho Fixo no Topo */}
             <div className="p-4 sm:p-5 border-b border-stone-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-stone-50/70 dark:bg-slate-950/70">
               <h3 className="text-sm sm:text-base font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
@@ -3040,8 +3040,8 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
 
       {/* MODAL: HISTÓRICO DE SESSÕES */}
       {historicoAberto && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden mb-8 sm:mb-12">
+        <div className="fixed inset-0 z-50 bg-black/75 flex justify-center items-start p-3 sm:p-6 overflow-y-auto animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl my-4 sm:my-8 flex flex-col overflow-hidden">
             <div className="p-5 border-b border-stone-200 dark:border-slate-800 flex items-center justify-between bg-stone-50 dark:bg-slate-950">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950 flex items-center justify-center text-rose-700 dark:text-rose-300">
@@ -3162,8 +3162,8 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
 
       {/* MODAL: EMISSÃO E IMPRESSÃO DE LAUDO */}
       {modalLaudoAberto && imagemUsuarioUrl && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
-          <div className="bg-white text-stone-900 border border-stone-200 rounded-3xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden mb-8 sm:mb-12 print:p-0 print:border-none print:shadow-none">
+        <div className="fixed inset-0 z-50 bg-black/75 flex justify-center items-start p-3 sm:p-6 overflow-y-auto animate-fadeIn">
+          <div className="bg-white text-stone-900 border border-stone-200 rounded-3xl w-full max-w-3xl shadow-2xl my-4 sm:my-8 flex flex-col overflow-hidden print:p-0 print:border-none print:shadow-none">
             <div className="p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50 print:hidden">
               <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-rose-700" />
@@ -3322,8 +3322,8 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
 
       {/* MODAL: RETORNAR CASO A CAPTURA FEITA NÃO SEJA VÁLIDA NA BANCADA */}
       {modalRetornarCapturaInvalida && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-start pt-6 sm:pt-10 p-3 sm:p-6 overflow-y-auto overscroll-contain animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden mb-8 sm:mb-12 p-5 sm:p-6 space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/75 flex justify-center items-start p-3 sm:p-6 overflow-y-auto animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl my-4 sm:my-8 p-5 sm:p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                 <AlertCircle className="w-5 h-5" />

@@ -771,9 +771,9 @@ export const CalendarioView: React.FC<CalendarioViewProps> = ({
       {/* 4. MODAL / CARD DE AGENDAMENTO COM SELEÇÃO DO MOTIVO */}
       {/* ========================================================================= */}
       {modalAgendamentoAberto && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex justify-center items-start p-2.5 sm:p-4 bg-slate-950/80 overflow-y-auto animate-fadeIn">
           <div 
-            className="w-full max-w-2xl bg-white dark:bg-[#071918] rounded-3xl shadow-2xl border border-teal-200/70 dark:border-teal-500/30 overflow-hidden flex flex-col max-h-[88vh] mb-8 sm:mb-12 animate-scaleUp"
+            className="w-full max-w-2xl bg-white dark:bg-[#071918] rounded-3xl shadow-2xl border border-teal-200/70 dark:border-teal-500/30 overflow-hidden flex flex-col my-4 sm:my-8 animate-scaleUp"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabeçalho do Modal */}
@@ -1046,8 +1046,8 @@ export const CalendarioView: React.FC<CalendarioViewProps> = ({
       {/* 5. MODAL CADASTRO RÁPIDO DE PACIENTE */}
       {/* ========================================================================= */}
       {modalNovoPaciente && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-6 sm:pt-10 p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto overscroll-contain animate-fadeIn">
-          <div className="w-full max-w-md bg-white dark:bg-[#071918] rounded-3xl p-5 sm:p-6 shadow-2xl border border-teal-200/70 dark:border-teal-500/30 space-y-4 max-h-[85vh] overflow-y-auto mb-8 sm:mb-12">
+        <div className="fixed inset-0 z-50 flex justify-center items-start p-2.5 sm:p-4 bg-slate-950/80 overflow-y-auto animate-fadeIn">
+          <div className="w-full max-w-md bg-white dark:bg-[#071918] rounded-3xl p-5 sm:p-6 shadow-2xl border border-teal-200/70 dark:border-teal-500/30 space-y-4 my-4 sm:my-8">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-white/[0.08]">
               <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                 <UserPlus className="w-4 h-4 text-teal-700 dark:text-teal-400" />
