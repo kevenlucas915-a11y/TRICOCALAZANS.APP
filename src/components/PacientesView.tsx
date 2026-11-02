@@ -36,7 +36,8 @@ import {
   Upload,
   Image as ImageIcon,
   Loader2,
-  Plus
+  Plus,
+  FileCheck2
 } from 'lucide-react';
 import { Paciente, ConsultaRegistro, FotoRegistroConsulta, FotoGlobalPaciente, AnguloFotoGlobal } from '../types/paciente';
 import { RespostaAnamnese } from '../types/anamnese';
@@ -58,6 +59,8 @@ import {
   alternarLiberacaoFotoGlobal
 } from '../services/pacientes';
 import { arquivoParaDataURL } from '../utils/imageStore';
+import { comprimirImagemArquivo } from '../utils/imageCompressor';
+import { useBackHandler } from '../utils/navigationHistory';
 import { Session, getSession } from '../services/annotations';
 import { ModalConvitePortal } from './ModalConvitePortal';
 import { ModalProdutoIndicado } from './ModalProdutoIndicado';
@@ -217,6 +220,31 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
   const [salvandoConsulta, setSalvandoConsulta] = useState(false);
   const [processandoFotoConsulta, setProcessandoFotoConsulta] = useState(false);
   const [modalFotoConsultaAmpliada, setModalFotoConsultaAmpliada] = useState<{ url: string; titulo: string; data: string } | null>(null);
+
+  // Sincronização do botão Voltar do dispositivo para modais e sub-navegação
+  useBackHandler(modalPacienteAberto, () => setModalPacienteAberto(false), 'modalPaciente');
+  useBackHandler(modalConsultaAberto, () => setModalConsultaAberto(false), 'modalConsulta');
+  useBackHandler(modalFotoGlobalUploadAberto, () => setModalFotoGlobalUploadAberto(false), 'modalFotoGlobalUpload');
+  useBackHandler(!!modalFotoGlobalAmpliada, () => setModalFotoGlobalAmpliada(null), 'modalFotoGlobalAmpliada');
+  useBackHandler(!!modalFotoAmpliada, () => setModalFotoAmpliada(null), 'modalFotoAmpliada');
+  useBackHandler(!!modalFotoConsultaAmpliada, () => setModalFotoConsultaAmpliada(null), 'modalFotoConsultaAmpliada');
+  useBackHandler(modalConviteAberto, () => setModalConviteAberto(false), 'modalConvite');
+  useBackHandler(modalProdutoAberto, () => setModalProdutoAberto(false), 'modalProduto');
+  useBackHandler(modalProximoPassoFluxo.aberto, () => setModalProximoPassoFluxo({ aberto: false, paciente: null }), 'modalProximoPasso');
+
+  // Sub-abas do prontuário: se estiver em Evolução/Exames/Histórico, voltar retorna à aba Geral
+  useBackHandler(
+    !!pacienteAtivo && abaProntuario !== 'geral',
+    () => setAbaProntuario('geral'),
+    'pacienteSubAba'
+  );
+
+  // Se estiver na aba Geral com um paciente aberto no mobile, voltar retorna para a lista de pacientes
+  useBackHandler(
+    !!pacienteAtivo && abaProntuario === 'geral' && !modalPacienteAberto && !modalConsultaAberto && !modalFotoGlobalUploadAberto && !modalConviteAberto && !modalProdutoAberto,
+    () => setPacienteAtivo(null),
+    'pacienteAtivoProntuario'
+  );
 
   // Alerta de feedback
   const [alerta, setAlerta] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
@@ -408,9 +436,9 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
     setProcessandoImagemGlobal(true);
     try {
-      const comprimida = await arquivoParaDataURL(file);
-      setFormFotoGlobalImagemUrl(comprimida);
-      mostrarAlerta('sucesso', 'Foto carregada e otimizada com sucesso!');
+      const res = await comprimirImagemArquivo(file, { perfil: 'global' });
+      setFormFotoGlobalImagemUrl(res.dataUrl);
+      mostrarAlerta('sucesso', `Foto otimizada com sucesso! (${res.textoResumo})`);
     } catch {
       mostrarAlerta('erro', 'Erro ao processar imagem.');
     } finally {
@@ -608,21 +636,27 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
     setProcessandoFotoConsulta(true);
     try {
       const novasFotos: Array<{ id: string; url: string; titulo?: string; area?: string }> = [];
+      let economiaTotal = 0;
+      let totalProcessadas = 0;
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (file.type.startsWith('image/')) {
-          const comprimida = await arquivoParaDataURL(file);
+          const res = await comprimirImagemArquivo(file, { perfil: 'global' });
           novasFotos.push({
             id: `foto_cons_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 6)}`,
-            url: comprimida,
+            url: res.dataUrl,
             titulo: `${formConsArea} - Foto ${formConsFotos.length + i + 1}`,
             area: formConsArea
           });
+          economiaTotal += res.percentualEconomia;
+          totalProcessadas++;
         }
       }
       if (novasFotos.length > 0) {
         setFormConsFotos(prev => [...prev, ...novasFotos]);
-        mostrarAlerta('sucesso', `${novasFotos.length} foto(s) anexada(s) à consulta!`);
+        const media = Math.round(economiaTotal / totalProcessadas);
+        mostrarAlerta('sucesso', `${novasFotos.length} foto(s) otimizada(s) e anexada(s) (${media}% mais leves)!`);
       }
     } catch {
       mostrarAlerta('erro', 'Falha ao processar imagens da consulta.');
@@ -989,6 +1023,26 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                     <span>Histórico Clínico</span>
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onDefinirPacienteAtivo?.(pacienteAtivo);
+                      setAbaProntuario('comparador');
+                      setTimeout(() => {
+                        document.getElementById('secao-historico-clinico')?.scrollIntoView({ behavior: 'smooth' });
+                      }, 50);
+                    }}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs border whitespace-nowrap ${
+                      abaProntuario === 'comparador'
+                        ? 'bg-emerald-700 text-white border-emerald-800 shadow-md shadow-emerald-700/25'
+                        : 'bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
+                    }`}
+                    title="Comparar evolução do tratamento lado a lado (Antes/Depois) com fotos e capturas por área"
+                  >
+                    <GitCompare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Evolução Lado a Lado</span>
+                  </button>
+
                   {onIniciarAnamnese && (
                     <button
                       type="button"
@@ -1294,6 +1348,20 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
+                        window.dispatchEvent(new CustomEvent('trico-abrir-fechamento-consulta', {
+                          detail: { paciente: pacienteAtivo }
+                        }));
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
+                      title="Fechar atendimento e emitir resumo consolidado em PDF timbrado ou WhatsApp"
+                    >
+                      <FileCheck2 className="w-3.5 h-3.5" />
+                      <span>📋 Fechar Consulta & Resumo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
                         setAbaProntuario('historico');
                         setTimeout(() => {
                           document.getElementById('secao-historico-clinico')?.scrollIntoView({ behavior: 'smooth' });
@@ -1311,27 +1379,31 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                     </button>
                   </div>
 
-                  {/* Comparativo se houver 2 ou mais fotos */}
-                  {consultasComFoto.length >= 2 && (
-                    <button
-                      type="button"
-                      onClick={() => {
+                  {/* Comparativo de Evolução Lado a Lado */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (consultasComFoto.length >= 2) {
                         const fotoMaisRecente = consultasComFoto[0];
                         const fotoAnterior = consultasComFoto[1];
                         setComparadorFotoAUrl(fotoAnterior.imagemUrl!);
                         setComparadorFotoBUrl(fotoMaisRecente.imagemUrl!);
-                        setAbaProntuario('comparador');
-                        setTimeout(() => {
-                          document.getElementById('secao-historico-clinico')?.scrollIntoView({ behavior: 'smooth' });
-                        }, 50);
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/80 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs hover:bg-emerald-100"
-                      title="Comparar evolução clínica entre as consultas"
-                    >
-                      <GitCompare className="w-3.5 h-3.5" />
-                      <span>Comparar Evolução (Antes/Depois)</span>
-                    </button>
-                  )}
+                      }
+                      setAbaProntuario('comparador');
+                      setTimeout(() => {
+                        document.getElementById('secao-historico-clinico')?.scrollIntoView({ behavior: 'smooth' });
+                      }, 50);
+                    }}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs border ${
+                      abaProntuario === 'comparador'
+                        ? 'bg-emerald-700 text-white border-emerald-800 shadow-md shadow-emerald-700/25'
+                        : 'bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/80 hover:bg-emerald-100'
+                    }`}
+                    title="Comparar evolução clínica e fotografias de tratamento lado a lado"
+                  >
+                    <GitCompare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Comparar Evolução (Antes/Depois)</span>
+                  </button>
                 </div>
               </div>
 
@@ -1373,16 +1445,16 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                   onClick={() => setAbaProntuario('comparador')}
                   className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border whitespace-nowrap ${
                     abaProntuario === 'comparador'
-                      ? 'bg-teal-700 text-white border-teal-700 shadow-md shadow-teal-700/25'
+                      ? 'bg-emerald-700 text-white border-emerald-800 shadow-md shadow-emerald-700/25'
                       : 'bg-white dark:bg-slate-900 text-stone-600 dark:text-slate-400 border-stone-200 dark:border-slate-800 hover:bg-stone-50'
                   }`}
                 >
-                  <GitCompare className="w-3.5 h-3.5" />
-                  <span>Comparador Lado a Lado</span>
+                  <GitCompare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Evolução & Comparador Lado a Lado</span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                     abaProntuario === 'comparador' ? 'bg-white/20 text-white' : 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
                   }`}>
-                    Antes / Depois
+                    Fotos do Tratamento
                   </span>
                 </button>
 
@@ -1464,6 +1536,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                   fotosGlobais={fotosGlobais}
                   fotoAInicialUrl={comparadorFotoAUrl}
                   fotoBInicialUrl={comparadorFotoBUrl}
+                  usuarioAtual={usuarioAtual}
                   onCarregarSessaoNaBancada={onCarregarSessaoNaBancada}
                   onVoltarProntuario={() => setAbaProntuario('geral')}
                 />
@@ -2064,6 +2137,24 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                                 </button>
                               )}
 
+                              {/* Botão Resumo / Laudo da Consulta em PDF ou WhatsApp */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  window.dispatchEvent(new CustomEvent('trico-abrir-fechamento-consulta', {
+                                    detail: {
+                                      paciente: pacienteAtivo,
+                                      consultaExistente: cons
+                                    }
+                                  }));
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/70 dark:hover:bg-teal-900 text-teal-800 dark:text-teal-200 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-teal-300 dark:border-teal-700/80 shadow-2xs"
+                                title="Gerar resumo da consulta em PDF timbrado ou enviar via WhatsApp"
+                              >
+                                <FileCheck2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                                <span>Resumo PDF</span>
+                              </button>
+
                               <button
                                 type="button"
                                 onClick={() => handleToggleLiberacaoConsulta(cons)}
@@ -2379,20 +2470,36 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
               )}
             </>
           ) : (
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-stone-200/90 dark:border-slate-800 p-12 text-center space-y-3">
-              <Users className="w-12 h-12 text-stone-300 dark:text-slate-700 mx-auto" />
-              <h3 className="text-base font-bold text-stone-800 dark:text-slate-200">
-                Selecione um paciente na lista ao lado
-              </h3>
-              <p className="text-xs text-stone-500 max-w-sm mx-auto">
-                Ou cadastre um novo paciente para gerenciar informações clínicas e histórico de consultas.
-              </p>
-              <button
-                onClick={handleAbrirNovoPaciente}
-                className="px-4 py-2 rounded-xl bg-rose-700 text-white text-xs font-bold shadow-xs hover:bg-rose-800"
-              >
-                Cadastrar Paciente
-              </button>
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-stone-200/90 dark:border-slate-800 p-8 sm:p-12 text-center space-y-3">
+              {abaInicial === 'comparador' ? (
+                <>
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto border border-emerald-200 dark:border-emerald-800 shadow-xs">
+                    <GitCompare className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-base font-bold text-stone-900 dark:text-slate-100">
+                    Evolução do Tratamento • Comparador Lado a Lado
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Selecione um paciente na lista à esquerda para carregar suas fotografias clínicas, comparar capturas por área anatômica lado a lado e demonstrar a evolução ao paciente.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Users className="w-12 h-12 text-stone-300 dark:text-slate-700 mx-auto" />
+                  <h3 className="text-base font-bold text-stone-800 dark:text-slate-200">
+                    Selecione um paciente na lista ao lado
+                  </h3>
+                  <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                    Ou cadastre um novo paciente para gerenciar informações clínicas e histórico de consultas.
+                  </p>
+                  <button
+                    onClick={handleAbrirNovoPaciente}
+                    className="px-4 py-2 rounded-xl bg-teal-700 text-white text-xs font-bold shadow-xs hover:bg-teal-800"
+                  >
+                    Cadastrar Paciente
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

@@ -222,31 +222,31 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
   const totalCasosAtlas = CASOS_ATLAS.length;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 pt-5 pb-16 animate-fadeIn">
+    <div className="space-y-6 max-w-7xl mx-auto px-3 sm:px-6 pt-5 pb-16 animate-fadeIn w-full max-w-full min-w-0">
       {/* 1. CABEÇALHO DO PAINEL CLÍNICO */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full min-w-0">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               Painel Clínico
             </h1>
-            <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
+            <span className="text-xs font-medium text-slate-400 dark:text-slate-500 whitespace-nowrap">
               · Gestão & Análise Capilar
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
             {usuarioAtual.clinica ? `${usuarioAtual.clinica} · ` : ''}
             {usuarioAtual.nome} {usuarioAtual.registro ? `(${usuarioAtual.registro})` : ''}
           </p>
         </div>
 
         {/* Botões de Ação do Especialista */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 max-w-full">
           {/* Seletor de Período em Vidro Fosco */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               onClick={() => setFiltroAberto(!filtroAberto)}
-              className="glass-button px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 select-none"
+              className="glass-button px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 select-none whitespace-nowrap"
             >
               <span>
                 {periodoFiltro === '30d' && 'Últimos 30 Dias'}
@@ -298,7 +298,7 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
           {/* Botão Novo Paciente */}
           <button
             onClick={() => setModalNovoPaciente(true)}
-            className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-medium text-xs flex items-center gap-1.5 shadow-sm shadow-teal-700/25 transition-all"
+            className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-medium text-xs flex items-center gap-1.5 shadow-sm shadow-teal-700/25 transition-all whitespace-nowrap shrink-0"
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>Novo Paciente</span>
@@ -307,7 +307,7 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
           {/* Botão Agenda / Calendário */}
           <button
             onClick={() => onNavegarPara('calendario')}
-            className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-medium text-xs flex items-center gap-1.5 shadow-sm shadow-teal-700/25 transition-all"
+            className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-medium text-xs flex items-center gap-1.5 shadow-sm shadow-teal-700/25 transition-all whitespace-nowrap shrink-0"
             title="Acessar calendário clínico e agendamentos"
           >
             <Calendar className="w-3.5 h-3.5" />
@@ -317,7 +317,7 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
           {/* Botão Anamnese Digital */}
           <button
             onClick={() => onNavegarPara('anamnese')}
-            className="px-3 py-1.5 rounded-xl bg-teal-700/80 hover:bg-teal-800 text-white font-medium text-xs flex items-center gap-1.5 shadow-sm shadow-teal-700/25 transition-all"
+            className="px-3 py-1.5 rounded-xl bg-teal-700/80 hover:bg-teal-800 text-white font-medium text-xs flex items-center gap-1.5 shadow-sm shadow-teal-700/25 transition-all whitespace-nowrap shrink-0"
             title="Acessar questionários clínicos e criar novos formulários"
           >
             <FileText className="w-3.5 h-3.5" />
@@ -327,7 +327,7 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
           {/* Botão Meu Perfil & Segurança */}
           <button
             onClick={() => onNavegarPara('perfil')}
-            className="glass-button px-3 py-1.5 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white font-medium text-xs flex items-center gap-1.5 shadow-xs transition-all"
+            className="glass-button px-3 py-1.5 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white font-medium text-xs flex items-center gap-1.5 shadow-xs transition-all whitespace-nowrap shrink-0"
             title="Acessar Meu Perfil, Espaço e Alterar Senha"
           >
             <User className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
@@ -337,7 +337,7 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
           {/* Botão Editar Dados da Clínica Rápido */}
           <button
             onClick={() => setModalEditarPerfil(true)}
-            className="glass-button p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+            className="glass-button p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shrink-0"
             title="Edição rápida de dados da clínica e laudos"
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -513,7 +513,7 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
       </div>
 
       {/* 3. MÓDULO DE FUNÇÃO: ATLAS CLÍNICO INTEGRADO NO DASHBOARD (CONSULTA DIRETA SEM SAIR DO PAINEL) */}
-      <div className="glass-card p-6 sm:p-7 space-y-4">
+      <div className="glass-card p-4 sm:p-7 space-y-4 max-w-full min-w-0">
         {!temAcesso && (
           <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-950 via-teal-900 to-slate-950 text-white flex flex-col sm:flex-row items-center justify-between gap-3 border border-teal-500/30 animate-fadeIn">
             <div className="flex items-center gap-3">
@@ -534,24 +534,24 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
           </div>
         )}
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-200/60 dark:border-white/[0.06]">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl glass-button flex items-center justify-center text-teal-700 dark:text-teal-400">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-200/60 dark:border-white/[0.06] min-w-0">
+          <div className="space-y-0.5 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-xl glass-button flex items-center justify-center text-teal-700 dark:text-teal-400 shrink-0">
                 <BookOpen className="w-4 h-4" />
               </div>
-              <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+              <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white truncate">
                 Função Atlas: Consulta Rápida de Casos & Padrões
               </h2>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
               Pesquise casos clínicos, compare sinais tricoscópicos e acesse referências sem sair do painel.
             </p>
           </div>
 
           {/* Campo de Busca Rápida Dentro do Atlas do Dashboard */}
-          <div className="flex items-center gap-2">
-            <div className="relative w-full sm:w-64">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto min-w-0">
+            <div className="relative w-full sm:w-64 min-w-0">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
@@ -572,7 +572,7 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
 
             <button
               onClick={() => onNavegarPara('atlas')}
-              className="glass-button px-3 py-1.5 text-xs font-semibold text-teal-700 dark:text-teal-300 flex items-center gap-1 shrink-0"
+              className="glass-button px-3 py-1.5 text-xs font-semibold text-teal-700 dark:text-teal-300 flex items-center justify-center gap-1 shrink-0 whitespace-nowrap"
             >
               <span>Ver Atlas Completo</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -661,27 +661,27 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
       </div>
 
       {/* 4. GRID DE DISTRIBUIÇÃO MENSAL DE SESSÕES + RESUMO DO CONSULTÓRIO */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 min-w-0">
         {/* CARD ESQUERDA: DISTRIBUIÇÃO REAL DE SESSÕES DE FOTOTRICOSCOPIA */}
-        <div className="lg:col-span-8 glass-card p-6 sm:p-7 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h2 className="text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+        <div className="lg:col-span-8 glass-card p-4 sm:p-7 flex flex-col justify-between min-w-0 max-w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 min-w-0">
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-white truncate">
                 Distribuição Mensal de Sessões
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                 Histórico de exames tricoscópicos gravados em 2026
               </p>
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400 shrink-0">
               <span className="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block" />
               <span>{totalSessoesRealizadas} {totalSessoesRealizadas === 1 ? 'sessão gravada' : 'sessões gravadas'}</span>
             </div>
           </div>
 
           {/* ÁREA GRÁFICA REAL DE BARRAS POR MÊS */}
-          <div className="relative w-full h-56 sm:h-64 mt-2 flex flex-col justify-end">
+          <div className="relative w-full max-w-full h-56 sm:h-64 mt-2 flex flex-col justify-end overflow-x-auto no-scrollbar">
             {totalSessoesAno === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-4 border border-dashed border-slate-200 dark:border-white/10 rounded-2xl bg-slate-50/50 dark:bg-white/[0.01]">
                 <Camera className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
@@ -693,7 +693,7 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="h-full flex items-end justify-between gap-1.5 sm:gap-3 pt-6 pb-2 px-2">
+              <div className="h-full min-w-[280px] flex items-end justify-between gap-1 sm:gap-3 pt-6 pb-2 px-1">
                 {sessoesPorMes.map((qtd, idx) => {
                   const alturaPct = maxSessoesMes > 0 ? Math.round((qtd / maxSessoesMes) * 100) : 0;
                   const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -720,7 +720,7 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
         </div>
 
         {/* CARD DIREITA: RESUMO OPERACIONAL & PACIENTES RECENTES */}
-        <div className="lg:col-span-4 glass-card p-6 sm:p-7 flex flex-col justify-between">
+        <div className="lg:col-span-4 glass-card p-4 sm:p-7 flex flex-col justify-between min-w-0">
           <div>
             <div className="flex items-center justify-between">
               <div>
@@ -809,22 +809,22 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
       </div>
 
       {/* 5. TABELA DE PACIENTES CADASTRADOS & ATALHOS */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 min-w-0">
         {/* TABELA DE PACIENTES DO CONSULTÓRIO (7 Colunas) */}
-        <div className="lg:col-span-7 glass-card p-6 sm:p-7">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-semibold tracking-tight text-slate-900 dark:text-white">
+        <div className="lg:col-span-7 glass-card p-4 sm:p-7 min-w-0 max-w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 min-w-0">
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold tracking-tight text-slate-900 dark:text-white truncate">
                 Prontuários & Pacientes do Consultório
               </h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500">
+              <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
                 Lista de pacientes cadastrados com status de anamnese e tricoscopia
               </p>
             </div>
 
             <button 
               onClick={() => onNavegarPara('pacientes')}
-              className="glass-button px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 text-teal-700 dark:text-teal-300"
+              className="glass-button px-3 py-1.5 text-xs font-medium flex items-center justify-center gap-1.5 text-teal-700 dark:text-teal-300 shrink-0 whitespace-nowrap self-start sm:self-auto"
             >
               <span>Ver Todos ({totalPacientesAtivos})</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -832,8 +832,8 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
           </div>
 
           {/* Tabela Clean Glass com Cabeçalho e Linhas */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto no-scrollbar w-full max-w-full min-w-0">
+            <table className="w-full min-w-[480px] text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200/60 dark:border-white/[0.06] text-slate-400 dark:text-slate-500 font-medium">
                   <th className="pb-2.5 font-medium">Paciente</th>
@@ -879,9 +879,9 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
         </div>
 
         {/* CARD DIREITA: RESUMO DE CONSULTAS & AÇÕES RÁPIDAS (5 Colunas) */}
-        <div className="lg:col-span-5 flex flex-col gap-5">
+        <div className="lg:col-span-5 flex flex-col gap-5 min-w-0">
           {/* TOTAL DE ATENDIMENTOS */}
-          <div className="glass-card p-6 sm:p-7 flex flex-col justify-between flex-1">
+          <div className="glass-card p-4 sm:p-7 flex flex-col justify-between flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl glass-button flex items-center justify-center text-slate-800 dark:text-slate-200 shadow-inner">

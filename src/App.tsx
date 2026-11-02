@@ -4,7 +4,6 @@ import { CasoAtlas } from './types/tricoscopia';
 import { useTheme } from './context/ThemeContext';
 import { AtlasGridView } from './components/AtlasGridView';
 import { FichaCasoView } from './components/FichaCasoView';
-import { BuscaPorAchadoView } from './components/BuscaPorAchadoView';
 import { MinhaCapturaView } from './components/MinhaCapturaView';
 import { PacientesView } from './components/PacientesView';
 import { PainelUsuarioView } from './components/PainelUsuarioView';
@@ -19,11 +18,12 @@ import { GerenciadorImagensModal } from './components/GerenciadorImagensModal';
 import { recuperarImagensLegadas } from './utils/imageStore';
 import { getConsultasMarcadasHoje, updateStatusAgendamento } from './services/agendamentoService';
 import { Agendamento, StatusAgendamento } from './types/agendamento';
-import { Paciente } from './types/paciente';
+import { Paciente, ConsultaRegistro } from './types/paciente';
 import { usuarioEhAdmin } from './utils/fotosNuvem';
 import { temAcessoAtlas } from './types/assinatura';
 import { PortalPacienteView } from './components/PortalPacienteView';
 import { FluxoClinicoStepper } from './components/FluxoClinicoStepper';
+import { ModalFechamentoConsulta } from './components/ModalFechamentoConsulta';
 import { 
   BookOpen, 
   Camera, 
@@ -54,6 +54,11 @@ import {
   Settings
 } from 'lucide-react';
 import { ModalConfigurarStripe } from './components/ModalConfigurarStripe';
+import { 
+  useBackHandler, 
+  sincronizarRota, 
+  registrarAvisoSaida 
+} from './utils/navigationHistory';
 
 type TelaAtiva = 'atlas' | 'caso' | 'achados' | 'comparador' | 'captura' | 'pacientes' | 'painel' | 'login' | 'perfil' | 'anamnese' | 'calendario' | 'planos' | 'area-do-cliente';
 
@@ -141,6 +146,92 @@ export default function App() {
   const [menuUsuarioAberto, setMenuUsuarioAberto] = useState(false);
   const [casoSelecionadoId, setCasoSelecionadoId] = useState<string | null>(null);
   const [achadoSelecionadoId, setAchadoSelecionadoId] = useState<string | null>(null);
+  const [toastAvisoVoltar, setToastAvisoVoltar] = useState<string | null>(null);
+
+  // Registrar aviso de saída dupla para mobile (prevenção contra fechamento acidental)
+  useEffect(() => {
+    registrarAvisoSaida((mensagem) => {
+      setToastAvisoVoltar(mensagem);
+      setTimeout(() => setToastAvisoVoltar(null), 2500);
+    });
+  }, []);
+
+  // Inicializar estado raiz no histórico do navegador
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.history) {
+      if (!window.history.state || !window.history.state.tela) {
+        window.history.replaceState({ tela: telaAtiva, tricoRoot: true }, '', window.location.search || `?tela=${telaAtiva}`);
+      }
+    }
+  }, []);
+
+  // Função centralizada para navegar entre telas e sincronizar o histórico do navegador
+  const navegarPara = (novaTela: TelaAtiva, dados?: { casoId?: string; achadoId?: string }) => {
+    if (novaTela === telaAtiva && dados?.casoId === casoSelecionadoId) return;
+
+    sincronizarRota(novaTela, dados);
+    setTelaAtiva(novaTela);
+    if (dados?.casoId !== undefined) setCasoSelecionadoId(dados.casoId);
+    if (dados?.achadoId !== undefined) setAchadoSelecionadoId(dados.achadoId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const mudarTela = (novaTela: TelaAtiva, dados?: { casoId?: string; achadoId?: string }) => {
+    navegarPara(novaTela, dados);
+    setMenuMobileAberto(false);
+  };
+
+  // Ouvir evento de navegação por histórico (botão Voltar do dispositivo)
+  useEffect(() => {
+    const handleNavegarTela = (ev: any) => {
+      const detail = ev.detail;
+      if (detail && detail.tela) {
+        setTelaAtiva(detail.tela);
+        if (detail.casoId !== undefined) setCasoSelecionadoId(detail.casoId);
+        if (detail.achadoId !== undefined) setAchadoSelecionadoId(detail.achadoId);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    window.addEventListener('trico-navegar-tela', handleNavegarTela);
+    return () => window.removeEventListener('trico-navegar-tela', handleNavegarTela);
+  }, []);
+
+  // Sincronização do botão Voltar para modais e gavetas
+  useBackHandler(menuMobileAberto, () => setMenuMobileAberto(false), 'menuMobile');
+  useBackHandler(menuUsuarioAberto, () => setMenuUsuarioAberto(false), 'menuUsuario');
+  useBackHandler(modalLembreteGlobalAberto, () => setModalLembreteGlobalAberto(false), 'modalLembrete');
+  useBackHandler(modalStripeAbertoGlobal, () => setModalStripeAbertoGlobal(false), 'modalStripe');
+  useBackHandler(gerenciadorImagensAberto, () => setGerenciadorImagensAberto(false), 'gerenciadorImagens');
+  
+  // Modal Global de Fechamento de Consulta em 1 Clique (Resumo Integrado)
+  const [modalFechamentoConsultaAberto, setModalFechamentoConsultaAberto] = useState(false);
+  const [dadosFechamentoConsulta, setDadosFechamentoConsulta] = useState<any>(null);
+
+  useBackHandler(modalFechamentoConsultaAberto, () => {
+    setModalFechamentoConsultaAberto(false);
+    setDadosFechamentoConsulta(null);
+  }, 'modalFechamentoConsultaGlobal');
+
+  // Ouvinte global para disparo do Fechamento de Consulta de qualquer componente
+  useEffect(() => {
+    const handler = (e: any) => {
+      const detail = e.detail;
+      if (detail?.paciente) {
+        setDadosFechamentoConsulta(detail);
+        setModalFechamentoConsultaAberto(true);
+      } else if (pacienteAtivoAtendimento) {
+        setDadosFechamentoConsulta({
+          paciente: pacienteAtivoAtendimento,
+          fotosIniciais: detail?.fotosIniciais,
+          metricasIniciais: detail?.metricasIniciais
+        });
+        setModalFechamentoConsultaAberto(true);
+      }
+    };
+    window.addEventListener('trico-abrir-fechamento-consulta', handler);
+    return () => window.removeEventListener('trico-abrir-fechamento-consulta', handler);
+  }, [pacienteAtivoAtendimento]);
   
   // Paciente em Atendimento Ativo no Fluxo Clínico Global (1. Paciente -> 2. Anamnese -> 3. Tricoscopia)
   const [pacienteAtivoAtendimento, setPacienteAtivoAtendimento] = useState<Paciente | null>(() => {
@@ -192,17 +283,16 @@ export default function App() {
 
   const handleNavegarPassoFluxo = (passo: 1 | 2 | 3 | 4) => {
     if (passo === 1) {
-      setTelaAtiva('pacientes');
+      navegarPara('pacientes');
     } else if (passo === 2) {
-      setTelaAtiva('anamnese');
+      navegarPara('anamnese');
     } else if (passo === 3) {
       setModoBancadaAtual('registro');
-      setTelaAtiva('captura');
+      navegarPara('captura');
     } else if (passo === 4) {
       setModoBancadaAtual('analise');
-      setTelaAtiva('captura');
+      navegarPara('captura');
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Consultas de hoje para Lembrete Pop-up global
@@ -292,51 +382,42 @@ export default function App() {
 
   // Navegar para ficha de um caso
   const handleAbrirCaso = (casoId: string) => {
-    setCasoSelecionadoId(casoId);
-    setTelaAtiva('caso');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navegarPara('caso', { casoId });
   };
 
   // Navegar para comparação de paciente
   const handleAbrirComparacao = (_casoAId?: string, _casoBId?: string) => {
-    setTelaAtiva('pacientes');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navegarPara('pacientes');
   };
 
   // Navegar para achado específico
   const handleAbrirAchado = (achadoId: string) => {
-    setAchadoSelecionadoId(achadoId);
-    setTelaAtiva('achados');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navegarPara('achados', { achadoId });
   };
 
   // Voltar para a galeria
   const handleVoltarAtlas = () => {
-    setTelaAtiva('atlas');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navegarPara('atlas');
   };
 
   // Iniciar exame/captura com paciente pré-selecionado (Modo Registro de Fotos)
   const handleIniciarCapturaPaciente = (paciente: { id: string; nome: string } | Paciente) => {
     handleDefinirPacienteAtivo(paciente as Paciente);
     setModoBancadaAtual('registro');
-    setTelaAtiva('captura');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navegarPara('captura');
   };
 
   // Carregar sessão de fototricoscopia na bancada (Modo Contagem & Consulta)
   const handleCarregarSessaoNaBancada = (sessionId: string) => {
     setSessaoSelecionadaParaBancadaId(sessionId);
     setModoBancadaAtual('analise');
-    setTelaAtiva('captura');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navegarPara('captura');
   };
 
   // Iniciar anamnese para paciente específico
   const handleIniciarAnamnesePaciente = (paciente: Paciente | { id: string; nome: string }) => {
     handleDefinirPacienteAtivo(paciente as Paciente);
-    setTelaAtiva('anamnese');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navegarPara('anamnese');
   };
 
   // Tratar busca global
@@ -416,7 +497,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen text-slate-800 dark:text-slate-100 flex flex-col lg:flex-row font-sans selection:bg-teal-500/20 selection:text-teal-900 dark:selection:bg-teal-500/30 dark:selection:text-teal-200 transition-colors">
+    <div className="min-h-screen text-slate-800 dark:text-slate-100 flex flex-col lg:flex-row font-sans selection:bg-teal-500/20 selection:text-teal-900 dark:selection:bg-teal-500/30 dark:selection:text-teal-200 transition-colors w-full max-w-full overflow-x-hidden">
       {/* OVERLAY PARA MOBILE QUANDO SIDEBAR ESTIVER ABERTA */}
       {menuMobileAberto && (
         <div 
@@ -471,11 +552,10 @@ export default function App() {
             <button
               onClick={() => {
                 if (estaAutenticado) {
-                  setTelaAtiva('painel');
+                  mudarTela('painel');
                 } else {
-                  setTelaAtiva('login');
+                  mudarTela('login');
                 }
-                setMenuMobileAberto(false);
               }}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold transition-all ${
                 telaAtiva === 'painel'
@@ -500,11 +580,10 @@ export default function App() {
             <button
               onClick={() => { 
                 if (estaAutenticado) {
-                  setTelaAtiva('calendario'); 
+                  mudarTela('calendario'); 
                 } else {
-                  setTelaAtiva('login');
+                  mudarTela('login');
                 }
-                setMenuMobileAberto(false); 
               }}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold transition-all ${
                 telaAtiva === 'calendario'
@@ -535,11 +614,10 @@ export default function App() {
             <button
               onClick={() => { 
                 if (estaAutenticado) {
-                  setTelaAtiva('pacientes'); 
+                  mudarTela('pacientes'); 
                 } else {
-                  setTelaAtiva('login');
+                  mudarTela('login');
                 }
-                setMenuMobileAberto(false); 
               }}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold transition-all ${
                 telaAtiva === 'pacientes'
@@ -560,11 +638,10 @@ export default function App() {
             <button
               onClick={() => { 
                 if (estaAutenticado) {
-                  setTelaAtiva('anamnese'); 
+                  mudarTela('anamnese'); 
                 } else {
-                  setTelaAtiva('login');
+                  mudarTela('login');
                 }
-                setMenuMobileAberto(false); 
               }}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold transition-all ${
                 telaAtiva === 'anamnese'
@@ -589,11 +666,10 @@ export default function App() {
             <button
               onClick={() => { 
                 if (estaAutenticado) {
-                  setTelaAtiva('captura'); 
+                  mudarTela('captura'); 
                 } else {
-                  setTelaAtiva('login');
+                  mudarTela('login');
                 }
-                setMenuMobileAberto(false); 
               }}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold transition-all ${
                 telaAtiva === 'captura'
@@ -609,6 +685,34 @@ export default function App() {
                 Bancada
               </span>
             </button>
+
+            {/* Item 6: Evolução do Tratamento (Comparador Lado a Lado) */}
+            <button
+              onClick={() => { 
+                if (estaAutenticado) {
+                  mudarTela('comparador'); 
+                } else {
+                  mudarTela('login');
+                }
+              }}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold transition-all ${
+                telaAtiva === 'comparador'
+                  ? 'bg-teal-700 text-white shadow-md shadow-teal-700/25'
+                  : 'text-slate-700 dark:text-slate-200 hover:text-teal-950 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/[0.08]'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <GitCompare className={`w-4 h-4 shrink-0 ${telaAtiva === 'comparador' ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                <span>Evolução do Paciente</span>
+              </div>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                telaAtiva === 'comparador'
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+              }`}>
+                Lado a Lado
+              </span>
+            </button>
           </div>
 
           {/* SEÇÃO 2: ANÁLISE & REFERÊNCIA */}
@@ -620,9 +724,8 @@ export default function App() {
             {/* Item 1: Atlas Clínico — selo com o número de casos ou exclusivo planos pagos */}
             <button
               onClick={() => { 
-                setTelaAtiva('atlas'); 
+                mudarTela('atlas'); 
                 setCasoSelecionadoId(null); 
-                setMenuMobileAberto(false); 
               }}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold transition-all ${
                 telaAtiva === 'atlas' || telaAtiva === 'caso'
@@ -649,25 +752,6 @@ export default function App() {
                 </span>
               )}
             </button>
-
-            {/* Item 2: Busca por Achado */}
-            <button
-              onClick={() => { 
-                setTelaAtiva('achados'); 
-                setAchadoSelecionadoId(null); 
-                setMenuMobileAberto(false); 
-              }}
-              className={`w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold transition-all ${
-                telaAtiva === 'achados'
-                  ? 'bg-teal-700 text-white shadow-md shadow-teal-700/25'
-                  : 'text-slate-700 dark:text-slate-200 hover:text-teal-950 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/[0.08]'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Sparkles className="w-4 h-4 shrink-0 text-amber-500" />
-                <span>Busca por Achado</span>
-              </div>
-            </button>
           </div>
 
           {/* SEÇÃO 3: MINHA CONTA */}
@@ -680,11 +764,10 @@ export default function App() {
             <button
               onClick={() => { 
                 if (estaAutenticado) {
-                  setTelaAtiva('perfil'); 
+                  mudarTela('perfil'); 
                 } else {
-                  setTelaAtiva('login');
+                  mudarTela('login');
                 }
-                setMenuMobileAberto(false); 
               }}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold transition-all ${
                 telaAtiva === 'perfil'
@@ -704,8 +787,7 @@ export default function App() {
             {/* Item 3: Planos & Assinaturas */}
             <button
               onClick={() => { 
-                setTelaAtiva('planos'); 
-                setMenuMobileAberto(false); 
+                mudarTela('planos'); 
               }}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold transition-all ${
                 telaAtiva === 'planos'
@@ -861,22 +943,22 @@ export default function App() {
       {/* ========================================================================= */}
       {/* 2. ÁREA PRINCIPAL À DIREITA COM HEADER SUPERIOR FLUTUANTE */}
       {/* ========================================================================= */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all w-full max-w-full">
         {/* Topbar Superior em Vidro Fosco */}
-        <header className="sticky top-0 z-30 glass-header px-4 sm:px-6 h-16 flex items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-30 glass-header px-3 sm:px-6 h-16 flex items-center justify-between gap-2.5 sm:gap-4 w-full max-w-full min-w-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             {/* Botão Hamburger para Mobile */}
             <button
               onClick={() => setMenuMobileAberto(true)}
-              className="lg:hidden p-2 rounded-xl glass-button text-slate-600 dark:text-slate-300"
+              className="lg:hidden p-2 rounded-xl glass-button text-slate-600 dark:text-slate-300 shrink-0"
               title="Abrir Menu Lateral"
             >
               <Menu className="w-5 h-5" />
             </button>
 
             {/* Título da Tela Ativa */}
-            <div>
-              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 leading-tight">
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 leading-tight truncate">
                 {telaAtiva === 'painel' && 'Meu Painel Clínico'}
                 {telaAtiva === 'calendario' && 'Agenda & Calendário Clínico'}
                 {telaAtiva === 'perfil' && 'Meu Perfil & Segurança'}
@@ -885,19 +967,19 @@ export default function App() {
                 {telaAtiva === 'caso' && (casoAtual ? casoAtual.nome : 'Ficha Clínica')}
                 {telaAtiva === 'captura' && 'Tricoscopia'}
                 {telaAtiva === 'pacientes' && 'Prontuário de Pacientes'}
-                {telaAtiva === 'achados' && 'Busca por Achado Tricoscópico'}
-                {telaAtiva === 'comparador' && 'Comparador de Exames'}
+                {telaAtiva === 'achados' && 'Evolução do Tratamento • Comparador Lado a Lado'}
+                {telaAtiva === 'comparador' && 'Evolução do Tratamento • Comparador Lado a Lado'}
               </h2>
-              <p className="text-[10px] text-slate-400 hidden sm:block">
+              <p className="text-[10px] text-slate-400 hidden sm:block truncate">
                 Sistema Digital de Análise e Apoio Dermatológico
               </p>
             </div>
           </div>
 
           {/* Busca Rápida e Ações Rápidas à Direita */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Campo de Busca Global */}
-            <form onSubmit={handleBuscar} className="relative w-36 sm:w-56 md:w-72">
+            <form onSubmit={handleBuscar} className="relative w-28 sm:w-56 md:w-72">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
@@ -1078,11 +1160,17 @@ export default function App() {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             onLimparPacienteAtivo={() => handleDefinirPacienteAtivo(null)}
+            onFinalizarConsulta={() => {
+              if (pacienteAtivoAtendimento) {
+                setDadosFechamentoConsulta({ paciente: pacienteAtivoAtendimento });
+                setModalFechamentoConsultaAberto(true);
+              }
+            }}
           />
         )}
 
         {/* Conteúdo Principal Dinâmico Conforme Tela Ativa */}
-        <main className="flex-1 pb-16">
+        <main className="flex-1 pb-16 w-full max-w-full min-w-0">
           {telaAtiva === 'painel' && (
             <PainelUsuarioView
               onNavegarPara={(tela) => {
@@ -1177,13 +1265,6 @@ export default function App() {
             />
           )}
 
-          {telaAtiva === 'achados' && (
-            <BuscaPorAchadoView
-              onSelecionarCaso={handleAbrirCaso}
-              achadoInicialId={achadoSelecionadoId}
-            />
-          )}
-
           {telaAtiva === 'captura' && (
             <MinhaCapturaView
               onSelecionarCaso={handleAbrirCaso}
@@ -1203,7 +1284,7 @@ export default function App() {
             />
           )}
 
-          {(telaAtiva === 'pacientes' || telaAtiva === 'comparador') && (
+          {(telaAtiva === 'pacientes' || telaAtiva === 'comparador' || telaAtiva === 'achados') && (
             <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
               <PacientesView
                 pacienteAtivoId={pacienteAtivoAtendimento?.id || null}
@@ -1211,7 +1292,7 @@ export default function App() {
                 onIniciarCapturaPaciente={handleIniciarCapturaPaciente}
                 onIniciarAnamnese={(paciente) => handleIniciarAnamnesePaciente(paciente)}
                 onCarregarSessaoNaBancada={handleCarregarSessaoNaBancada}
-                abaInicial={telaAtiva === 'comparador' ? 'comparador' : undefined}
+                abaInicial={(telaAtiva === 'comparador' || telaAtiva === 'achados') ? 'comparador' : undefined}
                 onNavegarParaPlanos={() => {
                   setTelaAtiva('planos');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1293,6 +1374,33 @@ export default function App() {
         onClose={() => setModalStripeAbertoGlobal(false)}
         onAbrirCheckoutTeste={() => setTelaAtiva('planos')}
       />
+
+      {/* Modal Global de Fechamento de Consulta em 1 Clique (Resumo Integrado) */}
+      {modalFechamentoConsultaAberto && (dadosFechamentoConsulta?.paciente || pacienteAtivoAtendimento) && (
+        <ModalFechamentoConsulta
+          aberto={modalFechamentoConsultaAberto}
+          onFechar={() => {
+            setModalFechamentoConsultaAberto(false);
+            setDadosFechamentoConsulta(null);
+          }}
+          paciente={dadosFechamentoConsulta?.paciente || (pacienteAtivoAtendimento as Paciente)}
+          profissional={usuarioAtual}
+          consultaExistente={dadosFechamentoConsulta?.consultaExistente}
+          fotosIniciais={dadosFechamentoConsulta?.fotosIniciais}
+          metricasIniciais={dadosFechamentoConsulta?.metricasIniciais}
+          onConsultaConcluida={(_cons) => {
+            setModalFechamentoConsultaAberto(false);
+            setDadosFechamentoConsulta(null);
+          }}
+        />
+      )}
+
+      {/* Toast de Prevenção de Fechamento Acidental (Botão Voltar em Dispositivos Móveis) */}
+      {toastAvisoVoltar && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-stone-900/95 dark:bg-slate-800/95 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-2xl border border-white/20 backdrop-blur-md animate-fadeIn flex items-center gap-2">
+          <span>{toastAvisoVoltar}</span>
+        </div>
+      )}
     </div>
   );
 }

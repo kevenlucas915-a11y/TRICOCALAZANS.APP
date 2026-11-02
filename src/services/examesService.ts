@@ -12,6 +12,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import { ConsentimentoIaExames, ExameLaboratorial } from '../types/exames';
+import { comprimirImagemArquivo } from '../utils/imageCompressor';
 
 const COLECAO_EXAMES = 'exames_laboratoriais';
 
@@ -106,6 +107,7 @@ export async function salvarConsentimentoPaciente(
 
 /**
  * Faz upload do arquivo do laudo para o Firebase Storage em capturas/{uid}/exames/{pacienteId}/
+ * Imagens de exames são comprimidas previamente para economizar banda e cota de Storage.
  */
 export async function uploadArquivoLaudo(
   uid: string, 
@@ -113,13 +115,25 @@ export async function uploadArquivoLaudo(
   file: File
 ): Promise<string> {
   try {
+    let arquivoParaEnviar = file;
+
+    // Se for imagem (foto do exame/laudo), comprime mantendo alta nitidez para OCR e leitura clínica
+    if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|bmp)$/i.test(file.name)) {
+      try {
+        const resultado = await comprimirImagemArquivo(file, { perfil: 'exame' });
+        arquivoParaEnviar = resultado.arquivo;
+      } catch (compErr) {
+        console.warn('Aviso compressão de exame (usando original):', compErr);
+      }
+    }
+
     // Sanitizar nome do arquivo
-    const nomeLimpo = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const nomeLimpo = arquivoParaEnviar.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const storagePath = `capturas/${uid}/exames/${pacienteId}/${Date.now()}_${nomeLimpo}`;
     const storageRef = ref(storage, storagePath);
 
-    const contentType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream');
-    const snapshot = await uploadBytes(storageRef, file, {
+    const contentType = arquivoParaEnviar.type || (arquivoParaEnviar.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream');
+    const snapshot = await uploadBytes(storageRef, arquivoParaEnviar, {
       contentType
     });
 

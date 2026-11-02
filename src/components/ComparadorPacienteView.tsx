@@ -23,9 +23,23 @@ import {
   Layers,
   ArrowRight,
   Eye,
-  Info
+  Info,
+  FileText,
+  Download,
+  Share2,
+  MessageCircle,
+  Loader2,
+  CheckCircle2
 } from 'lucide-react';
 import { Paciente, ConsultaRegistro, FotoGlobalPaciente } from '../types/paciente';
+import { UsuarioProfissional } from '../types/usuario';
+import { useAuth } from '../context/AuthContext';
+import { 
+  baixarPdfComparativo, 
+  compartilharPdfComparativo, 
+  abrirWhatsAppComComparativo 
+} from '../services/comparadorPdfGenerator';
+import { useBackHandler } from '../utils/navigationHistory';
 
 export interface ItemFotoComparacao {
   id: string;
@@ -48,6 +62,7 @@ interface ComparadorPacienteViewProps {
   fotosGlobais: FotoGlobalPaciente[];
   fotoAInicialUrl?: string;
   fotoBInicialUrl?: string;
+  usuarioAtual?: UsuarioProfissional | null;
   onCarregarSessaoNaBancada?: (sessionId: string) => void;
   onVoltarProntuario?: () => void;
 }
@@ -58,6 +73,7 @@ export const ComparadorPacienteView: React.FC<ComparadorPacienteViewProps> = ({
   fotosGlobais,
   fotoAInicialUrl,
   fotoBInicialUrl,
+  usuarioAtual,
   onCarregarSessaoNaBancada,
   onVoltarProntuario
 }) => {
@@ -223,6 +239,20 @@ export const ComparadorPacienteView: React.FC<ComparadorPacienteViewProps> = ({
   const [telaCheia, setTelaCheia] = useState(false);
   const containerComparadorRef = useRef<HTMLDivElement>(null);
 
+  // Profissional ativo (prop ou contexto de autenticação)
+  const auth = useAuth();
+  const profissionalAtivo = usuarioAtual || auth?.usuarioAtual || null;
+
+  // Estados do Modal de Exportação PDF Antes & Depois
+  const [modalExportarAberto, setModalExportarAberto] = useState(false);
+  const [exportandoPdf, setExportandoPdf] = useState(false);
+  const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
+  const [obsPersonalizadaPdf, setObsPersonalizadaPdf] = useState<string>('');
+
+  // Sincronização do botão voltar para fechar modais no celular/tablet
+  useBackHandler(modalExportarAberto, () => setModalExportarAberto(false), 'comparadorModalExportar');
+  useBackHandler(!!modalSeletorAberto, () => setModalSeletorAberto(null), 'comparadorModalSeletor');
+
   // Inverter Lados A e B
   const handleInverterLados = () => {
     const tempA = fotoAId;
@@ -238,6 +268,71 @@ export const ComparadorPacienteView: React.FC<ComparadorPacienteViewProps> = ({
     setZoomLevel(1);
     setPanA({ x: 0, y: 0 });
     setPanB({ x: 0, y: 0 });
+  };
+
+  // Exportação e Compartilhamento de PDF Antes & Depois
+  const handleBaixarPdf = async () => {
+    if (!fotoA || !fotoB) return;
+    try {
+      setExportandoPdf(true);
+      await baixarPdfComparativo({
+        paciente,
+        profissional: profissionalAtivo,
+        fotoA,
+        fotoB,
+        intervaloTexto: intervaloComparacao?.textoFormatado,
+        diasIntervalo: intervaloComparacao?.dias,
+        deltasMetricos,
+        observacoesClinicas: obsPersonalizadaPdf.trim() || undefined
+      });
+      setMensagemSucesso('PDF de evolução clínica baixado com sucesso!');
+      setTimeout(() => setMensagemSucesso(null), 4000);
+    } catch (err) {
+      console.error('Erro ao gerar PDF comparativo:', err);
+      alert('Erro ao gerar o PDF. Verifique se as fotos estão acessíveis.');
+    } finally {
+      setExportandoPdf(false);
+    }
+  };
+
+  const handleCompartilharPdf = async () => {
+    if (!fotoA || !fotoB) return;
+    try {
+      setExportandoPdf(true);
+      const compartilhado = await compartilharPdfComparativo({
+        paciente,
+        profissional: profissionalAtivo,
+        fotoA,
+        fotoB,
+        intervaloTexto: intervaloComparacao?.textoFormatado,
+        diasIntervalo: intervaloComparacao?.dias,
+        deltasMetricos,
+        observacoesClinicas: obsPersonalizadaPdf.trim() || undefined
+      });
+      if (compartilhado) {
+        setMensagemSucesso('Comparativo compartilhado com sucesso!');
+        setTimeout(() => setMensagemSucesso(null), 4000);
+      }
+    } catch (err) {
+      console.error('Erro ao compartilhar PDF comparativo:', err);
+      alert('Erro ao compartilhar o PDF.');
+    } finally {
+      setExportandoPdf(false);
+    }
+  };
+
+  const handleEnviarWhatsApp = () => {
+    if (!fotoA || !fotoB) return;
+    abrirWhatsAppComComparativo({
+      paciente,
+      profissional: profissionalAtivo,
+      fotoA,
+      fotoB,
+      intervaloTexto: intervaloComparacao?.textoFormatado,
+      diasIntervalo: intervaloComparacao?.dias,
+      deltasMetricos,
+      observacoesClinicas: obsPersonalizadaPdf.trim() || undefined
+    });
   };
 
   // Manipulação do Split Slider
@@ -484,6 +579,28 @@ export const ComparadorPacienteView: React.FC<ComparadorPacienteViewProps> = ({
             title={telaCheia ? "Sair da Tela Cheia" : "Apresentar em Tela Cheia ao Paciente"}
           >
             {telaCheia ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+
+          {/* Exportar Antes & Depois (PDF / WhatsApp) */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!obsPersonalizadaPdf) {
+                const regiao = fotoA?.areaOuAngulo || 'couro cabeludo';
+                const periodo = intervaloComparacao?.textoFormatado || 'tratamento continuado';
+                setObsPersonalizadaPdf(
+                  `Exame comparativo da região (${regiao}) evidenciando resposta clínica favorável no período de acompanhamento (${periodo}). Recomenda-se a continuidade do protocolo clínico prescrito e retorno programado para reavaliação.`
+                );
+              }
+              setModalExportarAberto(true);
+            }}
+            disabled={!fotoA || !fotoB}
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50 shrink-0"
+            title="Exportar laudo oficial Antes & Depois em PDF ou enviar via WhatsApp"
+          >
+            <FileText className="w-3.5 h-3.5 text-teal-200" />
+            <span className="hidden sm:inline">Exportar Antes & Depois</span>
+            <span className="sm:hidden">Exportar PDF</span>
           </button>
         </div>
       </div>
@@ -1056,6 +1173,199 @@ export const ComparadorPacienteView: React.FC<ComparadorPacienteViewProps> = ({
                   </button>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL EXPORTAR COMPARATIVO ANTES & DEPOIS (PDF / WHATSAPP) */}
+      {/* ========================================================================= */}
+      {modalExportarAberto && fotoA && fotoB && (
+        <div className="fixed inset-0 z-50 bg-black/75 flex justify-center items-start sm:items-center p-3 sm:p-5 overflow-y-auto backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl p-5 sm:p-6 space-y-4 shadow-2xl my-4 sm:my-auto max-h-[92vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 dark:bg-teal-950/80 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-stone-900 dark:text-slate-100">
+                    Relatório Clínico Antes & Depois
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-slate-400">
+                    Exportar evolução de {paciente.nome} em padrão A4 de alta definição.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalExportarAberto(false)}
+                className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Alerta de Sucesso */}
+            {mensagemSucesso && (
+              <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2 font-semibold animate-fadeIn">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{mensagemSucesso}</span>
+              </div>
+            )}
+
+            {/* Preview Resumo Visual */}
+            <div className="p-4 rounded-2xl bg-stone-50 dark:bg-slate-800/60 border border-stone-200/80 dark:border-slate-700/80 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+                <span className="font-bold text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-teal-600" />
+                  <span>Área: {fotoA.areaOuAngulo}</span>
+                </span>
+                {intervaloComparacao && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/60 text-teal-900 dark:text-teal-200 font-bold font-mono text-[11px]">
+                    {intervaloComparacao.textoFormatado}
+                  </span>
+                )}
+              </div>
+
+              {/* Grid das Imagens Comparadas */}
+              <div className="grid grid-cols-2 gap-3 items-center">
+                {/* Lado A */}
+                <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 space-y-1.5">
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
+                    <img
+                      src={fotoA.url}
+                      alt="Antes"
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute top-1 left-1 px-2 py-0.5 rounded bg-black/80 text-white text-[9px] font-bold">
+                      ANTES
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="font-semibold text-stone-600 dark:text-slate-400">
+                      {new Date(fotoA.data).toLocaleDateString('pt-BR')}
+                    </span>
+                    {fotoA.totalFios !== undefined && (
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        {fotoA.totalFios} fios
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Lado B */}
+                <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-teal-200 dark:border-teal-900/60 space-y-1.5">
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
+                    <img
+                      src={fotoB.url}
+                      alt="Depois"
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute top-1 left-1 px-2 py-0.5 rounded bg-teal-800 text-white text-[9px] font-bold">
+                      DEPOIS
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="font-semibold text-stone-600 dark:text-slate-400">
+                      {new Date(fotoB.data).toLocaleDateString('pt-BR')}
+                    </span>
+                    {fotoB.totalFios !== undefined && (
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        {fotoB.totalFios} fios
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Deltas Métricos se houver */}
+              {deltasMetricos && (
+                <div className="pt-2 border-t border-stone-200 dark:border-slate-700/80 flex items-center justify-around text-xs font-mono">
+                  <div className="text-center">
+                    <span className="text-[10px] text-stone-400 block uppercase">Fios</span>
+                    <span className={`font-bold ${deltasMetricos.deltaFios >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {deltasMetricos.deltaFios >= 0 ? `+${deltasMetricos.deltaFios}` : deltasMetricos.deltaFios}
+                      {deltasMetricos.pctFios && ` (${deltasMetricos.pctFios}%)`}
+                    </span>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-[10px] text-stone-400 block uppercase">UFs</span>
+                    <span className={`font-bold ${deltasMetricos.deltaUf >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {deltasMetricos.deltaUf >= 0 ? `+${deltasMetricos.deltaUf}` : deltasMetricos.deltaUf}
+                      {deltasMetricos.pctUf && ` (${deltasMetricos.pctUf}%)`}
+                    </span>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-[10px] text-stone-400 block uppercase">Óstios Vazios</span>
+                    <span className={`font-bold ${deltasMetricos.deltaOstios <= 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      {deltasMetricos.deltaOstios}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Parecer Clínico Editável */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-stone-700 dark:text-slate-300 block">
+                Parecer Clínico & Orientações do Especialista (incluído no laudo PDF)
+              </label>
+              <textarea
+                value={obsPersonalizadaPdf}
+                onChange={(e) => setObsPersonalizadaPdf(e.target.value)}
+                rows={3}
+                placeholder="Insira as observações clínicas para constar no documento..."
+                className="w-full text-xs p-3 rounded-2xl border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-stone-900 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 outline-none resize-none"
+              />
+              <p className="text-[10px] text-stone-400">
+                O documento final é formatado em página A4 timbrada com sua assinatura profissional e dados clínicos.
+              </p>
+            </div>
+
+            {/* Botões de Ação */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-3 border-t border-stone-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setModalExportarAberto(false)}
+                className="px-4 py-2.5 rounded-xl border border-stone-200 dark:border-slate-700 text-stone-600 dark:text-slate-300 text-xs font-semibold hover:bg-stone-50 dark:hover:bg-slate-800 transition-colors order-last sm:order-first"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleEnviarWhatsApp}
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all"
+                title="Abrir WhatsApp com mensagem formatada de evolução"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCompartilharPdf}
+                disabled={exportandoPdf}
+                className="px-4 py-2.5 rounded-xl bg-teal-800 hover:bg-teal-900 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-60"
+                title="Compartilhar arquivo PDF nativamente"
+              >
+                {exportandoPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+                <span>Compartilhar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBaixarPdf}
+                disabled={exportandoPdf}
+                className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-60"
+                title="Fazer download do arquivo PDF A4"
+              >
+                {exportandoPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                <span>Baixar PDF (A4)</span>
+              </button>
             </div>
           </div>
         </div>

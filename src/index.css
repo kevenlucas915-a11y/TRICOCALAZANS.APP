@@ -19,6 +19,7 @@ html {
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
   letter-spacing: -0.011em;
+  overflow-x: hidden;
 }
 
 /* Fundo no Modo Escuro: Profundo, com sutil difusão de luz ambiente verde-petróleo (#0F766E) */
@@ -42,6 +43,7 @@ body {
     radial-gradient(circle at 85% 20%, rgba(240, 253, 250, 0.65) 0%, transparent 40%);
   background-attachment: fixed;
   color: #0F172A;
+  overflow-x: hidden;
 }
 
 /* =========================================================================
@@ -236,6 +238,18 @@ html.dark .glass-button:hover {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.4);
+}
+
+/* Ocultar barra de rolagem mantendo a funcionalidade de scroll */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* =========================================================================

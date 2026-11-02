@@ -10,6 +10,13 @@
  */
 
 import { usuarioEhAdmin, enviarImagemAtlas, removerArquivo } from './fotosNuvem';
+import { 
+  comprimirImagem, 
+  comprimirImagemArquivo, 
+  comprimirDataUrl, 
+  ResultadoCompressao, 
+  OpcoesCompressao 
+} from './imageCompressor';
 
 export interface ImagemArmazenada {
   id?: string;
@@ -776,7 +783,7 @@ async function executeWithStore<T>(
 }
 
 /**
- * Otimiza e garante que a imagem esteja dentro dos limites seguros do Firestore e do navegador (< 650KB)
+ * Otimiza e garante que a imagem esteja dentro dos limites seguros do Firestore e do navegador (< 250KB)
  * Mantém altíssima nitidez tricoscópica (resolução e contraste dos óstios e fios).
  */
 export async function otimizarImagemParaArmazenamento(dataUrl: string): Promise<string> {
@@ -786,72 +793,12 @@ export async function otimizarImagemParaArmazenamento(dataUrl: string): Promise<
     return dataUrl;
   }
 
-  return new Promise((resolve) => {
-    const img = new Image();
-    // Apenas aplicar crossOrigin para imagens externas via HTTP(S) para não corromper/travar canvas em data: URLs
-    if (dataUrl.startsWith('http://') || dataUrl.startsWith('https://')) {
-      img.crossOrigin = 'anonymous';
-    }
-
-    img.onload = () => {
-      try {
-        const TARGET_MAX_CHARS = 480000; // Limite ultrasseguro para Firestore (< 500KB) mantendo nitidez tricoscópica
-        let origW = img.width || 1280;
-        let origH = img.height || 720;
-        let maxDim = 1280;
-
-        let scale = Math.min(1, maxDim / Math.max(origW, origH));
-        let curW = Math.max(100, Math.round(origW * scale));
-        let curH = Math.max(100, Math.round(origH * scale));
-
-        const canvas = document.createElement('canvas');
-        canvas.width = curW;
-        canvas.height = curH;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve(dataUrl.length <= 500000 ? dataUrl : dataUrl.slice(0, 500000));
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, curW, curH);
-
-        // Compressão iterativa com alvo <= 480.000 chars (seguro para Firestore e ultra-rápido)
-        let quality = 0.80;
-        let compressed = canvas.toDataURL('image/jpeg', quality);
-
-        // Se passar do alvo, reduz qualidade e/ou escala progressivamente
-        let attempts = 0;
-        while (compressed.length > TARGET_MAX_CHARS && attempts < 8) {
-          attempts++;
-          if (quality > 0.50) {
-            quality -= 0.10;
-            compressed = canvas.toDataURL('image/jpeg', quality);
-          } else {
-            // Reduz dimensão
-            curW = Math.round(curW * 0.78);
-            curH = Math.round(curH * 0.78);
-            canvas.width = curW;
-            canvas.height = curH;
-            ctx.drawImage(img, 0, 0, curW, curH);
-            quality = 0.65;
-            compressed = canvas.toDataURL('image/jpeg', quality);
-          }
-        }
-
-        resolve(compressed);
-      } catch (err) {
-        console.warn('Erro ao otimizar imagem no canvas:', err);
-        resolve(dataUrl);
-      }
-    };
-
-    img.onerror = () => {
-      console.warn('Falha no carregamento do dataUrl para otimização, usando original.');
-      resolve(dataUrl);
-    };
-
-    img.src = dataUrl;
-  });
+  try {
+    return await comprimirDataUrl(dataUrl, { perfil: 'tricoscopia', tamanhoMaximoBytes: 250_000 });
+  } catch (err) {
+    console.warn('Fallback em otimizarImagemParaArmazenamento:', err);
+    return dataUrl.length > 500000 ? dataUrl.slice(0, 500000) : dataUrl;
+  }
 }
 
 /**
@@ -1450,55 +1397,29 @@ export async function obterTodasImagens(): Promise<Record<string, ImagemArmazena
 }
 
 /**
- * Processamento e compressão inteligente de imagem para dataUrl (compatível com Firestore)
+ * Processamento e compressão inteligente de imagem para dataUrl (compatível com Firestore e mobile)
  */
-export function arquivoParaDataURL(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const img = new Image();
-      img.onload = () => {
-        const maxDim = 1400;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve(result);
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-        let compressed = canvas.toDataURL('image/jpeg', 0.88);
-        if (compressed.length > 800000) {
-          compressed = canvas.toDataURL('image/jpeg', 0.78);
-        }
-        if (compressed.length > 800000) {
-          compressed = canvas.toDataURL('image/jpeg', 0.65);
-        }
-        resolve(compressed);
-      };
-      img.onerror = () => resolve(result);
-      img.src = result;
-    };
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
+export async function arquivoParaDataURL(file: File, opcoes?: OpcoesCompressao): Promise<string> {
+  try {
+    const res = await comprimirImagem(file, { perfil: 'padrao', ...opcoes });
+    return res.dataUrl;
+  } catch (err) {
+    console.warn('Fallback em arquivoParaDataURL:', err);
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
 }
+
+export { 
+  comprimirImagem, 
+  comprimirImagemArquivo, 
+  comprimirDataUrl 
+};
+export type { ResultadoCompressao, OpcoesCompressao };
 
 export async function exportarBackupImagens(): Promise<string> {
   const todas = await obterTodasImagensGaleria();

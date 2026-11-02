@@ -57,6 +57,8 @@ import {
 } from '../config/planos';
 import { AVISO_PRIVACIDADE_LAUDO } from '../config/promptsIA';
 import { auth } from '../firebase';
+import { comprimirImagemArquivo } from '../utils/imageCompressor';
+import { useBackHandler } from '../utils/navigationHistory';
 
 interface ExamesViewProps {
   paciente: Paciente;
@@ -110,6 +112,10 @@ export const ExamesView: React.FC<ExamesViewProps> = ({
   const [modalCartaAberto, setModalCartaAberto] = useState(false);
   const [destinatarioTipo, setDestinatarioTipo] = useState<'Médico(a)' | 'Nutricionista'>('Médico(a)');
   const [obsCarta, setObsCarta] = useState('');
+
+  // Sincronização do botão Voltar para fechar modais no celular
+  useBackHandler(modalNovoAberto, () => setModalNovoAberto(false), 'examesModalNovo');
+  useBackHandler(modalCartaAberto, () => setModalCartaAberto(false), 'examesModalCarta');
 
   // Consentimento do Paciente
   const [consentimentoMarcado, setConsentimentoMarcado] = useState(
@@ -187,24 +193,31 @@ export const ExamesView: React.FC<ExamesViewProps> = ({
     }
   };
 
-  // Upload e Seleção de Arquivo
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload e Seleção de Arquivo (com compressão automática de imagens)
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 15 * 1024 * 1024) {
-      setErroProcessamento('O arquivo excede o limite máximo permitido de 15 MB.');
+    if (file.size > 25 * 1024 * 1024) {
+      setErroProcessamento('O arquivo excede o limite máximo permitido de 25 MB.');
       return;
     }
 
-    setArquivoSelecionado(file);
     setErroProcessamento(null);
 
-    // Criar preview local
-    if (file.type.startsWith('image/')) {
-      const url = URL.createObjectURL(file);
-      setArquivoPreviewUrl(url);
+    // Se for imagem (foto de exame), comprime imediatamente mantendo máxima nitidez de texto para OCR/Gemini
+    if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|bmp)$/i.test(file.name)) {
+      try {
+        const resultado = await comprimirImagemArquivo(file, { perfil: 'exame' });
+        setArquivoSelecionado(resultado.arquivo);
+        setArquivoPreviewUrl(resultado.dataUrl);
+      } catch (err) {
+        console.warn('Fallback carregamento imagem exame:', err);
+        setArquivoSelecionado(file);
+        setArquivoPreviewUrl(URL.createObjectURL(file));
+      }
     } else {
+      setArquivoSelecionado(file);
       setArquivoPreviewUrl(null); // PDF
     }
   };
@@ -230,13 +243,16 @@ export const ExamesView: React.FC<ExamesViewProps> = ({
         throw new Error('Sessão expirada. Faça login novamente.');
       }
 
-      // Converter arquivo para base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(arquivoSelecionado);
-      });
+      // Obter base64 leve otimizado
+      let base64 = arquivoPreviewUrl;
+      if (!base64 || !base64.startsWith('data:')) {
+        base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(arquivoSelecionado);
+        });
+      }
 
       const response = await fetch('/api/exames/transcrever-laudo', {
         method: 'POST',

@@ -15,6 +15,7 @@ import { listPacientes } from '../services/pacientes';
 import { BancadaMarcacao, CORES_TIPO } from './BancadaMarcacao';
 import { TourBancadaModal } from './TourBancadaModal';
 import { TricoscopioLiveModal } from './TricoscopioLiveModal';
+import { useBackHandler } from '../utils/navigationHistory';
 import { arquivoParaDataURL } from '../utils/imageStore';
 import { useCaseImage } from '../hooks/useCaseImage';
 import { useAuth } from '../context/AuthContext';
@@ -56,7 +57,8 @@ import {
   Flame, 
   BookOpen, 
   RotateCcw, 
-  Image as ImageIcon, 
+  Image as ImageIcon,
+  FileCheck2, 
   ArrowLeft, 
   ArrowRight, 
   Loader2, 
@@ -187,6 +189,13 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
   const [mensagemStatus, setMensagemStatus] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
   const [modalLaudoAberto, setModalLaudoAberto] = useState<boolean>(false);
   const [modalCameraAoVivo, setModalCameraAoVivo] = useState<boolean>(false);
+
+  // Sincronização do botão Voltar para fechar modais e gavetas na bancada
+  useBackHandler(modalAchadoAberto, () => setModalAchadoAberto(false), 'capturaModalAchado');
+  useBackHandler(modalLaudoAberto, () => setModalLaudoAberto(false), 'capturaModalLaudo');
+  useBackHandler(modalCameraAoVivo, () => setModalCameraAoVivo(false), 'capturaModalCamera');
+  useBackHandler(historicoAberto, () => setHistoricoAberto(false), 'capturaHistorico');
+  useBackHandler(tourAberto, () => setTourAberto(false), 'capturaTour');
 
   // Tipo de Captura no Passo 3: 'tricoscopia' (com dermatoscópio) ou 'macro' (foto geral do couro)
   const [tipoCaptura, setTipoCaptura] = useState<'tricoscopia' | 'macro'>('tricoscopia');
@@ -342,7 +351,7 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       try {
-        const dataUrl = await arquivoParaDataURL(file);
+        const dataUrl = await arquivoParaDataURL(file, { perfil: 'tricoscopia' });
         setImagemUsuarioUrl(dataUrl);
         setRotacao(0);
         setZoom(1);
@@ -1118,6 +1127,42 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
             >
               <User className="w-3.5 h-3.5 text-rose-600" />
               <span>Prontuário (Passo 1)</span>
+            </button>
+          )}
+
+          {/* Botão Fechamento de Consulta em 1 Clique */}
+          {clientName && (
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('trico-abrir-fechamento-consulta', {
+                  detail: {
+                    paciente: pacienteId ? { id: pacienteId, nome: clientName } : { id: `pac_${Date.now()}`, nome: clientName },
+                    fotosIniciais: imagemUsuarioUrl ? [{
+                      id: 'foto_sessao_atual',
+                      url: imagemUsuarioUrl,
+                      titulo: areaCouro,
+                      area: areaCouro
+                    }] : (sessoesDoPaciente.length > 0 ? sessoesDoPaciente.slice(0, 4).map(s => ({
+                      id: s.id,
+                      url: s.image_data_url || s.image_url,
+                      titulo: s.notes || s.regiao_couro || 'Tricoscopia',
+                      area: s.regiao_couro || areaCouro
+                    })) : []),
+                    metricasIniciais: {
+                      totalFios: contagemEstatisticas.fios,
+                      totalUF: contagemEstatisticas.uf,
+                      ostiosVazios: contagemEstatisticas.ostiosVazios,
+                      focosInflamacao: contagemEstatisticas.inflamacao
+                    }
+                  }
+                }));
+              }}
+              className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-700/25 transition-all"
+              title="Finalizar consulta de hoje e emitir laudo/resumo integrado em PDF ou WhatsApp"
+            >
+              <FileCheck2 className="w-3.5 h-3.5 text-amber-300" />
+              <span>Finalizar Consulta</span>
             </button>
           )}
         </div>

@@ -38,6 +38,7 @@ import {
   FileCheck
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useBackHandler } from '../utils/navigationHistory';
 import { 
   ModeloAnamnese, 
   PerguntaAnamnese, 
@@ -139,6 +140,11 @@ export const AnamneseView: React.FC<AnamneseViewProps> = ({
   });
   const [modalLogoAberto, setModalLogoAberto] = useState(false);
   const [carregandoLogo, setCarregandoLogo] = useState(false);
+
+  // Sincronização do botão Voltar para fechar modais no celular
+  useBackHandler(modalNovaSessaoAberto, () => setModalNovaSessaoAberto(false), 'anamneseModalNovaSessao');
+  useBackHandler(modalLogoAberto, () => setModalLogoAberto(false), 'anamneseModalLogo');
+  useBackHandler(modalLimitePlano, () => setModalLimitePlano(false), 'anamneseModalLimitePlano');
 
   const handleUploadLogoPng = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
