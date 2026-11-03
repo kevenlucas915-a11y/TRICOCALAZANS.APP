@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { PlanoConfig, CicloCobranca, MetodoPagamento } from '../types/assinatura';
 import { useAuth } from '../context/AuthContext';
+import { usuarioEhAdmin } from '../utils/fotosNuvem';
 import { ModalConfigurarStripe } from './ModalConfigurarStripe';
 
 interface CheckoutModalProps {
@@ -144,26 +145,28 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <div className="flex items-center gap-2 text-teal-200 text-xs font-semibold uppercase tracking-wider mb-1">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Checkout Seguro & Protegido</span>
-              {stripeConfig?.configured ? (
-                <button
-                  type="button"
-                  onClick={() => setModalConfigStripeAberto(true)}
-                  className="ml-2 text-[10px] bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 px-2.5 py-0.5 rounded-full font-bold border border-emerald-400/30 flex items-center gap-1 transition-colors cursor-pointer"
-                  title="Gerenciar chaves e conexão Stripe"
-                >
-                  <span>● Stripe {stripeConfig.mode === 'live' ? 'Produção' : 'Testes'}</span>
-                  <Settings className="w-2.5 h-2.5 opacity-80" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setModalConfigStripeAberto(true)}
-                  className="ml-2 text-[10px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-2.5 py-0.5 rounded-full font-bold border border-amber-400/30 flex items-center gap-1 transition-colors cursor-pointer"
-                  title="Configurar chaves oficiais da Stripe"
-                >
-                  <span>Modo Sandbox</span>
-                  <span className="underline ml-0.5 text-amber-300 font-extrabold">⚙️ Configurar Stripe</span>
-                </button>
+              {usuarioEhAdmin() && (
+                stripeConfig?.configured ? (
+                  <button
+                    type="button"
+                    onClick={() => setModalConfigStripeAberto(true)}
+                    className="ml-2 text-[10px] bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 px-2.5 py-0.5 rounded-full font-bold border border-emerald-400/30 flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Gerenciar chaves e conexão Stripe"
+                  >
+                    <span>● Stripe {stripeConfig.mode === 'live' ? 'Produção' : 'Testes'}</span>
+                    <Settings className="w-2.5 h-2.5 opacity-80" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setModalConfigStripeAberto(true)}
+                    className="ml-2 text-[10px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-2.5 py-0.5 rounded-full font-bold border border-amber-400/30 flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Configurar chaves oficiais da Stripe"
+                  >
+                    <span>Modo Sandbox</span>
+                    <span className="underline ml-0.5 text-amber-300 font-extrabold">⚙️ Configurar Stripe</span>
+                  </button>
+                )
               )}
             </div>
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight">

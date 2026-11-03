@@ -182,4 +182,20 @@ export function obterLimitePacientes(usuario: any): number {
   return Infinity;
 }
 
+export function obterRotuloPlano(planoId?: string): string {
+  if (!planoId || planoId === 'gratuito') return 'GRATUITO';
+  if (planoId === 'degustacao') return 'DEGUSTAÇÃO';
+  if (planoId === 'mensal') return 'MENSAL';
+  if (planoId === 'anual') return 'ANUAL';
+  return String(planoId).toUpperCase();
+}
+
+export function obterNomeCompletoPlano(planoId?: string): string {
+  if (!planoId || planoId === 'gratuito') return 'Modo Gratuito (Demonstração)';
+  if (planoId === 'degustacao') return 'Plano Degustação (7 Dias - R$ 5,00)';
+  if (planoId === 'mensal') return 'Plano Mensal (R$ 69,90/mês)';
+  if (planoId === 'anual') return 'Plano Anual (12x de R$ 49,90)';
+  return 'Plano Clínico';
+}
+
 

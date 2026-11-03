@@ -39,15 +39,15 @@ var HIERARQUIA_PLANOS = {
   anual: 2
 };
 function temPermissaoExamesIa(planoId, status) {
+  if (!planoId || planoId === "gratuito" || planoId === "degustacao") return false;
   if (status === "trial") return true;
-  if (!planoId) return false;
   const nivel = HIERARQUIA_PLANOS[planoId.toLowerCase()] ?? 0;
   const nivelExigido = HIERARQUIA_PLANOS[PLANO_MINIMO_IA] ?? 2;
   return nivel >= nivelExigido;
 }
 function obterLimiteMensalIa(planoId, status) {
+  if (!planoId || planoId === "gratuito" || planoId === "degustacao") return 0;
   if (status === "trial") return 40;
-  if (!planoId) return 0;
   return LIMITES_MENSAIS_IA[planoId.toLowerCase()] ?? 0;
 }
 

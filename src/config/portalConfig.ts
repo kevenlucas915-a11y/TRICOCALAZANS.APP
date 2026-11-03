@@ -14,13 +14,12 @@ export const NIVEL_MINIMO_PORTAL: string = 'anual';
 export function profissionalTemAcessoPortal(usuario: any): boolean {
   if (!usuario) return false;
   
-  const plano = (usuario.planoId || 'mensal') as string;
+  const plano = (usuario.planoId || 'gratuito') as string;
   const ciclo = usuario.planoCiclo;
-  const status = usuario.planoStatus || 'trial';
 
-  // Se for admin ou trial inicial completo, libera para teste
-  if (status === 'trial' && plano !== 'mensal') {
-    return true;
+  // Plano Gratuito e Plano Degustação NUNCA têm acesso ao Portal do Paciente
+  if (plano === 'gratuito' || plano === 'degustacao') {
+    return false;
   }
 
   // Plano Anual (ou faturamento anual) tem acesso irrestrito

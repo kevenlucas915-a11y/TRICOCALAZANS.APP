@@ -21,6 +21,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { obterRotuloPlano, obterNomeCompletoPlano } from '../types/assinatura';
 
 interface MeuPerfilViewProps {
   onVoltarParaPainel?: () => void;
@@ -437,7 +438,7 @@ export const MeuPerfilView: React.FC<MeuPerfilViewProps> = ({ onVoltarParaPainel
               </div>
 
               <span className="px-2.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-300 text-[10px] font-bold uppercase tracking-wider">
-                {usuarioAtual?.planoId === 'mensal' ? 'MENSAL' : 'ANUAL'}
+                {obterRotuloPlano(usuarioAtual?.planoId)}
               </span>
             </div>
 
@@ -445,14 +446,14 @@ export const MeuPerfilView: React.FC<MeuPerfilViewProps> = ({ onVoltarParaPainel
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500 dark:text-slate-400">Plano Atual:</span>
                 <strong className="text-slate-900 dark:text-white font-bold">
-                  {usuarioAtual?.planoId === 'mensal' ? 'Plano Mensal (R$ 69,90/mês)' : 'Plano Anual (R$ 49,90/mês)'}
+                  {obterNomeCompletoPlano(usuarioAtual?.planoId)}
                 </strong>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500 dark:text-slate-400">Status:</span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  {usuarioAtual?.planoStatus === 'trial' ? 'Período Degustação' : 'Assinatura Ativa'}
+                  {usuarioAtual?.planoId === 'gratuito' ? 'Modo Demonstração' : usuarioAtual?.planoStatus === 'trial' ? 'Período Degustação' : 'Assinatura Ativa'}
                 </span>
               </div>
               {usuarioAtual?.planoValidade && (

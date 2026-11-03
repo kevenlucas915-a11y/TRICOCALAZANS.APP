@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Check, 
-  X, 
-  Sparkles, 
-  ShieldCheck, 
-  Crown, 
-  Layers, 
+import {
+  Check,
+  X,
+  Sparkles,
+  ShieldCheck,
+  Crown,
+  Layers,
   ChevronRight,
   TrendingUp,
   CheckCircle2,
@@ -32,7 +32,7 @@ export const PlanosView: React.FC = () => {
     }
   }, []);
 
-  const planoAtualId = usuarioAtual?.planoId || 'anual';
+  const planoAtualId = usuarioAtual?.planoId || 'gratuito';
   const statusAtual = usuarioAtual?.planoStatus || 'trial';
 
   const formatarData = (iso?: string) => {
@@ -115,7 +115,7 @@ export const PlanosView: React.FC = () => {
             <CheckCircle2 className="w-5 h-5 text-teal-200 shrink-0" />
             <span>{mensagemSucesso}</span>
           </div>
-          <button 
+          <button
             onClick={() => setMensagemSucesso(null)}
             className="p-1 rounded-lg hover:bg-white/20 text-white"
           >
@@ -217,7 +217,7 @@ export const PlanosView: React.FC = () => {
 
       {/* 4. CARDS DOS 3 PLANOS (DEGUSTAÇÃO, MENSAL, ANUAL) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2 items-stretch">
-        
+
         {/* CARD 1: PLANO DEGUSTAÇÃO (7 DIAS) */}
         <div className="glass-card rounded-3xl flex flex-col justify-between transition-all duration-300 relative overflow-hidden border border-slate-200/80 dark:border-white/10 hover:border-teal-500/40 p-6 space-y-6">
           <div className="space-y-5">
@@ -570,7 +570,7 @@ export const PlanosView: React.FC = () => {
           {faqs.map((faq, index) => {
             const aberta = faqAberta === index;
             return (
-              <div 
+              <div
                 key={index}
                 className="glass-card rounded-2xl overflow-hidden border border-slate-200/80 dark:border-white/10 transition-all"
               >

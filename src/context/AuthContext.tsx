@@ -1,15 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
+import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  signOut, 
-  onAuthStateChanged, 
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut,
+  onAuthStateChanged,
   updatePassword,
   updateProfile,
   sendPasswordResetEmail,
-  User as FirebaseUser 
+  User as FirebaseUser
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
@@ -49,7 +49,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof window === 'undefined' || !window.localStorage) return null;
     try {
       const saved = window.localStorage.getItem(LOCAL_STORAGE_AUTH_KEY);
-      return saved ? JSON.parse(saved) : null;
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      // Corrige sessão local de contas antigas que tinham o antigo default 'anual' sem pagamento registrado
+      if (parsed && (!parsed.planoId || (parsed.planoId === 'anual' && parsed.planoStatus === 'trial' && !parsed.planoMetodo))) {
+        parsed.planoId = 'gratuito';
+        parsed.planoCiclo = 'mensal';
+        window.localStorage.setItem(LOCAL_STORAGE_AUTH_KEY, JSON.stringify(parsed));
+      }
+      return parsed;
     } catch {
       return null;
     }
@@ -86,11 +94,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 assinaturaPendente = pendenteSnap.data();
                 try {
                   await deleteDoc(pendenteRef);
-                } catch {}
+                } catch { }
               }
-            } catch {}
+            } catch { }
           }
-          
+
           if (docSnap.exists()) {
             let data = docSnap.data() as UsuarioProfissional;
             if (assinaturaPendente) {
@@ -104,6 +112,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 updatedAt: new Date().toISOString()
               };
               await setDoc(docRef, data, { merge: true });
+            } else if ((!data.planoId || (data.planoId === 'anual' && data.planoStatus === 'trial')) && !data.planoMetodo) {
+              // Converte cadastros legados com plano anual automático para o modo gratuito
+              data = {
+                ...data,
+                planoId: 'gratuito',
+                planoStatus: 'trial',
+                planoCiclo: 'mensal',
+                updatedAt: new Date().toISOString()
+              };
+              try {
+                await setDoc(docRef, { planoId: 'gratuito', planoCiclo: 'mensal' }, { merge: true });
+              } catch {}
             }
             salvarUsuarioLocal(data);
           } else {
@@ -186,6 +206,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (docSnap.exists()) {
           perfil = docSnap.data() as UsuarioProfissional;
+          if ((!perfil.planoId || (perfil.planoId === 'anual' && perfil.planoStatus === 'trial')) && !perfil.planoMetodo) {
+            perfil.planoId = 'gratuito';
+            perfil.planoCiclo = 'mensal';
+            try {
+              await setDoc(docRef, { planoId: 'gratuito', planoCiclo: 'mensal' }, { merge: true });
+            } catch {}
+          }
         } else {
           const agora = new Date();
           const validadeTrial = new Date(agora);
@@ -319,6 +346,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (docSnap.exists()) {
           perfil = docSnap.data() as UsuarioProfissional;
+          if ((!perfil.planoId || (perfil.planoId === 'anual' && perfil.planoStatus === 'trial')) && !perfil.planoMetodo) {
+            perfil.planoId = 'gratuito';
+            perfil.planoCiclo = 'mensal';
+            try {
+              await setDoc(docRef, { planoId: 'gratuito', planoCiclo: 'mensal' }, { merge: true });
+            } catch {}
+          }
         } else {
           const agora = new Date();
           const validadeTrial = new Date(agora);
@@ -430,15 +464,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           if (usuarioAtual.email) {
             await sendPasswordResetEmail(auth, usuarioAtual.email);
-            return { 
-              sucesso: true, 
-              mensagem: 'Por segurança do provedor, enviamos um link para o seu e-mail confirmar a nova senha!' 
+            return {
+              sucesso: true,
+              mensagem: 'Por segurança do provedor, enviamos um link para o seu e-mail confirmar a nova senha!'
             };
           }
-        } catch {}
-        return { 
-          sucesso: false, 
-          mensagem: 'Para segurança da sua conta, saia e entre novamente antes de alterar a senha.' 
+        } catch { }
+        return {
+          sucesso: false,
+          mensagem: 'Para segurança da sua conta, saia e entre novamente antes de alterar a senha.'
         };
       }
       await atualizarPerfil({ senhaAlteradaEm: new Date().toISOString() });

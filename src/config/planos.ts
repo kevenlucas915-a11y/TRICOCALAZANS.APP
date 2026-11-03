@@ -36,8 +36,8 @@ const HIERARQUIA_PLANOS: Record<string, number> = {
  * Verifica se o usuário tem permissão para a aba de Exames (manual / tabela)
  */
 export function temPermissaoExamesManual(planoId?: string, status?: string): boolean {
+  if (!planoId || planoId === 'gratuito' || planoId === 'degustacao') return false;
   if (status === 'trial') return true;
-  if (!planoId) return false;
   const nivel = HIERARQUIA_PLANOS[planoId.toLowerCase()] ?? 0;
   const nivelExigido = HIERARQUIA_PLANOS[PLANO_MINIMO_EXAMES_MANUAL] ?? 1;
   return nivel >= nivelExigido;
@@ -47,8 +47,8 @@ export function temPermissaoExamesManual(planoId?: string, status?: string): boo
  * Verifica se o usuário tem permissão para a leitura de laudos com IA
  */
 export function temPermissaoExamesIa(planoId?: string, status?: string): boolean {
+  if (!planoId || planoId === 'gratuito' || planoId === 'degustacao') return false;
   if (status === 'trial') return true;
-  if (!planoId) return false;
   const nivel = HIERARQUIA_PLANOS[planoId.toLowerCase()] ?? 0;
   const nivelExigido = HIERARQUIA_PLANOS[PLANO_MINIMO_IA] ?? 2;
   return nivel >= nivelExigido;
@@ -58,7 +58,7 @@ export function temPermissaoExamesIa(planoId?: string, status?: string): boolean
  * Retorna o limite mensal de transcrições por IA
  */
 export function obterLimiteMensalIa(planoId?: string, status?: string): number {
+  if (!planoId || planoId === 'gratuito' || planoId === 'degustacao') return 0;
   if (status === 'trial') return 40;
-  if (!planoId) return 0;
   return LIMITES_MENSAIS_IA[planoId.toLowerCase()] ?? 0;
 }

@@ -20,7 +20,7 @@ import { getConsultasMarcadasHoje, updateStatusAgendamento } from './services/ag
 import { Agendamento, StatusAgendamento } from './types/agendamento';
 import { Paciente, ConsultaRegistro } from './types/paciente';
 import { usuarioEhAdmin } from './utils/fotosNuvem';
-import { temAcessoAtlas } from './types/assinatura';
+import { temAcessoAtlas, obterRotuloPlano } from './types/assinatura';
 import { PortalPacienteView } from './components/PortalPacienteView';
 import { FluxoClinicoStepper } from './components/FluxoClinicoStepper';
 import { ModalFechamentoConsulta } from './components/ModalFechamentoConsulta';
@@ -43,6 +43,7 @@ import {
   User, 
   LogOut, 
   ChevronDown, 
+  ChevronRight,
   UserCheck, 
   Bell, 
   MessageSquare,
@@ -890,7 +891,7 @@ export default function App() {
                   ? 'bg-white/20 text-white' 
                   : 'bg-teal-500/15 text-teal-800 dark:text-teal-300'
               }`}>
-                {usuarioAtual?.planoId === 'mensal' ? 'MENSAL' : 'ANUAL'}
+                {obterRotuloPlano(usuarioAtual?.planoId)}
               </span>
             </button>
 
@@ -911,23 +912,6 @@ export default function App() {
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-teal-500/10 text-teal-800 dark:text-teal-300">
                 Área do Cliente
-              </span>
-            </button>
-
-            {/* Item 5: Configurar Stripe */}
-            <button
-              onClick={() => { 
-                setModalStripeAbertoGlobal(true);
-                setMenuMobileAberto(false); 
-              }}
-              className="w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-teal-950 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/[0.08] transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <CreditCard className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400 group-hover:scale-105 transition-transform" />
-                <span>Configurar Stripe</span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-teal-500/10 text-teal-800 dark:text-teal-300">
-                Pagamentos
               </span>
             </button>
           </div>
@@ -955,6 +939,23 @@ export default function App() {
                   <Images className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400" />
                   <span>Fotos do Atlas</span>
                 </div>
+              </button>
+
+              {/* Item 2: Configurar Stripe (Exclusivo Administrador) */}
+              <button
+                onClick={() => { 
+                  setModalStripeAbertoGlobal(true);
+                  setMenuMobileAberto(false); 
+                }}
+                className="w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-teal-950 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/[0.08] transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <CreditCard className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400 group-hover:scale-105 transition-transform" />
+                  <span>Configurar Stripe</span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-teal-500/10 text-teal-800 dark:text-teal-300">
+                  Gateway
+                </span>
               </button>
             </div>
           )}
@@ -1106,8 +1107,8 @@ export default function App() {
               >
                 <Crown className="w-3.5 h-3.5 text-amber-500" />
                 <span>Planos</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-teal-500/15 text-teal-800 dark:text-teal-300 font-bold uppercase">
-                  {usuarioAtual?.planoId === 'mensal' ? 'MENSAL' : 'ANUAL'}
+                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-teal-500/15 text-teal-800 dark:text-teal-300 font-bold uppercase">
+                  {obterRotuloPlano(usuarioAtual?.planoId)}
                 </span>
               </button>
             )}
@@ -1183,22 +1184,24 @@ export default function App() {
                           <span>Planos & Assinatura</span>
                         </div>
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-300 font-bold uppercase">
-                          {usuarioAtual.planoId === 'mensal' ? 'MENSAL' : usuarioAtual.planoId === 'degustacao' ? 'DEGUSTAÇÃO' : usuarioAtual.planoId === 'gratuito' ? 'GRATUITO' : 'ANUAL'}
+                          {obterRotuloPlano(usuarioAtual?.planoId)}
                         </span>
                       </button>
 
-                      <button
-                        onClick={() => { setModalStripeAbertoGlobal(true); setMenuUsuarioAberto(false); }}
-                        className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-between font-medium transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                          <span>Configurar Stripe</span>
-                        </div>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-300 font-bold">
-                          Gateway
-                        </span>
-                      </button>
+                      {ehAdmin && (
+                        <button
+                          onClick={() => { setModalStripeAbertoGlobal(true); setMenuUsuarioAberto(false); }}
+                          className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-between font-medium transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                            <span>Configurar Stripe</span>
+                          </div>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-300 font-bold">
+                            Gateway
+                          </span>
+                        </button>
+                      )}
 
                       <button
                         onClick={() => { setTelaAtiva('pacientes'); setMenuUsuarioAberto(false); }}
