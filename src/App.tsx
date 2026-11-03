@@ -57,7 +57,9 @@ import { ModalConfigurarStripe } from './components/ModalConfigurarStripe';
 import { 
   useBackHandler, 
   sincronizarRota, 
-  registrarAvisoSaida 
+  registrarAvisoSaida,
+  obterPathDaTela,
+  obterTelaDoPath
 } from './utils/navigationHistory';
 
 type TelaAtiva = 'atlas' | 'caso' | 'achados' | 'comparador' | 'captura' | 'pacientes' | 'painel' | 'login' | 'perfil' | 'anamnese' | 'calendario' | 'planos' | 'area-do-cliente';
@@ -68,11 +70,23 @@ export default function App() {
   const usuarioTemAtlas = temAcessoAtlas(usuarioAtual);
   const [telaAtiva, setTelaAtiva] = useState<TelaAtiva>(() => {
     if (typeof window !== 'undefined') {
-      if (window.location.pathname.startsWith('/area-do-cliente') || window.location.search.includes('token=')) {
+      const pathname = window.location.pathname;
+
+      // 1. Checa rotas diretas com barramento de URL (ex: /planos, /vendas, /area-do-cliente)
+      const telaPeloPath = obterTelaDoPath(pathname);
+      if (telaPeloPath === 'planos') {
+        return 'planos';
+      }
+      if (telaPeloPath === 'area-do-cliente' || pathname.startsWith('/area-do-cliente') || window.location.search.includes('token=')) {
         return 'area-do-cliente';
       }
+
+      // Parâmetros legados de busca (?tela=... ou #...)
       const params = new URLSearchParams(window.location.search);
       const urlTela = params.get('tela') || (window.location.hash ? window.location.hash.replace('#', '') : null);
+      if (urlTela === 'planos' || urlTela === 'assinaturas' || urlTela === 'vendas' || urlTela === 'precos') {
+        return 'planos';
+      }
       if (urlTela === 'area-do-cliente') {
         return 'area-do-cliente';
       }
@@ -82,9 +96,14 @@ export default function App() {
         }
       }
 
+      // 2. Se o usuário estiver autenticado, restaura a rota do path ou última tela salva
       if (window.localStorage) {
         const savedUser = window.localStorage.getItem('trico_auth_user_active_v1');
         if (savedUser) {
+          if (telaPeloPath && ['atlas', 'caso', 'achados', 'comparador', 'captura', 'pacientes', 'painel', 'perfil', 'anamnese', 'calendario', 'planos'].includes(telaPeloPath)) {
+            return telaPeloPath as TelaAtiva;
+          }
+
           const savedTela = window.localStorage.getItem('trico_ultima_tela_v1');
           if (savedTela === 'minha-captura' || savedTela === 'minha_captura' || savedTela === 'Minha Captura' || savedTela === 'captura') {
             return 'captura';
@@ -94,7 +113,7 @@ export default function App() {
               return 'painel';
             }
           }
-          if (savedTela && ['atlas', 'caso', 'achados', 'comparador', 'captura', 'pacientes', 'painel', 'login', 'perfil', 'anamnese', 'calendario'].includes(savedTela)) {
+          if (savedTela && ['atlas', 'caso', 'achados', 'comparador', 'captura', 'pacientes', 'painel', 'login', 'perfil', 'anamnese', 'calendario', 'planos'].includes(savedTela)) {
             return savedTela as TelaAtiva;
           }
           return 'painel';
@@ -111,12 +130,13 @@ export default function App() {
     }
   }, [telaAtiva, estaAutenticado]);
 
-  // Monitorar mudanças de URL (ex: /area-do-cliente)
+  // Monitorar mudanças de URL (ex: /planos, /area-do-cliente, /pacientes)
   useEffect(() => {
     const handleUrlChange = () => {
       if (typeof window !== 'undefined') {
-        if (window.location.pathname.startsWith('/area-do-cliente') || window.location.search.includes('token=')) {
-          setTelaAtiva('area-do-cliente');
+        const telaPeloPath = obterTelaDoPath(window.location.pathname);
+        if (telaPeloPath) {
+          setTelaAtiva(telaPeloPath as TelaAtiva);
         }
       }
     };
@@ -156,11 +176,13 @@ export default function App() {
     });
   }, []);
 
-  // Inicializar estado raiz no histórico do navegador
+  // Inicializar estado raiz no histórico do navegador com o barramento limpo de URL
   useEffect(() => {
     if (typeof window !== 'undefined' && window.history) {
       if (!window.history.state || !window.history.state.tela) {
-        window.history.replaceState({ tela: telaAtiva, tricoRoot: true }, '', window.location.search || `?tela=${telaAtiva}`);
+        const pathAtual = obterPathDaTela(telaAtiva);
+        const search = window.location.search || '';
+        window.history.replaceState({ tela: telaAtiva, tricoRoot: true }, '', `${pathAtual}${search}`);
       }
     }
   }, []);
@@ -455,12 +477,71 @@ export default function App() {
     );
   }
 
+  // PÁGINA PÚBLICA DE VENDAS / PLANOS E ASSINATURAS (ACESSO LIVRE VIA /planos, /assinaturas, /vendas)
+  // Permite que qualquer pessoa ou visitante veja a página de vendas sem ser bloqueado pela tela de login!
+  if (telaAtiva === 'planos' && !estaAutenticado) {
+    return (
+      <div className={`min-h-screen ${isDark ? 'dark bg-[#030e0d]' : 'bg-slate-50'} flex flex-col font-sans transition-colors relative`}>
+        {/* Topbar Pública com Marca, Alternador de Tema e Botão de Login */}
+        <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-teal-500/20 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-teal-700 text-white flex items-center justify-center font-black text-sm shadow-md shadow-teal-700/25">
+              TC
+            </div>
+            <div>
+              <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white">
+                TricoCalazans
+              </span>
+              <span className="text-[10px] text-teal-600 dark:text-teal-400 font-semibold block leading-none">
+                Planos & Assinaturas Clínicas
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white glass-button transition-colors"
+              title={isDark ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
+            >
+              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+            </button>
+
+            <button
+              onClick={() => {
+                navegarPara('login');
+              }}
+              className="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition-all shadow-md shadow-teal-700/25"
+            >
+              Já sou Assinante / Entrar
+            </button>
+          </div>
+        </header>
+
+        {/* Conteúdo da Página de Vendas */}
+        <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-16 w-full">
+          <PlanosView />
+        </main>
+      </div>
+    );
+  }
+
   // TELA DE LOGIN TOTALMENTE ISOLADA (SEM SIDEBAR, SEM TOPBAR, ACESSO RESTRITO)
   if (!estaAutenticado || telaAtiva === 'login') {
     return (
       <div className={`min-h-screen ${isDark ? 'dark bg-[#030e0d]' : 'bg-slate-50'} flex flex-col font-sans transition-colors relative`}>
-        {/* Controles de Topo: Alternador de Tema e Portal do Paciente */}
+        {/* Controles de Topo: Alternador de Tema, Conhecer Planos e Portal do Paciente */}
         <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2.5 z-20">
+          <button
+            onClick={() => {
+              navegarPara('planos');
+            }}
+            className="text-xs px-3.5 py-2 rounded-xl text-amber-800 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/60 font-semibold transition-all border border-amber-300/70 dark:border-amber-800/50 flex items-center gap-2 glass-card shadow-xs"
+          >
+            <Crown className="w-3.5 h-3.5 text-amber-500" />
+            <span className="hidden sm:inline">Planos & Assinaturas</span>
+          </button>
+
           <button
             onClick={() => {
               if (typeof window !== 'undefined' && window.history) {
@@ -1014,7 +1095,7 @@ export default function App() {
             {/* Botão de Planos & Assinatura no Header */}
             {estaAutenticado && (
               <button
-                onClick={() => { setTelaAtiva('planos'); }}
+                onClick={() => { mudarTela('planos'); }}
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-button text-xs font-semibold text-teal-800 dark:text-teal-300 hover:border-teal-500/50 shrink-0"
                 title="Gerenciar Assinatura e Planos"
               >
@@ -1089,7 +1170,7 @@ export default function App() {
                       </button>
 
                       <button
-                        onClick={() => { setTelaAtiva('planos'); setMenuUsuarioAberto(false); }}
+                        onClick={() => { mudarTela('planos'); setMenuUsuarioAberto(false); }}
                         className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-between font-medium transition-colors"
                       >
                         <div className="flex items-center gap-2">
@@ -1192,12 +1273,10 @@ export default function App() {
           {telaAtiva === 'perfil' && (
             <MeuPerfilView
               onVoltarParaPainel={() => {
-                setTelaAtiva('painel');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                mudarTela('painel');
               }}
               onNavegarParaPlanos={() => {
-                setTelaAtiva('planos');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                mudarTela('planos');
               }}
             />
           )}
@@ -1211,8 +1290,7 @@ export default function App() {
           {telaAtiva === 'calendario' && (
             <CalendarioView
               onVoltarParaPainel={() => {
-                setTelaAtiva('painel');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                mudarTela('painel');
               }}
               onIniciarExamePaciente={handleIniciarCapturaPaciente}
               onIniciarAnamnesePaciente={handleIniciarAnamnesePaciente}
@@ -1223,8 +1301,7 @@ export default function App() {
             <AnamneseView
               pacientePreSelecionado={pacienteParaAnamnese ? (pacienteParaAnamnese as any) : null}
               onVoltarParaPainel={() => {
-                setTelaAtiva('painel');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                mudarTela('painel');
               }}
               onSelecionarPaciente={(paciente) => {
                 handleDefinirPacienteAtivo(paciente);
@@ -1232,12 +1309,10 @@ export default function App() {
               onAvancarParaTricoscopia={(paciente) => {
                 handleDefinirPacienteAtivo(paciente);
                 setModoBancadaAtual('registro');
-                setTelaAtiva('captura');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                mudarTela('captura');
               }}
               onNavegarParaPlanos={() => {
-                setTelaAtiva('planos');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                mudarTela('planos');
               }}
             />
           )}
@@ -1250,7 +1325,7 @@ export default function App() {
               onAbrirGerenciadorImagens={ehAdmin ? () => setGerenciadorImagensAberto(true) : undefined}
               termoBuscaGlobal={termoBuscaHeader}
               onLimparBuscaGlobal={() => setTermoBuscaHeader('')}
-              onNavegarParaPlanos={() => setTelaAtiva('planos')}
+              onNavegarParaPlanos={() => mudarTela('planos')}
             />
           )}
 
@@ -1261,7 +1336,7 @@ export default function App() {
               onSelecionarCaso={handleAbrirCaso}
               onAbrirComparacao={handleAbrirComparacao}
               onAbrirAchado={handleAbrirAchado}
-              onNavegarParaPlanos={() => setTelaAtiva('planos')}
+              onNavegarParaPlanos={() => mudarTela('planos')}
             />
           )}
 

@@ -448,8 +448,8 @@ app.post('/api/stripe/create-checkout-session', async (req: Request, res: Respon
           ciclo: isAnual ? 'anual' : 'mensal',
           portalPaciente: isAnual ? 'true' : 'false',
         },
-        success_url: `${appUrl}?stripe_status=sucesso&session_id={CHECKOUT_SESSION_ID}&plano=${isAnual ? 'anual' : 'mensal'}`,
-        cancel_url: `${appUrl}?stripe_status=cancelado`,
+        success_url: `${appUrl}/planos?stripe_status=sucesso&session_id={CHECKOUT_SESSION_ID}&plano=${isAnual ? 'anual' : 'mensal'}`,
+        cancel_url: `${appUrl}/planos?stripe_status=cancelado`,
       };
 
       const session = await stripe.checkout.sessions.create(sessionParams);

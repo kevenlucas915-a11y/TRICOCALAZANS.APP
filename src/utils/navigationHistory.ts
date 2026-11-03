@@ -97,15 +97,73 @@ export function useBackHandler(ativo: boolean, callback: () => void, id: string)
 }
 
 /**
- * Notifica e sincroniza a navegação entre telas no histórico
+ * Converte o nome interno da tela para o caminho limpo de URL com barra ("barramento")
+ */
+export function obterPathDaTela(tela: string, extra?: Record<string, any>): string {
+  switch (tela) {
+    case 'painel':
+      return '/';
+    case 'planos':
+      return '/planos';
+    case 'pacientes':
+      return '/pacientes';
+    case 'captura':
+      return '/captura';
+    case 'anamnese':
+      return '/anamnese';
+    case 'exames':
+      return '/exames';
+    case 'calendario':
+      return '/calendario';
+    case 'atlas':
+      return '/atlas';
+    case 'perfil':
+      return '/perfil';
+    case 'area-do-cliente':
+      return '/area-do-cliente';
+    case 'login':
+      return '/login';
+    default:
+      return `/${tela}`;
+  }
+}
+
+/**
+ * Converte um pathname da barra de endereços (ex: /planos, /vendas, /assinaturas) na tela correspondente
+ */
+export function obterTelaDoPath(pathname: string): string | null {
+  if (!pathname) return null;
+  const limpo = pathname.toLowerCase().replace(/\/+$/, '') || '/';
+
+  if (limpo === '/' || limpo === '/painel') return 'painel';
+  if (limpo === '/planos' || limpo === '/assinaturas' || limpo === '/vendas' || limpo === '/precos' || limpo === '/precos-e-planos') return 'planos';
+  if (limpo === '/pacientes') return 'pacientes';
+  if (limpo === '/captura' || limpo === '/bancada' || limpo === '/tricoscopia') return 'captura';
+  if (limpo === '/anamnese') return 'anamnese';
+  if (limpo === '/exames') return 'exames';
+  if (limpo === '/calendario' || limpo === '/agenda') return 'calendario';
+  if (limpo === '/atlas') return 'atlas';
+  if (limpo === '/perfil' || limpo === '/meu-perfil') return 'perfil';
+  if (limpo.startsWith('/area-do-cliente') || limpo.startsWith('/portal')) return 'area-do-cliente';
+  if (limpo === '/login' || limpo === '/entrar') return 'login';
+
+  return null;
+}
+
+/**
+ * Notifica e sincroniza a navegação entre telas na barra de endereços (URL com barramento limpo)
  */
 export function sincronizarRota(tela: string, extra?: Record<string, any>): void {
   if (typeof window === 'undefined' || !window.history) return;
 
-  const stateAtual = window.history.state;
-  if (stateAtual?.tela === tela && !extra) return;
+  const path = obterPathDaTela(tela, extra);
+  const search = window.location.search || '';
+  const urlFinal = `${path}${search}`;
 
-  window.history.pushState({ tela, ...extra }, '', `?tela=${tela}`);
+  const stateAtual = window.history.state;
+  if (stateAtual?.tela === tela && window.location.pathname === path && !extra) return;
+
+  window.history.pushState({ tela, ...extra }, '', urlFinal);
 }
 
 /**
@@ -135,6 +193,13 @@ if (typeof window !== 'undefined') {
       return;
     }
 
+    // 3.1 Se não houver state mas a URL pathname mudou (ex: navegação direta de URL)
+    const telaPeloPath = obterTelaDoPath(window.location.pathname);
+    if (telaPeloPath) {
+      window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: telaPeloPath } }));
+      return;
+    }
+
     // 4. Prevenção de fechamento acidental na raiz do aplicativo ("Duplo clique para sair")
     const agora = Date.now();
     if (agora - ultimoCliqueVoltarTimestamp < 2500) {
@@ -149,7 +214,7 @@ if (typeof window !== 'undefined') {
     }
 
     // Reinsere estado de segurança no histórico para manter o app aberto
-    window.history.pushState({ tela: 'painel', tricoRoot: true }, '');
+    window.history.pushState({ tela: 'painel', tricoRoot: true }, '', '/');
   });
 }
 
