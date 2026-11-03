@@ -219,6 +219,28 @@ export default function App() {
     return () => window.removeEventListener('trico-navegar-tela', handleNavegarTela);
   }, []);
   
+  // Paciente em Atendimento Ativo no Fluxo Clínico Global (1. Paciente -> 2. Anamnese -> 3. Tricoscopia)
+  const [pacienteAtivoAtendimento, setPacienteAtivoAtendimento] = useState<Paciente | null>(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const salvo = window.localStorage.getItem('trico_paciente_ativo_v2');
+        if (salvo) return JSON.parse(salvo);
+      } catch {}
+    }
+    return null;
+  });
+
+  // Salvar paciente ativo no localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (pacienteAtivoAtendimento) {
+        window.localStorage.setItem('trico_paciente_ativo_v2', JSON.stringify(pacienteAtivoAtendimento));
+      } else {
+        window.localStorage.removeItem('trico_paciente_ativo_v2');
+      }
+    }
+  }, [pacienteAtivoAtendimento]);
+
   // Modal Global de Fechamento de Consulta em 1 Clique (Resumo Integrado)
   const [modalFechamentoConsultaAberto, setModalFechamentoConsultaAberto] = useState(false);
   const [dadosFechamentoConsulta, setDadosFechamentoConsulta] = useState<any>(null);
@@ -246,28 +268,6 @@ export default function App() {
     };
     window.addEventListener('trico-abrir-fechamento-consulta', handler);
     return () => window.removeEventListener('trico-abrir-fechamento-consulta', handler);
-  }, [pacienteAtivoAtendimento]);
-  
-  // Paciente em Atendimento Ativo no Fluxo Clínico Global (1. Paciente -> 2. Anamnese -> 3. Tricoscopia)
-  const [pacienteAtivoAtendimento, setPacienteAtivoAtendimento] = useState<Paciente | null>(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      try {
-        const salvo = window.localStorage.getItem('trico_paciente_ativo_v2');
-        if (salvo) return JSON.parse(salvo);
-      } catch {}
-    }
-    return null;
-  });
-
-  // Salvar paciente ativo no localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      if (pacienteAtivoAtendimento) {
-        window.localStorage.setItem('trico_paciente_ativo_v2', JSON.stringify(pacienteAtivoAtendimento));
-      } else {
-        window.localStorage.removeItem('trico_paciente_ativo_v2');
-      }
-    }
   }, [pacienteAtivoAtendimento]);
 
   const [pacienteSelecionadoParaCaptura, setPacienteSelecionadoParaCaptura] = useState<{ id: string; nome: string } | null>(() => {
