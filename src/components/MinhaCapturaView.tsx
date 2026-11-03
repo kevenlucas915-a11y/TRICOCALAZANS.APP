@@ -19,7 +19,7 @@ import { useBackHandler } from '../utils/navigationHistory';
 import { arquivoParaDataURL } from '../utils/imageStore';
 import { useCaseImage } from '../hooks/useCaseImage';
 import { useAuth } from '../context/AuthContext';
-import { usuarioPodeInserirDados } from '../types/assinatura';
+import { usuarioPodeInserirDados, temAcessoAtlas } from '../types/assinatura';
 import { 
   Camera, 
   Video,
@@ -104,6 +104,7 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
   onMudarModoBancada
 }) => {
   const { usuarioAtual } = useAuth();
+  const usuarioTemAtlas = temAcessoAtlas(usuarioAtual);
 
   // Modo da Bancada: 'registro' (Passo 3: Registro de Fotos por Área) ou 'analise' (Passo 4: Contagem de Fios, Óstios & Laudo)
   const [modoBancada, setModoBancada] = useState<'registro' | 'analise'>(modoInicial);
@@ -1706,6 +1707,11 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
 
             <button
               onClick={() => {
+                if (!usuarioTemAtlas) {
+                  mostrarAlerta('alerta', 'O acervo do Atlas Clínico é exclusivo dos Planos Mensal e Anual. O Plano Degustação e o Modo Gratuito possuem acesso bloqueado.');
+                  window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+                  return;
+                }
                 const novoEstado = !exibirReferenciaAtlas;
                 setExibirReferenciaAtlas(novoEstado);
                 if (novoEstado) {
@@ -2160,6 +2166,11 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
               <button
                 type="button"
                 onClick={() => {
+                  if (!usuarioTemAtlas) {
+                    mostrarAlerta('alerta', 'O acervo do Atlas Clínico é exclusivo dos Planos Mensal e Anual. O Plano Degustação e o Modo Gratuito possuem acesso bloqueado.');
+                    window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+                    return;
+                  }
                   setExibirReferenciaAtlas(true);
                   setTimeout(() => {
                     document.getElementById('secao-referencia-atlas')?.scrollIntoView({ behavior: 'smooth' });
@@ -2556,7 +2567,37 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
 
       {/* SEÇÃO AO FINAL DA PÁGINA: REFERÊNCIA DO ATLAS & GUIA DE CONFERÊNCIA VISUAL */}
       <div id="secao-referencia-atlas" className="pt-2 pb-16">
-        {!exibirReferenciaAtlas ? (
+        {!usuarioTemAtlas ? (
+          <div className="bg-gradient-to-r from-stone-50 via-rose-50/20 to-stone-50 dark:from-slate-900 dark:via-rose-950/20 dark:to-slate-900 rounded-3xl p-5 sm:p-6 border border-amber-500/30 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20 shadow-xs">
+                <Lock className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+                  <span>Referência do Atlas Clínico HD</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300 font-bold">
+                    Exclusivo Planos Pagos
+                  </span>
+                </h4>
+                <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
+                  O acervo de patologias tricoscópicas HD e critérios diagnósticos do Atlas é exclusivo dos Planos Mensal e Anual. O Plano Degustação e o Modo Gratuito possuem acesso bloqueado.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+              }}
+              className="px-5 py-2.5 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-teal-700/20 transition-all hover:scale-[1.01] shrink-0 cursor-pointer"
+            >
+              <Crown className="w-4 h-4 text-amber-400" />
+              <span>Desbloquear no Plano Anual ou Mensal</span>
+            </button>
+          </div>
+        ) : !exibirReferenciaAtlas ? (
           /* CARD DE BUSCAR REFERÊNCIAS (QUANDO NÃO SELECIONADA, NÃO APARECE O CONTEÚDO) */
           <div className="bg-gradient-to-r from-stone-50 via-rose-50/20 to-stone-50 dark:from-slate-900 dark:via-rose-950/20 dark:to-slate-900 rounded-3xl p-5 sm:p-6 border border-stone-200/90 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">

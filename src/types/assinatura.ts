@@ -157,10 +157,12 @@ export const PLANOS_DISPONIVEIS: PlanoConfig[] = [
 
 export function temAcessoAtlas(usuario: any): boolean {
   if (!usuario) return false;
-  // Plano degustação e plano gratuito não têm acesso ao Atlas Clínico
-  if (usuario.planoId === 'degustacao' || usuario.planoId === 'gratuito') return false;
+  const plano = String(usuario.planoId || '').toLowerCase().trim();
+  // Plano degustação e plano gratuito possuem acesso totalmente bloqueado ao Atlas Clínico
+  if (!plano || plano === 'degustacao' || plano === 'gratuito') return false;
+  const planosPermitidos = ['mensal', 'anual', 'pro', 'master'];
+  if (!planosPermitidos.includes(plano)) return false;
   const status = usuario.planoStatus || 'trial';
-  // Tanto Mensal quanto Anual têm acesso irrestrito ao Atlas Clínico
   return status === 'ativo' || status === 'trial';
 }
 

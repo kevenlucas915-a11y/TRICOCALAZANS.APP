@@ -67,7 +67,7 @@ export const FichaCasoView: React.FC<FichaCasoViewProps> = ({
               {caso.nome}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              O estudo dermatoscópico detalhado desta condição clínica, critérios de diagnóstico diferencial, padrões tricoscópicos e imagens em alta definição fazem parte <strong>exclusivamente dos Planos Pagos (Clínico Pro e Master)</strong>.
+              O estudo dermatoscópico detalhado desta condição clínica, critérios de diagnóstico diferencial, padrões tricoscópicos e imagens em alta definição fazem parte <strong>exclusivamente dos Planos Mensal e Anual</strong>. Usuários no <strong>Plano Degustação</strong> ou <strong>Modo Gratuito</strong> possuem o acesso bloqueado a este acervo.
             </p>
           </div>
 
@@ -77,13 +77,13 @@ export const FichaCasoView: React.FC<FichaCasoViewProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-bold text-slate-900 dark:text-white">Plano Anual</span>
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 uppercase">50% OFF</span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 uppercase">Mais Popular</span>
                 </div>
                 <div className="text-xl font-extrabold text-teal-800 dark:text-teal-300">
-                  12x R$ 44,90
+                  12x R$ 49,90
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Total R$ 538,80/ano parcelado em até 12x sem juros.
+                  Total R$ 598,80/ano parcelado em até 12x no cartão.
                 </p>
               </div>
             </div>
@@ -91,14 +91,14 @@ export const FichaCasoView: React.FC<FichaCasoViewProps> = ({
             <div className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">Apenas o Mês</span>
-                  <span className="text-[10px] text-slate-400">Avulso</span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-white">Plano Mensal</span>
+                  <span className="text-[10px] text-slate-400">Sem Fidelidade</span>
                 </div>
                 <div className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  R$ 89,90
+                  R$ 69,90
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  30 dias de acesso sem fidelidade (renovação avulsa).
+                  Cobrança mensal avulsa. Cancele quando desejar.
                 </p>
               </div>
             </div>

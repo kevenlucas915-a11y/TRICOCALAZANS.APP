@@ -505,7 +505,13 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
 
         {/* CARD 6: FUNÇÃO ATLAS NAS OPÇÕES DO DASHBOARD */}
         <div 
-          onClick={() => onNavegarPara('atlas')}
+          onClick={() => {
+            if (!temAcesso) {
+              onNavegarPara('planos');
+              return;
+            }
+            onNavegarPara('atlas');
+          }}
           className="glass-card p-4 cursor-pointer group hover:scale-[1.02] transition-all border-teal-500/40 bg-teal-500/[0.04] dark:bg-teal-500/[0.08]"
         >
           <div className="flex items-center justify-between">
@@ -540,150 +546,151 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
 
       {/* 3. MÓDULO DE FUNÇÃO: ATLAS CLÍNICO INTEGRADO NO DASHBOARD (CONSULTA DIRETA SEM SAIR DO PAINEL) */}
       <div className="glass-card p-4 sm:p-7 space-y-4 max-w-full min-w-0">
-        {!temAcesso && (
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-950 via-teal-900 to-slate-950 text-white flex flex-col sm:flex-row items-center justify-between gap-3 border border-teal-500/30 animate-fadeIn">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0">
-                <Crown className="w-4 h-4" />
+        {!temAcesso ? (
+          <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-teal-950 via-teal-900 to-slate-950 text-white flex flex-col sm:flex-row items-center justify-between gap-5 border border-teal-500/30 animate-fadeIn">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0 border border-amber-400/30">
+                <Lock className="w-6 h-6 text-amber-400" />
               </div>
-              <div className="text-xs">
-                <p className="font-bold text-white">Atlas Clínico: Exclusivo dos Planos Pagos</p>
-                <p className="text-teal-100/80">Assine apenas o mês avulso (R$ 89,90) ou economize 50% no plano anual (12x de R$ 44,90).</p>
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider border border-amber-400/30">
+                  <Crown className="w-3 h-3" />
+                  <span>Atlas Clínico: Exclusivo dos Planos Mensal e Anual</span>
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-white">
+                  Acervo Completo de Tricoscopia HD Bloqueado
+                </h3>
+                <p className="text-xs text-teal-100/80 max-w-xl">
+                  O Atlas Clínico não está disponível no Plano Degustação ou Modo Gratuito. Assine o Plano Mensal (R$ 69,90) ou Anual (12x de R$ 49,90) para ter acesso completo.
+                </p>
               </div>
             </div>
             <button
               onClick={() => onNavegarPara('planos')}
-              className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shrink-0 transition-all shadow-md hover:scale-[1.02]"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shrink-0 transition-all shadow-md hover:scale-[1.02] cursor-pointer flex items-center justify-center gap-1.5"
             >
-              Liberar Acesso Agora
+              <Crown className="w-3.5 h-3.5" />
+              <span>Desbloquear Atlas</span>
             </button>
           </div>
-        )}
-
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-200/60 dark:border-white/[0.06] min-w-0">
-          <div className="space-y-0.5 min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-xl glass-button flex items-center justify-center text-teal-700 dark:text-teal-400 shrink-0">
-                <BookOpen className="w-4 h-4" />
-              </div>
-              <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white truncate">
-                Função Atlas: Consulta Rápida de Casos & Padrões
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-              Pesquise casos clínicos, compare sinais tricoscópicos e acesse referências sem sair do painel.
-            </p>
-          </div>
-
-          {/* Campo de Busca Rápida Dentro do Atlas do Dashboard */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto min-w-0">
-            <div className="relative w-full sm:w-64 min-w-0">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={termoBuscaAtlas}
-                onChange={(e) => setTermoBuscaAtlas(e.target.value)}
-                placeholder="Buscar caso ou achado..."
-                className="w-full glass-input pl-8 pr-3 py-1.5 text-xs placeholder:text-slate-400"
-              />
-              {termoBuscaAtlas && (
-                <button 
-                  onClick={() => setTermoBuscaAtlas('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-
-            <button
-              onClick={() => onNavegarPara('atlas')}
-              className="glass-button px-3 py-1.5 text-xs font-semibold text-teal-700 dark:text-teal-300 flex items-center justify-center gap-1 shrink-0 whitespace-nowrap"
-            >
-              <span>Ver Atlas Completo</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Filtros de Categoria do Atlas */}
-        <div className="flex flex-wrap items-center gap-1.5 text-xs">
-          {['Todas', 'Não Cicatricial', 'Cicatricial', 'Dermatose Descamativa', 'Infecciosa'].map(cat => {
-            const ativa = categoriaAtlasAtiva === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setCategoriaAtlasAtiva(cat)}
-                className={`px-3 py-1 rounded-xl transition-all ${
-                  ativa
-                    ? 'glass-button bg-teal-700 text-white dark:bg-teal-700 dark:text-white font-semibold shadow-xs'
-                    : 'glass-button text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                {cat}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Mini Grid de Casos do Atlas para Consulta Imediata */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
-          {casosAtlasFiltrados.slice(0, 4).map(caso => (
-            <div
-              key={caso.id}
-              onClick={() => {
-                if (temAcesso) {
-                  if (onSelecionarCasoAtlas) {
-                    onSelecionarCasoAtlas(caso.id);
-                  } else {
-                    onNavegarPara('atlas');
-                  }
-                } else {
-                  onNavegarPara('atlas');
-                }
-              }}
-              className="glass-card p-3.5 cursor-pointer group hover:scale-[1.01] hover:border-teal-400/40 transition-all flex flex-col justify-between"
-            >
-              <div className="space-y-2">
-                <div className="relative h-28 w-full rounded-xl overflow-hidden bg-slate-950/20">
-                  <TricoscopyViewer 
-                    imagem={caso.imagem} 
-                    nomeCondicao={caso.nome} 
-                    casoId={caso.id} 
-                    isHero={false}
-                    className="w-full h-full"
-                  />
-                  <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md glass-card text-[9px] font-mono font-medium text-slate-900 dark:text-white pointer-events-none z-10">
-                    #{caso.numeroOrdem ? caso.numeroOrdem.toString().padStart(2, '0') : '01'}
+        ) : (
+          <>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-200/60 dark:border-white/[0.06] min-w-0">
+              <div className="space-y-0.5 min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-xl glass-button flex items-center justify-center text-teal-700 dark:text-teal-400 shrink-0">
+                    <BookOpen className="w-4 h-4" />
                   </div>
-                  {!temAcesso && (
-                    <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-slate-950/85 text-amber-300 text-[9px] font-bold flex items-center gap-1 border border-amber-400/30 z-10">
-                      <Lock className="w-2.5 h-2.5 text-amber-400" />
-                      <span>Exclusivo Pagos</span>
-                    </div>
+                  <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white truncate">
+                    Função Atlas: Consulta Rápida de Casos & Padrões
+                  </h2>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  Pesquise casos clínicos, compare sinais tricoscópicos e acesse referências sem sair do painel.
+                </p>
+              </div>
+
+              {/* Campo de Busca Rápida Dentro do Atlas do Dashboard */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto min-w-0">
+                <div className="relative w-full sm:w-64 min-w-0">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={termoBuscaAtlas}
+                    onChange={(e) => setTermoBuscaAtlas(e.target.value)}
+                    placeholder="Buscar caso ou achado..."
+                    className="w-full glass-input pl-8 pr-3 py-1.5 text-xs placeholder:text-slate-400"
+                  />
+                  {termoBuscaAtlas && (
+                    <button 
+                      onClick={() => setTermoBuscaAtlas('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
                   )}
                 </div>
 
-                <div>
-                  <div className="text-[10px] font-medium text-teal-700 dark:text-teal-300 truncate">
-                    {caso.categoria}
-                  </div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors line-clamp-1">
-                    {caso.nome}
-                  </h4>
-                  <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
-                    {caso.padrao}
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-2 mt-2 border-t border-slate-200/50 dark:border-white/[0.05] flex items-center justify-between text-[11px] text-teal-700 dark:text-teal-300 font-semibold">
-                <span>{temAcesso ? 'Ver Análise' : 'Desbloquear no Pro'}</span>
-                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                <button
+                  onClick={() => onNavegarPara('atlas')}
+                  className="glass-button px-3 py-1.5 text-xs font-semibold text-teal-700 dark:text-teal-300 flex items-center justify-center gap-1 shrink-0 whitespace-nowrap"
+                >
+                  <span>Ver Atlas Completo</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
-          ))}
-        </div>
+
+            {/* Filtros de Categoria do Atlas */}
+            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+              {['Todas', 'Não Cicatricial', 'Cicatricial', 'Dermatose Descamativa', 'Infecciosa'].map(cat => {
+                const ativa = categoriaAtlasAtiva === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setCategoriaAtlasAtiva(cat)}
+                    className={`px-3 py-1 rounded-xl transition-all ${
+                      ativa
+                        ? 'glass-button bg-teal-700 text-white dark:bg-teal-700 dark:text-white font-semibold shadow-xs'
+                        : 'glass-button text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Mini Grid de Casos do Atlas para Consulta Imediata */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
+              {casosAtlasFiltrados.slice(0, 4).map(caso => (
+                <div
+                  key={caso.id}
+                  onClick={() => {
+                    if (onSelecionarCasoAtlas) {
+                      onSelecionarCasoAtlas(caso.id);
+                    } else {
+                      onNavegarPara('atlas');
+                    }
+                  }}
+                  className="glass-card p-3.5 cursor-pointer group hover:scale-[1.01] hover:border-teal-400/40 transition-all flex flex-col justify-between"
+                >
+                  <div className="space-y-2">
+                    <div className="relative h-28 w-full rounded-xl overflow-hidden bg-slate-950/20">
+                      <TricoscopyViewer 
+                        imagem={caso.imagem} 
+                        nomeCondicao={caso.nome} 
+                        casoId={caso.id} 
+                        isHero={false}
+                        className="w-full h-full"
+                      />
+                      <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md glass-card text-[9px] font-mono font-medium text-slate-900 dark:text-white pointer-events-none z-10">
+                        #{caso.numeroOrdem ? caso.numeroOrdem.toString().padStart(2, '0') : '01'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[10px] font-medium text-teal-700 dark:text-teal-300 truncate">
+                        {caso.categoria}
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors line-clamp-1">
+                        {caso.nome}
+                      </h4>
+                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
+                        {caso.padrao}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 mt-2 border-t border-slate-200/50 dark:border-white/[0.05] flex items-center justify-between text-[11px] text-teal-700 dark:text-teal-300 font-semibold">
+                    <span>Ver Análise</span>
+                    <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* 4. GRID DE DISTRIBUIÇÃO MENSAL DE SESSÕES + RESUMO DO CONSULTÓRIO */}

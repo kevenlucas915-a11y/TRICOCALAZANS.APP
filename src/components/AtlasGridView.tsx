@@ -136,49 +136,71 @@ export const AtlasGridView: React.FC<AtlasGridViewProps> = ({
     });
   }, [filtroTexto, termoBuscaGlobal, categoriaAtiva]);
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-      {/* Banner de Bloqueio / Recurso Exclusivo para Planos Pagos */}
-      {!temAcesso && (
-        <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-teal-950 via-teal-900 to-slate-950 text-white shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-5 border border-teal-500/30 animate-fadeIn">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold uppercase tracking-wider">
-              <Crown className="w-3.5 h-3.5" />
-              <span>Atlas Clínico: Exclusivo dos Planos Pagos</span>
+  // Se o plano atual for Degustação ou Gratuito, bloqueia totalmente o acesso ao acervo do Atlas
+  if (!temAcesso) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-6 animate-fadeIn">
+        <div className="glass-card rounded-3xl p-8 sm:p-12 border border-amber-500/40 text-center space-y-6 shadow-2xl relative overflow-hidden bg-gradient-to-b from-amber-500/[0.04] via-transparent to-transparent">
+          <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mx-auto shadow-md">
+            <Lock className="w-10 h-10" />
+          </div>
+
+          <div className="space-y-3 max-w-xl mx-auto">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300 text-xs font-bold uppercase tracking-wider border border-amber-400/30">
+              <Crown className="w-3.5 h-3.5 text-amber-500" />
+              <span>Acesso Bloqueado • Exclusivo dos Planos Pagos</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
-              Desbloqueie o acervo completo de patologias tricoscópicas
+
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Atlas Clínico de Tricoscopia HD
             </h2>
-            <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed">
-              O Atlas Clínico é uma ferramenta de referência diagnóstica de nível avançado, disponível nos <strong>Planos Mensal (R$ 69,90)</strong> e <strong>Anual (12x de R$ 49,90)</strong>. O Plano Degustação não inclui o acervo do Atlas.
+
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              O Atlas Clínico é uma ferramenta de referência diagnóstica de nível avançado, disponível exclusivamente nos <strong>Planos Mensal (R$ 69,90)</strong> e <strong>Anual (12x de R$ 49,90)</strong>. Usuários no <strong>Plano Degustação</strong> ou <strong>Modo Gratuito</strong> possuem o acesso bloqueado a este acervo.
             </p>
-            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-amber-200">
-              <span className="flex items-center gap-1">✓ Patologias com dermoscopia HD</span>
-              <span className="flex items-center gap-1">✓ Critérios diagnósticos padronizados</span>
-              <span className="flex items-center gap-1">✓ Comparador A/B diferencial</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto text-left text-xs text-slate-600 dark:text-slate-300 py-2">
+            <div className="p-3.5 rounded-2xl bg-white/70 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08] flex items-center gap-2.5">
+              <span className="text-teal-600 font-bold">✓</span>
+              <span>Dermoscopias em Alta Resolução</span>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-white/70 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08] flex items-center gap-2.5">
+              <span className="text-teal-600 font-bold">✓</span>
+              <span>Critérios de Diagnóstico Diferencial</span>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-white/70 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08] flex items-center gap-2.5">
+              <span className="text-teal-600 font-bold">✓</span>
+              <span>Padrões e Sinais Patológicos</span>
             </div>
           </div>
 
-          {onNavegarParaPlanos && (
-            <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
+            {onNavegarParaPlanos && (
               <button
                 onClick={onNavegarParaPlanos}
-                className="px-5 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-400/25 transition-all hover:scale-[1.02] cursor-pointer"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-lg shadow-teal-700/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] cursor-pointer"
               >
-                <Crown className="w-4 h-4 text-slate-950" />
-                <span>Desbloquear Atlas no Plano Anual (12x R$ 49,90)</span>
+                <Crown className="w-4 h-4 text-amber-400" />
+                <span>Desbloquear Atlas (Ver Planos)</span>
               </button>
-              <button
-                onClick={onNavegarParaPlanos}
-                className="px-4 py-2.5 rounded-2xl glass-button text-white/90 hover:text-white hover:bg-white/10 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-              >
-                <span>Assinar Plano Mensal (R$ 69,90/mês)</span>
-              </button>
-            </div>
-          )}
+            )}
+            <button
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'painel' } }));
+              }}
+              className="w-full sm:w-auto px-5 py-3.5 rounded-2xl glass-button text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-teal-600 transition-colors cursor-pointer"
+            >
+              <span>Voltar ao Meu Painel</span>
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Banner de Apresentação e Filtros estilo Glassmorphic */}
       <div className="glass-card p-5 sm:p-7 space-y-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
