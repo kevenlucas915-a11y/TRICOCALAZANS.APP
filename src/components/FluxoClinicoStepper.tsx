@@ -300,8 +300,4 @@ export const FluxoClinicoStepper: React.FC<FluxoClinicoStepperProps> = ({
       </div>
     </div>
   );
-
-      </div>
-    </div>
-  );
 };

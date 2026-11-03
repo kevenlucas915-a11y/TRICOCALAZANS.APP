@@ -527,6 +527,97 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
 });
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
+app.get("/api/kiwify/webhook", (_req, res) => {
+  return res.status(200).json({
+    status: "online",
+    servico: "Webhook Kiwify TricoCalazans",
+    planosConfigurados: {
+      degustacao: "https://pay.kiwify.com.br/ltmVSfe (R$ 5,00 / 7 dias)",
+      mensal: "https://pay.kiwify.com.br/UzqmVk6 (R$ 69,90 / m\xEAs)",
+      anual: "https://pay.kiwify.com.br/Srqbf4k (12x R$ 49,90 / ano)"
+    }
+  });
+});
+app.post("/api/kiwify/webhook", async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const payloadStr = JSON.stringify(payload).toLowerCase();
+    const email = (payload.Customer?.email || payload.customer?.email || payload.email || payload.Commissions?.customer_email || payload.commissions?.customer_email || "").toString().trim().toLowerCase();
+    const nome = (payload.Customer?.full_name || payload.Customer?.first_name || payload.customer?.full_name || payload.customer?.name || payload.name || "").toString().trim();
+    const orderStatus = (payload.order_status || payload.status || "").toString().toLowerCase();
+    const eventType = (payload.webhook_event_type || payload.event || "").toString().toLowerCase();
+    const orderId = payload.order_id || payload.order_ref || payload.id || `kiwify_${Date.now()}`;
+    const valorCentavos = Number(
+      payload.Commissions?.charge_amount || payload.commissions?.charge_amount || payload.order_amount || 0
+    );
+    console.log(`\u{1F4E6} Webhook Kiwify recebido: [${eventType || orderStatus}] para ${email || "sem email"} (Order: ${orderId})`);
+    if (!email) {
+      console.warn("\u26A0\uFE0F Webhook Kiwify recebido sem e-mail do cliente.");
+      return res.status(200).json({ received: true, aviso: "E-mail do cliente n\xE3o identificado" });
+    }
+    let planoId = "mensal";
+    let ciclo = "mensal";
+    let diasValidade = 30;
+    if (payloadStr.includes("ltmvsfe") || payloadStr.includes("degustacao") || payloadStr.includes("degusta\xE7\xE3o") || valorCentavos > 0 && valorCentavos <= 1e3) {
+      planoId = "degustacao";
+      ciclo = "mensal";
+      diasValidade = 7;
+    } else if (payloadStr.includes("srqbf4k") || payloadStr.includes("anual") || valorCentavos > 2e4) {
+      planoId = "anual";
+      ciclo = "anual";
+      diasValidade = 365;
+    } else {
+      planoId = "mensal";
+      ciclo = "mensal";
+      diasValidade = 30;
+    }
+    const isAprovado = orderStatus === "paid" || orderStatus === "approved" || eventType === "order_approved" || eventType === "subscription_renewed" || eventType === "approved";
+    const isCancelado = orderStatus === "refunded" || orderStatus === "chargedback" || eventType === "order_refunded" || eventType === "subscription_canceled";
+    const novoStatus = isAprovado ? "ativo" : isCancelado ? "cancelado" : "ativo";
+    const validadeData = new Date(Date.now() + diasValidade * 24 * 60 * 60 * 1e3).toISOString();
+    const dadosAtualizacao = {
+      planoId,
+      planoStatus: novoStatus,
+      planoCiclo: ciclo,
+      planoMetodo: "kiwify",
+      planoValidade: validadeData,
+      kiwifyOrderId: orderId,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    if (firebaseAdminInitialized) {
+      try {
+        const dbAdmin = getAdminFirestore();
+        const snapshot = await dbAdmin.collection("usuarios_profissionais").where("email", "==", email).get();
+        if (!snapshot.empty) {
+          for (const docSnapshot of snapshot.docs) {
+            await docSnapshot.ref.set(dadosAtualizacao, { merge: true });
+            console.log(`\u2705 Assinatura atualizada no Firestore para usu\xE1rio ${docSnapshot.id} (${email}) -> ${planoId} (${novoStatus})`);
+          }
+        } else {
+          await dbAdmin.collection("assinaturas_pendentes").doc(email).set({
+            ...dadosAtualizacao,
+            email,
+            nome,
+            createdAt: (/* @__PURE__ */ new Date()).toISOString()
+          }, { merge: true });
+          console.log(`\u{1F4CB} Assinatura pendente criada para ${email} (${planoId}). Ser\xE1 vinculada no primeiro login.`);
+        }
+      } catch (fsErr) {
+        console.error("Erro ao salvar usu\xE1rio no Firestore via Kiwify:", fsErr);
+      }
+    }
+    return res.status(200).json({
+      received: true,
+      planoId,
+      status: novoStatus,
+      validade: validadeData,
+      email
+    });
+  } catch (err) {
+    console.error("\u274C Erro ao processar Webhook Kiwify:", err);
+    return res.status(500).json({ error: "Erro interno ao processar webhook Kiwify", message: err.message });
+  }
+});
 var geminiApiKey = process.env.GEMINI_API_KEY || "";
 var ai = new GoogleGenAI({ apiKey: geminiApiKey });
 async function autenticarUsuario(req) {
@@ -765,8 +856,8 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
           ciclo: isAnual ? "anual" : "mensal",
           portalPaciente: isAnual ? "true" : "false"
         },
-        success_url: `${appUrl}?stripe_status=sucesso&session_id={CHECKOUT_SESSION_ID}&plano=${isAnual ? "anual" : "mensal"}`,
-        cancel_url: `${appUrl}?stripe_status=cancelado`
+        success_url: `${appUrl}/planos?stripe_status=sucesso&session_id={CHECKOUT_SESSION_ID}&plano=${isAnual ? "anual" : "mensal"}`,
+        cancel_url: `${appUrl}/planos?stripe_status=cancelado`
       };
       const session = await stripe.checkout.sessions.create(sessionParams);
       return res.json({
