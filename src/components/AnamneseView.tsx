@@ -38,6 +38,7 @@ import {
   FileCheck
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { usuarioPodeInserirDados } from '../types/assinatura';
 import { useBackHandler } from '../utils/navigationHistory';
 import { 
   ModeloAnamnese, 
@@ -407,6 +408,11 @@ export const AnamneseView: React.FC<AnamneseViewProps> = ({
   };
 
   const handleSalvarModeloNoBanco = async () => {
+    if (!usuarioPodeInserirDados(usuarioAtual)) {
+      mostrarNotificacao('Modo Demonstração (Gratuito): Para personalizar ou criar novos modelos de anamnese, conclua a assinatura de um dos nossos planos.', 'erro');
+      window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+      return;
+    }
     if (!modeloEmEdicao) return;
     if (!modeloEmEdicao.titulo.trim()) {
       mostrarNotificacao('Por favor, informe o título do formulário.', 'erro');
@@ -574,6 +580,11 @@ export const AnamneseView: React.FC<AnamneseViewProps> = ({
 
   const handleSalvarAnamnesePaciente = async (e: React.FormEvent, baixarPdfAoFinal = false) => {
     e.preventDefault();
+    if (!usuarioPodeInserirDados(usuarioAtual)) {
+      mostrarNotificacao('Modo Demonstração (Gratuito): Para salvar anamneses e fichas no prontuário, conclua a assinatura de um dos nossos planos.', 'erro');
+      window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+      return;
+    }
     if (!modeloSelecionadoParaPreencher) return;
     if (!pacienteSelecionado) {
       mostrarNotificacao('Por favor, selecione um paciente para associar a anamnese.', 'erro');
@@ -648,6 +659,12 @@ export const AnamneseView: React.FC<AnamneseViewProps> = ({
 
   const handleCadastrarNovoPacienteRapido = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!usuarioPodeInserirDados(usuarioAtual)) {
+      mostrarNotificacao('Modo Demonstração (Gratuito): Para cadastrar novos pacientes, conclua a assinatura de um dos nossos planos.', 'erro');
+      setModalNovoPaciente(false);
+      window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+      return;
+    }
     if (!novoPacienteNome.trim()) return;
 
     setSalvandoNovoPaciente(true);

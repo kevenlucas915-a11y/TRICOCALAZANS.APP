@@ -157,18 +157,28 @@ export const PLANOS_DISPONIVEIS: PlanoConfig[] = [
 
 export function temAcessoAtlas(usuario: any): boolean {
   if (!usuario) return false;
-  // Plano degustação não tem acesso ao Atlas Clínico
-  if (usuario.planoId === 'degustacao') return false;
+  // Plano degustação e plano gratuito não têm acesso ao Atlas Clínico
+  if (usuario.planoId === 'degustacao' || usuario.planoId === 'gratuito') return false;
   const status = usuario.planoStatus || 'trial';
   // Tanto Mensal quanto Anual têm acesso irrestrito ao Atlas Clínico
   return status === 'ativo' || status === 'trial';
 }
 
+export function usuarioPodeInserirDados(usuario: any): boolean {
+  if (!usuario) return false;
+  // Modo gratuito/demonstração: pode navegar por todas as telas para entender como funciona,
+  // mas não pode inserir nem salvar informações (prontuários, laudos, fotos, agendamentos).
+  if (usuario.planoId === 'gratuito') return false;
+  const status = usuario.planoStatus || 'trial';
+  return status === 'ativo' || status === 'trial';
+}
+
 export function obterLimitePacientes(usuario: any): number {
-  if (!usuario) return 1;
-  // Plano Degustação é restrito a exatamente 1 paciente
+  if (!usuario) return 0;
+  // Modo gratuito: 0 pacientes (não pode criar novos pacientes)
+  if (usuario.planoId === 'gratuito') return 0;
+  // Plano Degustação: exatamente 1 paciente
   if (usuario.planoId === 'degustacao') return 1;
-  if (usuario.planoId === 'gratuito') return 1;
   return Infinity;
 }
 

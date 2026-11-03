@@ -76,7 +76,7 @@ import { ProtocoloPaciente } from '../types/protocolo';
 import { listarProtocolosDoPaciente } from '../services/protocolosService';
 import { HistoricoClinicoView } from './HistoricoClinicoView';
 import { ComparadorPacienteView } from './ComparadorPacienteView';
-import { obterLimitePacientes } from '../types/assinatura';
+import { obterLimitePacientes, usuarioPodeInserirDados } from '../types/assinatura';
 
 interface PacientesViewProps {
   onIniciarCapturaPaciente: (paciente: Paciente) => void;
@@ -519,6 +519,10 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
   // Abrir modal de criação
   const handleAbrirNovoPaciente = () => {
+    if (!usuarioPodeInserirDados(usuarioAtual)) {
+      setModalLimitePlanoAberto(true);
+      return;
+    }
     const limite = obterLimitePacientes(usuarioAtual);
     if (pacientes.length >= limite) {
       setModalLimitePlanoAberto(true);
@@ -551,6 +555,11 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
   // Salvar paciente
   const handleSalvarPaciente = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!usuarioPodeInserirDados(usuarioAtual)) {
+      mostrarAlerta('erro', 'No Modo Demonstração (Gratuito) não é permitido cadastrar pacientes. Escolha um plano para ativar.');
+      setModalLimitePlanoAberto(true);
+      return;
+    }
     if (!formNome.trim()) {
       mostrarAlerta('erro', 'O nome do paciente é obrigatório.');
       return;
@@ -558,7 +567,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
     const foiCriacao = !pacienteEmEdicao;
     if (foiCriacao && pacientes.length >= obterLimitePacientes(usuarioAtual)) {
-      mostrarAlerta('erro', 'Limite de 1 paciente atingido no Plano Degustação.');
+      mostrarAlerta('erro', 'Limite de pacientes do seu plano atingido.');
       setModalLimitePlanoAberto(true);
       return;
     }
@@ -3499,7 +3508,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
         </div>
       )}
 
-      {/* MODAL DE LIMITE DE PLANO DEGUSTAÇÃO (1 PACIENTE) */}
+      {/* MODAL DE LIMITE DE PLANO / MODO GRATUITO */}
       {modalLimitePlanoAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn">
           <div className="glass-card max-w-md w-full p-6 sm:p-7 rounded-3xl border border-amber-500/40 shadow-2xl space-y-5 animate-scaleUp">
@@ -3508,13 +3517,19 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
             </div>
             <div className="text-center space-y-2">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                Limite de 1 Paciente Atingido
+                {usuarioAtual?.planoId === 'gratuito'
+                  ? 'Modo Demonstração (Gratuito)'
+                  : 'Limite de 1 Paciente Atingido'}
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                O seu <strong>Plano Degustação</strong> permite cadastrar até 1 paciente para você avaliar e testar toda a bancada de tricoscopia, laudos e anamneses na prática.
+                {usuarioAtual?.planoId === 'gratuito'
+                  ? 'Você está no modo gratuito de demonstração. Você pode navegar livremente por todas as páginas para conhecer a ferramenta, mas para cadastrar pacientes e salvar prontuários é necessário assinar um dos planos.'
+                  : 'O seu Plano Degustação permite cadastrar até 1 paciente para você avaliar e testar toda a bancada de tricoscopia, laudos e anamneses na prática.'}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Para cadastrar <strong>pacientes ilimitados</strong> e ter acesso completo ao <strong>Atlas Clínico HD</strong>, faça o upgrade para o Plano Mensal ou Anual!
+                {usuarioAtual?.planoId === 'gratuito'
+                  ? 'Escolha o Plano Degustação (R$ 5,00), Mensal (R$ 69,90) ou Anual (12x de R$ 49,90) para começar!'
+                  : 'Para cadastrar pacientes ilimitados e ter acesso completo ao Atlas Clínico HD, faça o upgrade para o Plano Mensal ou Anual!'}
               </p>
             </div>
 
@@ -3524,7 +3539,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                 onClick={() => setModalLimitePlanoAberto(false)}
                 className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl glass-button text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer"
               >
-                Continuar com 1
+                {usuarioAtual?.planoId === 'gratuito' ? 'Continuar Explorando' : 'Continuar com 1'}
               </button>
               <button
                 type="button"
@@ -3538,7 +3553,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                 }}
                 className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-lg shadow-teal-700/20 flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <span>Fazer Upgrade</span>
+                <span>{usuarioAtual?.planoId === 'gratuito' ? 'Concluir Pagamento' : 'Fazer Upgrade'}</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>

@@ -567,8 +567,13 @@ export default function App() {
         {/* Formulário de Login / Cadastro Centralizado */}
         <main className="flex-1 flex items-center justify-center">
           <LoginView
-            onLoginSucesso={() => {
-              setTelaAtiva('painel');
+            onLoginSucesso={(foiCadastro?: boolean) => {
+              if (foiCadastro) {
+                // Novos usuários cadastrados são redirecionados diretamente para a tela de planos
+                navegarPara('planos');
+              } else {
+                setTelaAtiva('painel');
+              }
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           />
@@ -1178,7 +1183,7 @@ export default function App() {
                           <span>Planos & Assinatura</span>
                         </div>
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-300 font-bold uppercase">
-                          {usuarioAtual.planoId === 'mensal' ? 'MENSAL' : 'ANUAL'}
+                          {usuarioAtual.planoId === 'mensal' ? 'MENSAL' : usuarioAtual.planoId === 'degustacao' ? 'DEGUSTAÇÃO' : usuarioAtual.planoId === 'gratuito' ? 'GRATUITO' : 'ANUAL'}
                         </span>
                       </button>
 
@@ -1229,6 +1234,28 @@ export default function App() {
             )}
           </div>
         </header>
+
+        {/* BANNER INFORMATIVO PARA USUÁRIOS NO MODO GRATUITO DE DEMONSTRAÇÃO */}
+        {estaAutenticado && usuarioAtual?.planoId === 'gratuito' && (
+          <div className="bg-gradient-to-r from-amber-500/15 via-amber-600/10 to-teal-500/10 border-b border-amber-500/30 px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 min-w-0">
+              <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+              <span className="truncate sm:whitespace-normal">
+                <strong>Modo Demonstração (Gratuito):</strong> Navegue livremente para conhecer os recursos. Para cadastrar pacientes, agendamentos e salvar exames, ative sua assinatura.
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                navegarPara('planos');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="shrink-0 px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <span>Escolher Plano</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* BARRA DO FLUXO CLÍNICO GUIADO (PASSO 1: PACIENTE -> PASSO 2: ANAMNESE -> PASSO 3: TRICOSCOPIA) */}
         {estaAutenticado && (['pacientes', 'anamnese', 'captura'].includes(telaAtiva) || pacienteAtivoAtendimento !== null) && (

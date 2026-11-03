@@ -121,11 +121,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               clinica: 'Consultório Clínico Particular',
               nomeDoEspaco: 'Consultório Clínico Particular',
               fotoUrl: fbUser.photoURL || undefined,
-              planoId: assinaturaPendente?.planoId || 'degustacao',
+              planoId: assinaturaPendente?.planoId || 'gratuito',
               planoStatus: assinaturaPendente?.planoStatus || 'trial',
               planoCiclo: assinaturaPendente?.planoCiclo || 'mensal',
               planoIniciadoEm: agora.toISOString(),
-              planoValidade: assinaturaPendente?.planoValidade || validadeTrial.toISOString(),
+              planoValidade: assinaturaPendente?.planoValidade || undefined,
               planoMetodo: assinaturaPendente ? 'kiwify' : undefined,
               createdAt: agora.toISOString(),
               updatedAt: agora.toISOString()
@@ -199,11 +199,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             registro: '',
             clinica: 'Consultório Particular',
             nomeDoEspaco: 'Consultório Particular',
-            planoId: 'anual',
+            planoId: 'gratuito',
             planoStatus: 'trial',
-            planoCiclo: 'anual',
+            planoCiclo: 'mensal',
             planoIniciadoEm: agora.toISOString(),
-            planoValidade: validadeTrial.toISOString(),
             createdAt: agora.toISOString(),
             updatedAt: agora.toISOString()
           };
@@ -219,9 +218,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           registro: '',
           clinica: 'Consultório Particular',
           nomeDoEspaco: 'Consultório Particular',
-          planoId: 'anual',
+          planoId: 'gratuito',
           planoStatus: 'trial',
-          planoCiclo: 'anual',
+          planoCiclo: 'mensal',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
@@ -254,8 +253,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const agora = new Date();
-      const validadeTrial = new Date(agora);
-      validadeTrial.setDate(validadeTrial.getDate() + 14);
+
+      // Verificar se há uma assinatura Kiwify recém-paga pendente para este e-mail
+      let assinaturaPendente: any = null;
+      try {
+        const pendenteRef = doc(db, 'assinaturas_pendentes', emailLimpo);
+        const pendenteSnap = await getDoc(pendenteRef);
+        if (pendenteSnap.exists()) {
+          assinaturaPendente = pendenteSnap.data();
+          try {
+            await deleteDoc(pendenteRef);
+          } catch {}
+        }
+      } catch {}
 
       const novoPerfil: UsuarioProfissional = {
         uid: fbUser.uid,
@@ -266,11 +276,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clinica: dados.clinica?.trim() || 'Consultório Clínico',
         nomeDoEspaco: dados.clinica?.trim() || 'Consultório Clínico',
         telefone: dados.telefone?.trim() || '',
-        planoId: 'anual',
-        planoStatus: 'trial',
-        planoCiclo: 'anual',
+        planoId: assinaturaPendente?.planoId || 'gratuito',
+        planoStatus: assinaturaPendente?.planoStatus || 'trial',
+        planoCiclo: assinaturaPendente?.planoCiclo || 'mensal',
         planoIniciadoEm: agora.toISOString(),
-        planoValidade: validadeTrial.toISOString(),
+        planoValidade: assinaturaPendente?.planoValidade || undefined,
+        planoMetodo: assinaturaPendente ? 'kiwify' : undefined,
         createdAt: agora.toISOString(),
         updatedAt: agora.toISOString()
       };
@@ -322,11 +333,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             clinica: 'Consultório Clínico Particular',
             nomeDoEspaco: 'Consultório Clínico Particular',
             fotoUrl: fbUser.photoURL || undefined,
-            planoId: 'anual',
+            planoId: 'gratuito',
             planoStatus: 'trial',
-            planoCiclo: 'anual',
+            planoCiclo: 'mensal',
             planoIniciadoEm: agora.toISOString(),
-            planoValidade: validadeTrial.toISOString(),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           };
@@ -343,9 +353,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           clinica: 'Consultório Clínico Particular',
           nomeDoEspaco: 'Consultório Clínico Particular',
           fotoUrl: fbUser.photoURL || undefined,
-          planoId: 'anual',
+          planoId: 'gratuito',
           planoStatus: 'trial',
-          planoCiclo: 'anual',
+          planoCiclo: 'mensal',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };

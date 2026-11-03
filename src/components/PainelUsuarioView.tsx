@@ -34,7 +34,7 @@ import {
   Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { temAcessoAtlas, obterLimitePacientes } from '../types/assinatura';
+import { temAcessoAtlas, obterLimitePacientes, usuarioPodeInserirDados } from '../types/assinatura';
 import { Paciente, ConsultaRegistro } from '../types/paciente';
 import { listPacientes, getConsultasDoPaciente, savePaciente } from '../services/pacientes';
 import { listAgendamentos } from '../services/agendamentoService';
@@ -154,8 +154,15 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
     e.preventDefault();
     if (!novoNome.trim()) return;
 
+    if (!usuarioPodeInserirDados(usuarioAtual)) {
+      alert('Você está no Modo Demonstração (Gratuito). Para cadastrar pacientes e salvar prontuários, conclua a assinatura de um dos nossos planos.');
+      setModalNovoPaciente(false);
+      onNavegarPara('planos');
+      return;
+    }
+
     if (pacientesDoUsuario.length >= obterLimitePacientes(usuarioAtual)) {
-      alert('Limite de 1 paciente atingido no Plano Degustação. Faça upgrade para o Plano Mensal ou Anual para cadastrar pacientes ilimitados.');
+      alert('Limite de pacientes atingido. Conclua ou faça upgrade do seu plano para cadastrar pacientes ilimitados.');
       setModalNovoPaciente(false);
       onNavegarPara('planos');
       return;
@@ -305,8 +312,13 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
           {/* Botão Novo Paciente */}
           <button
             onClick={() => {
+              if (!usuarioPodeInserirDados(usuarioAtual)) {
+                alert('Você está no Modo Demonstração (Gratuito). Para cadastrar pacientes e utilizar as ferramentas clínicas, conclua a assinatura de um dos nossos planos.');
+                onNavegarPara('planos');
+                return;
+              }
               if (pacientesDoUsuario.length >= obterLimitePacientes(usuarioAtual)) {
-                alert('Limite de 1 paciente atingido no Plano Degustação. Faça upgrade para o Plano Mensal ou Anual para cadastrar pacientes ilimitados.');
+                alert('Limite de pacientes atingido. Conclua ou faça upgrade do seu plano para cadastrar pacientes ilimitados.');
                 onNavegarPara('planos');
                 return;
               }

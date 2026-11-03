@@ -23,6 +23,7 @@ import {
 import { Paciente, ConsultaRegistro } from '../types/paciente';
 import { UsuarioProfissional } from '../types/usuario';
 import { ProdutoIndicado } from '../types/portal';
+import { usuarioPodeInserirDados } from '../types/assinatura';
 import { 
   baixarPdfResumoConsulta, 
   compartilharPdfResumoConsulta, 
@@ -207,6 +208,12 @@ export const ModalFechamentoConsulta: React.FC<ModalFechamentoConsultaProps> = (
 
   // Adicionar produto rápido
   const handleAdicionarProdutoRapido = async () => {
+    if (!usuarioPodeInserirDados(profissional)) {
+      alert('Modo Demonstração (Gratuito): Para cadastrar produtos e prescrições para o paciente, conclua a assinatura de um dos nossos planos!');
+      onFechar();
+      window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+      return;
+    }
     if (!novoProdNome.trim() || !novoProdComoUsar.trim()) return;
 
     const novo: ProdutoResumoConsulta = {
@@ -295,6 +302,12 @@ export const ModalFechamentoConsulta: React.FC<ModalFechamentoConsultaProps> = (
 
   // Ação 3: Concluir Atendimento & Gravar no Prontuário
   const handleConcluirAtendimento = async () => {
+    if (!usuarioPodeInserirDados(profissional)) {
+      alert('Modo Demonstração (Gratuito): Para gravar consultas e prontuários na nuvem, conclua a assinatura de um dos nossos planos!');
+      onFechar();
+      window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+      return;
+    }
     setSalvandoConsulta(true);
     try {
       const fotosParaGravar = fotos.filter(f => fotosSelecionadasIds.includes(f.id));

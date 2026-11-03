@@ -19,6 +19,7 @@ import { useBackHandler } from '../utils/navigationHistory';
 import { arquivoParaDataURL } from '../utils/imageStore';
 import { useCaseImage } from '../hooks/useCaseImage';
 import { useAuth } from '../context/AuthContext';
+import { usuarioPodeInserirDados } from '../types/assinatura';
 import { 
   Camera, 
   Video,
@@ -387,6 +388,11 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
 
   // Salvar sessão associada à área avaliada do paciente
   const handleSalvarSessao = async (avancarParaProximaArea: boolean | React.MouseEvent = false) => {
+    if (!usuarioPodeInserirDados(usuarioAtual)) {
+      mostrarAlerta('alerta', 'Modo Demonstração (Gratuito): Para salvar fotos, laudos e prontuários na nuvem, conclua a assinatura de um dos nossos planos!');
+      window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+      return;
+    }
     const deveAvancar = typeof avancarParaProximaArea === 'boolean' ? avancarParaProximaArea : false;
     let urlParaSalvar = imagemUsuarioUrl;
     if (!urlParaSalvar && fotoReferenciaFinal) {

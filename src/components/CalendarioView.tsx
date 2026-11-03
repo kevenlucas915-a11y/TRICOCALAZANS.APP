@@ -27,6 +27,7 @@ import {
   Check
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { usuarioPodeInserirDados } from '../types/assinatura';
 import { 
   Agendamento, 
   StatusAgendamento, 
@@ -290,6 +291,11 @@ export const CalendarioView: React.FC<CalendarioViewProps> = ({
   // Salvar agendamento
   const handleSalvarAgendamento = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!usuarioPodeInserirDados(usuarioAtual)) {
+      mostrarNotificacao('Modo Demonstração (Gratuito): Para agendar consultas na agenda clínica, conclua a assinatura de um dos nossos planos.', 'erro');
+      window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+      return;
+    }
     if (!formPacienteNome.trim()) {
       mostrarNotificacao('Por favor, informe ou selecione o paciente.', 'erro');
       return;
@@ -358,6 +364,12 @@ export const CalendarioView: React.FC<CalendarioViewProps> = ({
   // Cadastro rápido de paciente dentro do agendamento
   const handleCadastrarNovoPacienteRapido = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!usuarioPodeInserirDados(usuarioAtual)) {
+      mostrarNotificacao('Modo Demonstração (Gratuito): Para cadastrar novos pacientes, conclua a assinatura de um dos nossos planos.', 'erro');
+      setModalNovoPacienteAberto(false);
+      window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+      return;
+    }
     if (!novoPacienteNome.trim()) return;
 
     setSalvandoNovoPaciente(true);

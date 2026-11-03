@@ -21,7 +21,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 interface LoginViewProps {
-  onLoginSucesso?: () => void;
+  onLoginSucesso?: (foiCadastro?: boolean) => void;
   onContinuarComoVisitante?: () => void;
 }
 
@@ -116,7 +116,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSucesso, onContinua
     setProcessando(true);
     try {
       await loginComEmailESenha(emailLimpo, loginSenha);
-      if (onLoginSucesso) onLoginSucesso();
+      if (onLoginSucesso) onLoginSucesso(false);
     } catch (err: any) {
       console.error('Erro no login:', err);
       setErro(traduzirErroAuth(err?.code || '', err?.message || ''));
@@ -158,7 +158,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSucesso, onContinua
         clinica: cadClinica.trim(),
         telefone: cadTelefone.trim()
       });
-      if (onLoginSucesso) onLoginSucesso();
+      // Redireciona imediatamente o novo usuário cadastrado para a tela de planos
+      if (onLoginSucesso) onLoginSucesso(true);
     } catch (err: any) {
       console.error('Erro no cadastro:', err);
       setErro(traduzirErroAuth(err?.code || '', err?.message || ''));
