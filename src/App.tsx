@@ -218,13 +218,6 @@ export default function App() {
     window.addEventListener('trico-navegar-tela', handleNavegarTela);
     return () => window.removeEventListener('trico-navegar-tela', handleNavegarTela);
   }, []);
-
-  // Sincronização do botão Voltar para modais e gavetas
-  useBackHandler(menuMobileAberto, () => setMenuMobileAberto(false), 'menuMobile');
-  useBackHandler(menuUsuarioAberto, () => setMenuUsuarioAberto(false), 'menuUsuario');
-  useBackHandler(modalLembreteGlobalAberto, () => setModalLembreteGlobalAberto(false), 'modalLembrete');
-  useBackHandler(modalStripeAbertoGlobal, () => setModalStripeAbertoGlobal(false), 'modalStripe');
-  useBackHandler(gerenciadorImagensAberto, () => setGerenciadorImagensAberto(false), 'gerenciadorImagens');
   
   // Modal Global de Fechamento de Consulta em 1 Clique (Resumo Integrado)
   const [modalFechamentoConsultaAberto, setModalFechamentoConsultaAberto] = useState(false);
@@ -401,6 +394,13 @@ export default function App() {
   // Termo de busca global do header
   const [termoBuscaHeader, setTermoBuscaHeader] = useState('');
   const [menuMobileAberto, setMenuMobileAberto] = useState(false);
+
+  // Sincronização do botão Voltar para modais e gavetas (declarado com segurança após os estados)
+  useBackHandler(menuMobileAberto, () => setMenuMobileAberto(false), 'menuMobile');
+  useBackHandler(menuUsuarioAberto, () => setMenuUsuarioAberto(false), 'menuUsuario');
+  useBackHandler(modalLembreteGlobalAberto, () => setModalLembreteGlobalAberto(false), 'modalLembrete');
+  useBackHandler(modalStripeAbertoGlobal, () => setModalStripeAbertoGlobal(false), 'modalStripe');
+  useBackHandler(gerenciadorImagensAberto, () => setGerenciadorImagensAberto(false), 'gerenciadorImagens');
 
   // Navegar para ficha de um caso
   const handleAbrirCaso = (casoId: string) => {

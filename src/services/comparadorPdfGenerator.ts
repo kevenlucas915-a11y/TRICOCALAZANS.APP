@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { Paciente } from '../types/paciente';
 import { UsuarioProfissional } from '../types/usuario';
-import { ItemFotoComparacao } from '../components/ComparadorPacienteView';
+import type { ItemFotoComparacao } from '../components/ComparadorPacienteView';
 
 export interface DeltasMetricosComparador {
   fiosA: number;
