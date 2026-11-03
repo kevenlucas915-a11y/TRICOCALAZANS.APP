@@ -11,7 +11,7 @@ import {
   sendPasswordResetEmail,
   User as FirebaseUser 
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { UsuarioProfissional } from '../types/usuario';
 import { PlanoId, CicloCobranca, MetodoPagamento } from '../types/assinatura';
@@ -75,9 +75,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const docRef = doc(db, 'usuarios_profissionais', fbUser.uid);
           const docSnap = await getDoc(docRef);
+
+          // Verificar se há uma assinatura Kiwify recém-paga pendente para este e-mail
+          let assinaturaPendente: any = null;
+          if (fbUser.email) {
+            try {
+              const pendenteRef = doc(db, 'assinaturas_pendentes', fbUser.email.toLowerCase().trim());
+              const pendenteSnap = await getDoc(pendenteRef);
+              if (pendenteSnap.exists()) {
+                assinaturaPendente = pendenteSnap.data();
+                try {
+                  await deleteDoc(pendenteRef);
+                } catch {}
+              }
+            } catch {}
+          }
           
           if (docSnap.exists()) {
-            const data = docSnap.data() as UsuarioProfissional;
+            let data = docSnap.data() as UsuarioProfissional;
+            if (assinaturaPendente) {
+              data = {
+                ...data,
+                planoId: assinaturaPendente.planoId || data.planoId,
+                planoStatus: assinaturaPendente.planoStatus || 'ativo',
+                planoCiclo: assinaturaPendente.planoCiclo || data.planoCiclo,
+                planoMetodo: 'kiwify',
+                planoValidade: assinaturaPendente.planoValidade || data.planoValidade,
+                updatedAt: new Date().toISOString()
+              };
+              await setDoc(docRef, data, { merge: true });
+            }
             salvarUsuarioLocal(data);
           } else {
             // Perfil inicial no Firestore vinculado estritamente ao UID do usuário autenticado
@@ -87,18 +114,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             const novoPerfil: UsuarioProfissional = {
               uid: fbUser.uid,
-              nome: fbUser.displayName || 'Especialista em Tricologia',
+              nome: fbUser.displayName || assinaturaPendente?.nome || 'Especialista em Tricologia',
               email: fbUser.email || '',
               titulo: 'Especialista em Tricoscopia & Saúde Capilar',
               registro: '',
               clinica: 'Consultório Clínico Particular',
               nomeDoEspaco: 'Consultório Clínico Particular',
               fotoUrl: fbUser.photoURL || undefined,
-              planoId: 'pro',
-              planoStatus: 'trial',
-              planoCiclo: 'mensal',
+              planoId: assinaturaPendente?.planoId || 'degustacao',
+              planoStatus: assinaturaPendente?.planoStatus || 'trial',
+              planoCiclo: assinaturaPendente?.planoCiclo || 'mensal',
               planoIniciadoEm: agora.toISOString(),
-              planoValidade: validadeTrial.toISOString(),
+              planoValidade: assinaturaPendente?.planoValidade || validadeTrial.toISOString(),
+              planoMetodo: assinaturaPendente ? 'kiwify' : undefined,
               createdAt: agora.toISOString(),
               updatedAt: agora.toISOString()
             };

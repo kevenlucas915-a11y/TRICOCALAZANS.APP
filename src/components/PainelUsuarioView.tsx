@@ -34,7 +34,7 @@ import {
   Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { temAcessoAtlas } from '../types/assinatura';
+import { temAcessoAtlas, obterLimitePacientes } from '../types/assinatura';
 import { Paciente, ConsultaRegistro } from '../types/paciente';
 import { listPacientes, getConsultasDoPaciente, savePaciente } from '../services/pacientes';
 import { listAgendamentos } from '../services/agendamentoService';
@@ -153,6 +153,13 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
   const handleCadastrarPacienteRapido = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoNome.trim()) return;
+
+    if (pacientesDoUsuario.length >= obterLimitePacientes(usuarioAtual)) {
+      alert('Limite de 1 paciente atingido no Plano Degustação. Faça upgrade para o Plano Mensal ou Anual para cadastrar pacientes ilimitados.');
+      setModalNovoPaciente(false);
+      onNavegarPara('planos');
+      return;
+    }
 
     setSalvandoPaciente(true);
     try {
@@ -297,8 +304,15 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
 
           {/* Botão Novo Paciente */}
           <button
-            onClick={() => setModalNovoPaciente(true)}
-            className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-medium text-xs flex items-center gap-1.5 shadow-sm shadow-teal-700/25 transition-all whitespace-nowrap shrink-0"
+            onClick={() => {
+              if (pacientesDoUsuario.length >= obterLimitePacientes(usuarioAtual)) {
+                alert('Limite de 1 paciente atingido no Plano Degustação. Faça upgrade para o Plano Mensal ou Anual para cadastrar pacientes ilimitados.');
+                onNavegarPara('planos');
+                return;
+              }
+              setModalNovoPaciente(true);
+            }}
+            className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-medium text-xs flex items-center gap-1.5 shadow-sm shadow-teal-700/25 transition-all whitespace-nowrap shrink-0 cursor-pointer"
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>Novo Paciente</span>

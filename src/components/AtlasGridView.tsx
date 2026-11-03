@@ -150,7 +150,7 @@ export const AtlasGridView: React.FC<AtlasGridViewProps> = ({
               Desbloqueie o acervo completo de patologias tricoscópicas
             </h2>
             <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed">
-              O Atlas Clínico é uma ferramenta de referência diagnóstica de nível avançado, disponível <strong>exclusivamente para os Planos Pagos (Clínico Pro e Master)</strong>. Você pode assinar <strong>apenas o mês avulso</strong> (R$ 89,90 sem fidelidade) ou garantir <strong>50% de economia no plano anual</strong> (12x de R$ 44,90 sem juros).
+              O Atlas Clínico é uma ferramenta de referência diagnóstica de nível avançado, disponível nos <strong>Planos Mensal (R$ 69,90)</strong> e <strong>Anual (12x de R$ 49,90)</strong>. O Plano Degustação não inclui o acervo do Atlas.
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-amber-200">
               <span className="flex items-center gap-1">✓ Patologias com dermoscopia HD</span>
@@ -163,16 +163,16 @@ export const AtlasGridView: React.FC<AtlasGridViewProps> = ({
             <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0">
               <button
                 onClick={onNavegarParaPlanos}
-                className="px-5 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-400/25 transition-all hover:scale-[1.02]"
+                className="px-5 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-400/25 transition-all hover:scale-[1.02] cursor-pointer"
               >
                 <Crown className="w-4 h-4 text-slate-950" />
-                <span>Desbloquear Atlas no Plano Anual (12x R$ 44,90)</span>
+                <span>Desbloquear Atlas no Plano Anual (12x R$ 49,90)</span>
               </button>
               <button
                 onClick={onNavegarParaPlanos}
-                className="px-4 py-2.5 rounded-2xl glass-button text-white/90 hover:text-white hover:bg-white/10 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
+                className="px-4 py-2.5 rounded-2xl glass-button text-white/90 hover:text-white hover:bg-white/10 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
               >
-                <span>Assinar Apenas 1 Mês (R$ 89,90)</span>
+                <span>Assinar Plano Mensal (R$ 69,90/mês)</span>
               </button>
             </div>
           )}

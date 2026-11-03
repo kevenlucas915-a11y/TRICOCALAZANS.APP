@@ -145,6 +145,173 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
+/**
+ * ============================================================================
+ * WEBHOOK KIWIFY OFICIAL (/api/kiwify/webhook)
+ * ============================================================================
+ * Recebe notificações automáticas de pagamentos, assinaturas e cancelamentos da Kiwify.
+ * Links mapeados:
+ * - Degustação (R$ 5,00 / 7 dias / 1 paciente / sem Atlas): https://pay.kiwify.com.br/ltmVSfe
+ * - Mensal (R$ 69,90 / 30 dias): https://pay.kiwify.com.br/UzqmVk6
+ * - Anual (12x R$ 49,90 / 365 dias): https://pay.kiwify.com.br/Srqbf4k
+ */
+app.get('/api/kiwify/webhook', (_req: Request, res: Response) => {
+  return res.status(200).json({
+    status: 'online',
+    servico: 'Webhook Kiwify TricoCalazans',
+    planosConfigurados: {
+      degustacao: 'https://pay.kiwify.com.br/ltmVSfe (R$ 5,00 / 7 dias)',
+      mensal: 'https://pay.kiwify.com.br/UzqmVk6 (R$ 69,90 / mês)',
+      anual: 'https://pay.kiwify.com.br/Srqbf4k (12x R$ 49,90 / ano)'
+    }
+  });
+});
+
+app.post('/api/kiwify/webhook', async (req: Request, res: Response) => {
+  try {
+    const payload = req.body || {};
+    const payloadStr = JSON.stringify(payload).toLowerCase();
+
+    // Extrair e-mail do comprador em formatos possíveis enviados pela Kiwify
+    const email = (
+      payload.Customer?.email ||
+      payload.customer?.email ||
+      payload.email ||
+      payload.Commissions?.customer_email ||
+      payload.commissions?.customer_email ||
+      ''
+    ).toString().trim().toLowerCase();
+
+    const nome = (
+      payload.Customer?.full_name ||
+      payload.Customer?.first_name ||
+      payload.customer?.full_name ||
+      payload.customer?.name ||
+      payload.name ||
+      ''
+    ).toString().trim();
+
+    const orderStatus = (
+      payload.order_status ||
+      payload.status ||
+      ''
+    ).toString().toLowerCase();
+
+    const eventType = (
+      payload.webhook_event_type ||
+      payload.event ||
+      ''
+    ).toString().toLowerCase();
+
+    const orderId = payload.order_id || payload.order_ref || payload.id || `kiwify_${Date.now()}`;
+    const valorCentavos = Number(
+      payload.Commissions?.charge_amount ||
+      payload.commissions?.charge_amount ||
+      payload.order_amount ||
+      0
+    );
+
+    console.log(`📦 Webhook Kiwify recebido: [${eventType || orderStatus}] para ${email || 'sem email'} (Order: ${orderId})`);
+
+    if (!email) {
+      console.warn('⚠️ Webhook Kiwify recebido sem e-mail do cliente.');
+      return res.status(200).json({ received: true, aviso: 'E-mail do cliente não identificado' });
+    }
+
+    // Identificar plano pelo link da oferta (ltmVSfe, UzqmVk6, Srqbf4k), nome ou valor
+    let planoId: 'degustacao' | 'mensal' | 'anual' = 'mensal';
+    let ciclo: 'mensal' | 'anual' = 'mensal';
+    let diasValidade = 30;
+
+    if (
+      payloadStr.includes('ltmvsfe') ||
+      payloadStr.includes('degustacao') ||
+      payloadStr.includes('degustação') ||
+      (valorCentavos > 0 && valorCentavos <= 1000)
+    ) {
+      planoId = 'degustacao';
+      ciclo = 'mensal';
+      diasValidade = 7;
+    } else if (
+      payloadStr.includes('srqbf4k') ||
+      payloadStr.includes('anual') ||
+      valorCentavos > 20000
+    ) {
+      planoId = 'anual';
+      ciclo = 'anual';
+      diasValidade = 365;
+    } else {
+      planoId = 'mensal';
+      ciclo = 'mensal';
+      diasValidade = 30;
+    }
+
+    // Determinar se o pedido foi pago/aprovado ou reembolsado/cancelado
+    const isAprovado = 
+      orderStatus === 'paid' || 
+      orderStatus === 'approved' || 
+      eventType === 'order_approved' || 
+      eventType === 'subscription_renewed' ||
+      eventType === 'approved';
+
+    const isCancelado = 
+      orderStatus === 'refunded' || 
+      orderStatus === 'chargedback' || 
+      eventType === 'order_refunded' || 
+      eventType === 'subscription_canceled';
+
+    const novoStatus = isAprovado ? 'ativo' : isCancelado ? 'cancelado' : 'ativo';
+    const validadeData = new Date(Date.now() + diasValidade * 24 * 60 * 60 * 1000).toISOString();
+
+    const dadosAtualizacao = {
+      planoId,
+      planoStatus: novoStatus,
+      planoCiclo: ciclo,
+      planoMetodo: 'kiwify',
+      planoValidade: validadeData,
+      kiwifyOrderId: orderId,
+      updatedAt: new Date().toISOString()
+    };
+
+    // 1. Atualizar ou registrar no Firestore
+    if (firebaseAdminInitialized) {
+      try {
+        const dbAdmin = getAdminFirestore();
+        const snapshot = await dbAdmin.collection('usuarios_profissionais').where('email', '==', email).get();
+
+        if (!snapshot.empty) {
+          for (const docSnapshot of snapshot.docs) {
+            await docSnapshot.ref.set(dadosAtualizacao, { merge: true });
+            console.log(`✅ Assinatura atualizada no Firestore para usuário ${docSnapshot.id} (${email}) -> ${planoId} (${novoStatus})`);
+          }
+        } else {
+          // Usuário ainda não cadastrado na plataforma: salvar em assinaturas_pendentes pelo email
+          await dbAdmin.collection('assinaturas_pendentes').doc(email).set({
+            ...dadosAtualizacao,
+            email,
+            nome,
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+          console.log(`📋 Assinatura pendente criada para ${email} (${planoId}). Será vinculada no primeiro login.`);
+        }
+      } catch (fsErr) {
+        console.error('Erro ao salvar usuário no Firestore via Kiwify:', fsErr);
+      }
+    }
+
+    return res.status(200).json({
+      received: true,
+      planoId,
+      status: novoStatus,
+      validade: validadeData,
+      email
+    });
+  } catch (err: any) {
+    console.error('❌ Erro ao processar Webhook Kiwify:', err);
+    return res.status(500).json({ error: 'Erro interno ao processar webhook Kiwify', message: err.message });
+  }
+});
+
 // Inicialização do Google GenAI (Gemini)
 const geminiApiKey = process.env.GEMINI_API_KEY || '';
 const ai = new GoogleGenAI({ apiKey: geminiApiKey });

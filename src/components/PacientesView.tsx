@@ -76,6 +76,7 @@ import { ProtocoloPaciente } from '../types/protocolo';
 import { listarProtocolosDoPaciente } from '../services/protocolosService';
 import { HistoricoClinicoView } from './HistoricoClinicoView';
 import { ComparadorPacienteView } from './ComparadorPacienteView';
+import { obterLimitePacientes } from '../types/assinatura';
 
 interface PacientesViewProps {
   onIniciarCapturaPaciente: (paciente: Paciente) => void;
@@ -189,6 +190,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
   // Modais
   const [modalPacienteAberto, setModalPacienteAberto] = useState(false);
   const [pacienteEmEdicao, setPacienteEmEdicao] = useState<Paciente | null>(null);
+  const [modalLimitePlanoAberto, setModalLimitePlanoAberto] = useState(false);
 
   // Exclusões seguras sem depender de window.confirm
   const [pacienteParaExcluir, setPacienteParaExcluir] = useState<{ id: string; nome: string } | null>(null);
@@ -517,6 +519,11 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
 
   // Abrir modal de criação
   const handleAbrirNovoPaciente = () => {
+    const limite = obterLimitePacientes(usuarioAtual);
+    if (pacientes.length >= limite) {
+      setModalLimitePlanoAberto(true);
+      return;
+    }
     setPacienteEmEdicao(null);
     setFormNome('');
     setFormTelefone('');
@@ -546,6 +553,13 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
     e.preventDefault();
     if (!formNome.trim()) {
       mostrarAlerta('erro', 'O nome do paciente é obrigatório.');
+      return;
+    }
+
+    const foiCriacao = !pacienteEmEdicao;
+    if (foiCriacao && pacientes.length >= obterLimitePacientes(usuarioAtual)) {
+      mostrarAlerta('erro', 'Limite de 1 paciente atingido no Plano Degustação.');
+      setModalLimitePlanoAberto(true);
       return;
     }
 
@@ -3479,6 +3493,53 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Excluir Foto</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE LIMITE DE PLANO DEGUSTAÇÃO (1 PACIENTE) */}
+      {modalLimitePlanoAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn">
+          <div className="glass-card max-w-md w-full p-6 sm:p-7 rounded-3xl border border-amber-500/40 shadow-2xl space-y-5 animate-scaleUp">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+              <Lock className="w-6 h-6" />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                Limite de 1 Paciente Atingido
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                O seu <strong>Plano Degustação</strong> permite cadastrar até 1 paciente para você avaliar e testar toda a bancada de tricoscopia, laudos e anamneses na prática.
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Para cadastrar <strong>pacientes ilimitados</strong> e ter acesso completo ao <strong>Atlas Clínico HD</strong>, faça o upgrade para o Plano Mensal ou Anual!
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setModalLimitePlanoAberto(false)}
+                className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl glass-button text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer"
+              >
+                Continuar com 1
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setModalLimitePlanoAberto(false);
+                  if (onNavegarParaPlanos) {
+                    onNavegarParaPlanos();
+                  } else {
+                    window.location.href = '/planos';
+                  }
+                }}
+                className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-lg shadow-teal-700/20 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>Fazer Upgrade</span>
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
