@@ -192,13 +192,6 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
   const [modalLaudoAberto, setModalLaudoAberto] = useState<boolean>(false);
   const [modalCameraAoVivo, setModalCameraAoVivo] = useState<boolean>(false);
 
-  // Sincronização do botão Voltar para fechar modais e gavetas na bancada
-  useBackHandler(modalAchadoAberto, () => setModalAchadoAberto(false), 'capturaModalAchado');
-  useBackHandler(modalLaudoAberto, () => setModalLaudoAberto(false), 'capturaModalLaudo');
-  useBackHandler(modalCameraAoVivo, () => setModalCameraAoVivo(false), 'capturaModalCamera');
-  useBackHandler(historicoAberto, () => setHistoricoAberto(false), 'capturaHistorico');
-  useBackHandler(tourAberto, () => setTourAberto(false), 'capturaTour');
-
   // Tipo de Captura no Passo 3: 'tricoscopia' (com dermatoscópio) ou 'macro' (foto geral do couro)
   const [tipoCaptura, setTipoCaptura] = useState<'tricoscopia' | 'macro'>('tricoscopia');
 
@@ -224,6 +217,13 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
       window.localStorage.setItem('atlas_tour_minha_captura_v1', 'true');
     }
   };
+
+  // Sincronização do botão Voltar para fechar modais e gavetas na bancada
+  useBackHandler(modalAchadoAberto, () => setModalAchadoAberto(false), 'capturaModalAchado');
+  useBackHandler(modalLaudoAberto, () => setModalLaudoAberto(false), 'capturaModalLaudo');
+  useBackHandler(modalCameraAoVivo, () => setModalCameraAoVivo(false), 'capturaModalCamera');
+  useBackHandler(historicoAberto, () => setHistoricoAberto(false), 'capturaHistorico');
+  useBackHandler(tourAberto, () => setTourAberto(false), 'capturaTour');
 
   const casoReferencia = CASOS_ATLAS.find(c => c.id === casoReferenciaId) || CASOS_ATLAS[0];
   const { 

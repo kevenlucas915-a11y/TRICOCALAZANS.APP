@@ -223,31 +223,6 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
   const [processandoFotoConsulta, setProcessandoFotoConsulta] = useState(false);
   const [modalFotoConsultaAmpliada, setModalFotoConsultaAmpliada] = useState<{ url: string; titulo: string; data: string } | null>(null);
 
-  // Sincronização do botão Voltar do dispositivo para modais e sub-navegação
-  useBackHandler(modalPacienteAberto, () => setModalPacienteAberto(false), 'modalPaciente');
-  useBackHandler(modalConsultaAberto, () => setModalConsultaAberto(false), 'modalConsulta');
-  useBackHandler(modalFotoGlobalUploadAberto, () => setModalFotoGlobalUploadAberto(false), 'modalFotoGlobalUpload');
-  useBackHandler(!!modalFotoGlobalAmpliada, () => setModalFotoGlobalAmpliada(null), 'modalFotoGlobalAmpliada');
-  useBackHandler(!!modalFotoAmpliada, () => setModalFotoAmpliada(null), 'modalFotoAmpliada');
-  useBackHandler(!!modalFotoConsultaAmpliada, () => setModalFotoConsultaAmpliada(null), 'modalFotoConsultaAmpliada');
-  useBackHandler(modalConviteAberto, () => setModalConviteAberto(false), 'modalConvite');
-  useBackHandler(modalProdutoAberto, () => setModalProdutoAberto(false), 'modalProduto');
-  useBackHandler(modalProximoPassoFluxo.aberto, () => setModalProximoPassoFluxo({ aberto: false, paciente: null }), 'modalProximoPasso');
-
-  // Sub-abas do prontuário: se estiver em Evolução/Exames/Histórico, voltar retorna à aba Geral
-  useBackHandler(
-    !!pacienteAtivo && abaProntuario !== 'geral',
-    () => setAbaProntuario('geral'),
-    'pacienteSubAba'
-  );
-
-  // Se estiver na aba Geral com um paciente aberto no mobile, voltar retorna para a lista de pacientes
-  useBackHandler(
-    !!pacienteAtivo && abaProntuario === 'geral' && !modalPacienteAberto && !modalConsultaAberto && !modalFotoGlobalUploadAberto && !modalConviteAberto && !modalProdutoAberto,
-    () => setPacienteAtivo(null),
-    'pacienteAtivoProntuario'
-  );
-
   // Alerta de feedback
   const [alerta, setAlerta] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
 
@@ -290,6 +265,24 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
       setPacienteSelecionadoId(pacienteAtivoId);
     }
   }, [pacienteAtivoId]);
+
+  // Sincronização do botão Voltar do dispositivo para modais e sub-navegação
+  useBackHandler(modalPacienteAberto, () => setModalPacienteAberto(false), 'modalPaciente');
+  useBackHandler(modalConsultaAberto, () => setModalConsultaAberto(false), 'modalConsulta');
+  useBackHandler(modalFotoGlobalUploadAberto, () => setModalFotoGlobalUploadAberto(false), 'modalFotoGlobalUpload');
+  useBackHandler(!!modalFotoGlobalAmpliada, () => setModalFotoGlobalAmpliada(null), 'modalFotoGlobalAmpliada');
+  useBackHandler(!!modalFotoAmpliada, () => setModalFotoAmpliada(null), 'modalFotoAmpliada');
+  useBackHandler(!!modalFotoConsultaAmpliada, () => setModalFotoConsultaAmpliada(null), 'modalFotoConsultaAmpliada');
+  useBackHandler(modalConviteAberto, () => setModalConviteAberto(false), 'modalConvite');
+  useBackHandler(modalProdutoAberto, () => setModalProdutoAberto(false), 'modalProduto');
+  useBackHandler(modalProximoPassoFluxo.aberto, () => setModalProximoPassoFluxo({ aberto: false, paciente: null }), 'modalProximoPasso');
+
+  // Sub-abas do prontuário: se estiver em Evolução/Exames/Histórico, voltar retorna à aba Geral
+  useBackHandler(
+    !!pacienteAtivo && abaProntuario !== 'geral',
+    () => setAbaProntuario('geral'),
+    'pacienteSubAba'
+  );
 
   // Carregar consultas do paciente selecionado
   useEffect(() => {
