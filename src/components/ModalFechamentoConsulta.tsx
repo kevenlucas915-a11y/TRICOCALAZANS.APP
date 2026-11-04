@@ -288,7 +288,7 @@ export const ModalFechamentoConsulta: React.FC<ModalFechamentoConsultaProps> = (
   const handleCompartilharWhatsApp = async () => {
     const opts = montarOptionsRelatorio();
     // Se estiver em mobile, tenta compartilhar via Web Share com arquivo; se não, abre WhatsApp direto
-    if (navigator.share) {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       setGerandoPdf(true);
       try {
         await compartilharPdfResumoConsulta(opts);

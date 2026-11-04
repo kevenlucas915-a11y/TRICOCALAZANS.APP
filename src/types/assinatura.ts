@@ -4,7 +4,7 @@ export type CicloCobranca = 'mensal' | 'anual';
 
 export type StatusAssinatura = 'ativo' | 'trial' | 'cancelado' | 'expirado';
 
-export type MetodoPagamento = 'pix' | 'cartao' | 'boleto';
+export type MetodoPagamento = 'pix' | 'cartao' | 'boleto' | 'kiwify' | 'stripe';
 
 export const LINKS_KIWIFY = {
   degustacao: 'https://pay.kiwify.com.br/ltmVSfe',

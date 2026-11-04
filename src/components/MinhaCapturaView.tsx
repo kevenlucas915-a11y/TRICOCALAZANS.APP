@@ -68,7 +68,9 @@ import {
   Database,
   Microscope,
   CheckCheck,
-  ListOrdered
+  ListOrdered,
+  Lock,
+  Crown
 } from 'lucide-react';
 
 interface MinhaCapturaViewProps {
@@ -188,7 +190,7 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
   const [salvoComSucessoRecente, setSalvoComSucessoRecente] = useState<boolean>(false);
   const [alteracoesNaoSalvas, setAlteracoesNaoSalvas] = useState<boolean>(false);
   const [modoFoco, setModoFoco] = useState<boolean>(false);
-  const [mensagemStatus, setMensagemStatus] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
+  const [mensagemStatus, setMensagemStatus] = useState<{ tipo: 'sucesso' | 'erro' | 'alerta'; texto: string } | null>(null);
   const [modalLaudoAberto, setModalLaudoAberto] = useState<boolean>(false);
   const [modalCameraAoVivo, setModalCameraAoVivo] = useState<boolean>(false);
 
@@ -343,7 +345,7 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
     mostrarAlerta('sucesso', 'Todas as marcações foram removidas.');
   };
 
-  const mostrarAlerta = (tipo: 'sucesso' | 'erro', texto: string) => {
+  const mostrarAlerta = (tipo: 'sucesso' | 'erro' | 'alerta', texto: string) => {
     setMensagemStatus({ tipo, texto });
     setTimeout(() => setMensagemStatus(null), 4000);
   };
@@ -1152,15 +1154,15 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                       area: areaCouro
                     }] : (sessoesDoPaciente.length > 0 ? sessoesDoPaciente.slice(0, 4).map(s => ({
                       id: s.id,
-                      url: s.image_data_url || s.image_url,
-                      titulo: s.notes || s.regiao_couro || 'Tricoscopia',
-                      area: s.regiao_couro || areaCouro
+                      url: s.image_url,
+                      titulo: s.notes || s.area || 'Tricoscopia',
+                      area: s.area || areaCouro
                     })) : []),
                     metricasIniciais: {
-                      totalFios: contagemEstatisticas.fios,
-                      totalUF: contagemEstatisticas.uf,
-                      ostiosVazios: contagemEstatisticas.ostiosVazios,
-                      focosInflamacao: contagemEstatisticas.inflamacao
+                      totalFios: summary.totalFios,
+                      totalUF: summary.totalUnidadesFoliculares,
+                      ostiosVazios: summary.ostiosVazios,
+                      focosInflamacao: summary.inflamacaoCount
                     }
                   }
                 }));

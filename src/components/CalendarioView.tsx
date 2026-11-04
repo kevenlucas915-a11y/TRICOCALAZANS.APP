@@ -366,7 +366,7 @@ export const CalendarioView: React.FC<CalendarioViewProps> = ({
     e.preventDefault();
     if (!usuarioPodeInserirDados(usuarioAtual)) {
       mostrarNotificacao('Modo Demonstração (Gratuito): Para cadastrar novos pacientes, conclua a assinatura de um dos nossos planos.', 'erro');
-      setModalNovoPacienteAberto(false);
+      setModalNovoPaciente(false);
       window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
       return;
     }
