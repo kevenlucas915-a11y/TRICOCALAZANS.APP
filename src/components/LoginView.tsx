@@ -211,8 +211,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSucesso, onContinua
       <div className="w-full max-w-lg space-y-5">
         {/* Cabeçalho da Aplicação */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-700 to-teal-500 text-white shadow-xl shadow-teal-700/25 mb-1">
-            <Microscope className="w-7 h-7" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl overflow-hidden shadow-xl shadow-purple-900/20 mb-1 border border-purple-200/50 dark:border-purple-800/40 bg-[#1d0738]">
+            <img src="/logo.png" alt="TricoCalazans" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             TricoCalazans

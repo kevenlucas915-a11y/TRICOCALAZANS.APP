@@ -605,8 +605,8 @@ export default function App() {
             onClick={() => { setTelaAtiva('painel'); setMenuMobileAberto(false); }}
             className="flex items-center gap-3 cursor-pointer select-none group"
           >
-            <div className="w-10 h-10 rounded-2xl bg-teal-700 text-white flex items-center justify-center group-hover:scale-105 transition-all shadow-md shadow-teal-700/30 shrink-0">
-              <Microscope className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl overflow-hidden group-hover:scale-105 transition-all shadow-md shadow-teal-700/20 shrink-0 border border-teal-600/30 bg-[#1d0738]">
+              <img src="/logo.png" alt="TricoCalazans" className="w-full h-full object-cover" />
             </div>
             <div className="min-w-0">
               <span className="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-tight block truncate">

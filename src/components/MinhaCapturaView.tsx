@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { CASOS_ATLAS, ACHADOS_TRICOSCOPICOS } from '../data/tricoscopiaData';
-import { 
-  Session, 
-  Annotation, 
-  AnnotationType, 
-  saveSession, 
-  getSession, 
-  listSessions, 
-  deleteSession, 
+import {
+  Session,
+  Annotation,
+  AnnotationType,
+  saveSession,
+  getSession,
+  listSessions,
+  deleteSession,
   alternarLiberacaoCaptura,
-  calculateCountingSummary 
+  calculateCountingSummary
 } from '../services/annotations';
 import { listPacientes } from '../services/pacientes';
 import { BancadaMarcacao, CORES_TIPO } from './BancadaMarcacao';
@@ -20,50 +20,50 @@ import { arquivoParaDataURL } from '../utils/imageStore';
 import { useCaseImage } from '../hooks/useCaseImage';
 import { useAuth } from '../context/AuthContext';
 import { usuarioPodeInserirDados, temAcessoAtlas } from '../types/assinatura';
-import { 
-  Camera, 
+import {
+  Camera,
   Video,
-  Upload, 
-  CheckCircle2, 
-  RotateCw, 
-  ZoomIn, 
-  ZoomOut, 
-  AlertCircle, 
-  Eye, 
-  EyeOff, 
-  ShieldCheck, 
-  Sparkles, 
-  Save, 
-  History, 
-  FileText, 
-  Printer, 
-  Columns, 
-  Layers, 
-  Grid, 
-  SlidersHorizontal, 
-  X, 
-  Trash2, 
-  Calendar, 
-  User, 
-  MapPin, 
-  Check, 
-  Search, 
-  ExternalLink, 
-  ChevronDown, 
-  Edit3, 
-  HelpCircle, 
-  Hash, 
-  Scale, 
-  Download, 
-  Flame, 
-  BookOpen, 
-  RotateCcw, 
+  Upload,
+  CheckCircle2,
+  RotateCw,
+  ZoomIn,
+  ZoomOut,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Sparkles,
+  Save,
+  History,
+  FileText,
+  Printer,
+  Columns,
+  Layers,
+  Grid,
+  SlidersHorizontal,
+  X,
+  Trash2,
+  Calendar,
+  User,
+  MapPin,
+  Check,
+  Search,
+  ExternalLink,
+  ChevronDown,
+  Edit3,
+  HelpCircle,
+  Hash,
+  Scale,
+  Download,
+  Flame,
+  BookOpen,
+  RotateCcw,
   Image as ImageIcon,
-  FileCheck2, 
-  ArrowLeft, 
-  ArrowRight, 
-  Loader2, 
-  Maximize2, 
+  FileCheck2,
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  Maximize2,
   Minimize2,
   Database,
   Microscope,
@@ -145,8 +145,8 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
   const casosReferenciaFiltrados = useMemo(() => {
     if (!termoBuscaReferencia.trim()) return CASOS_ATLAS;
     const t = termoBuscaReferencia.toLowerCase().trim();
-    return CASOS_ATLAS.filter(c => 
-      c.nome.toLowerCase().includes(t) || 
+    return CASOS_ATLAS.filter(c =>
+      c.nome.toLowerCase().includes(t) ||
       c.categoria.toLowerCase().includes(t) ||
       (c.significadoClinico && c.significadoClinico.toLowerCase().includes(t)) ||
       c.oQueObservar?.some(obs => obs.toLowerCase().includes(t)) ||
@@ -228,25 +228,25 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
   useBackHandler(tourAberto, () => setTourAberto(false), 'capturaTour');
 
   const casoReferencia = CASOS_ATLAS.find(c => c.id === casoReferenciaId) || CASOS_ATLAS[0];
-  const { 
-    imageUrl: referenciaUrl, 
-    imagens: refImagens, 
-    indiceAtivo: refIndice, 
-    setIndiceAtivo: setRefIndice, 
-    totalImagens: refTotal 
+  const {
+    imageUrl: referenciaUrl,
+    imagens: refImagens,
+    indiceAtivo: refIndice,
+    setIndiceAtivo: setRefIndice,
+    totalImagens: refTotal
   } = useCaseImage(casoReferencia.id, casoReferencia.imagem.url);
 
   // URL validada e segura para imagem de referência (evita src="" no elemento img)
-  const fotoReferenciaFinal = (referenciaUrl && referenciaUrl.trim() !== '') 
-    ? referenciaUrl 
-    : (casoReferencia.imagem.url && casoReferencia.imagem.url.trim() !== '') 
-      ? casoReferencia.imagem.url 
+  const fotoReferenciaFinal = (referenciaUrl && referenciaUrl.trim() !== '')
+    ? referenciaUrl
+    : (casoReferencia.imagem.url && casoReferencia.imagem.url.trim() !== '')
+      ? casoReferencia.imagem.url
       : null;
 
   // Carrega histórico de sessões e lista de pacientes cadastrados do usuário atual
   useEffect(() => {
-    listSessions(usuarioAtual?.uid).then(list => setSessoesSalvas(list)).catch(() => {});
-    listPacientes(usuarioAtual?.uid).then(list => setPacientesCadastrados(list.map(p => ({ id: p.id, nome: p.nome })))).catch(() => {});
+    listSessions(usuarioAtual?.uid).then(list => setSessoesSalvas(list)).catch(() => { });
+    listPacientes(usuarioAtual?.uid).then(list => setPacientesCadastrados(list.map(p => ({ id: p.id, nome: p.nome })))).catch(() => { });
   }, [usuarioAtual?.uid]);
 
   // Se receber paciente inicial vindo da aba Pacientes
@@ -285,7 +285,7 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
   const sessoesDoPaciente = useMemo(() => {
     if (!clientName.trim() && !pacienteId) return [];
     const nomeNorm = clientName.toLowerCase().trim();
-    return sessoesSalvas.filter(s => 
+    return sessoesSalvas.filter(s =>
       (pacienteId && ((s as any).paciente_id === pacienteId || (s as any).pacienteId === pacienteId)) ||
       (nomeNorm && s.client_name.toLowerCase().trim() === nomeNorm)
     );
@@ -458,7 +458,7 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
       // Atualizar lista completa de forma assíncrona em background
       listSessions(usuarioAtual?.uid).then(lista => {
         if (lista && lista.length > 0) setSessoesSalvas(lista);
-      }).catch(() => {});
+      }).catch(() => { });
 
       // Confirmação explícita com tempo de gravação no banco de dados
       setConfirmacaoBanco({
@@ -992,7 +992,7 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
   const totalAchadosReferencia = casoReferencia.oQueObservar.length;
   const totalConferidos = itensConferidos.filter(item => casoReferencia.oQueObservar.includes(item)).length;
 
-  const sessoesFiltradas = sessoesSalvas.filter(s => 
+  const sessoesFiltradas = sessoesSalvas.filter(s =>
     s.client_name.toLowerCase().includes(buscaHistorico.toLowerCase()) ||
     s.session_date.includes(buscaHistorico)
   );
@@ -1001,11 +1001,10 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 animate-fadeIn pb-24">
       {/* Toast de Alerta Flutuante Ancorado no Topo */}
       {mensagemStatus && (
-        <div className={`fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-[92vw] px-4 py-3 rounded-2xl shadow-2xl border flex items-center gap-2.5 text-xs font-semibold animate-fadeIn ${
-          mensagemStatus.tipo === 'sucesso' 
-            ? 'bg-emerald-50 border-emerald-300 text-emerald-800 dark:bg-emerald-950 dark:border-emerald-700 dark:text-emerald-200' 
+        <div className={`fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-[92vw] px-4 py-3 rounded-2xl shadow-2xl border flex items-center gap-2.5 text-xs font-semibold animate-fadeIn ${mensagemStatus.tipo === 'sucesso'
+            ? 'bg-emerald-50 border-emerald-300 text-emerald-800 dark:bg-emerald-950 dark:border-emerald-700 dark:text-emerald-200'
             : 'bg-rose-50 border-rose-300 text-rose-800 dark:bg-rose-950 dark:border-rose-700 dark:text-rose-200'
-        }`}>
+          }`}>
           {mensagemStatus.tipo === 'sucesso' ? <Check className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
           <span>{mensagemStatus.texto}</span>
         </div>
@@ -1050,9 +1049,8 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
       <div className="bg-gradient-to-r from-teal-800/10 via-emerald-700/10 to-teal-900/5 dark:from-teal-950/60 dark:via-emerald-950/40 dark:to-slate-900 border border-teal-500/30 rounded-3xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`px-2.5 py-0.5 rounded-full text-white font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-xs ${
-              modoBancada === 'registro' ? 'bg-teal-700' : 'bg-emerald-700'
-            }`}>
+            <span className={`px-2.5 py-0.5 rounded-full text-white font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-xs ${modoBancada === 'registro' ? 'bg-teal-700' : 'bg-emerald-700'
+              }`}>
               {modoBancada === 'registro' ? (
                 <>
                   <Camera className="w-3 h-3" />
@@ -1080,7 +1078,7 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
             )}
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-            {modoBancada === 'registro' 
+            {modoBancada === 'registro'
               ? 'Após a anamnese, selecione os badges de área abaixo para fotografar e salvar os registros sequencialmente para este paciente.'
               : 'Na consulta clínica, acesse abaixo qualquer foto já registrada do paciente para realizar a contagem de fios, óstios e laudo.'}
           </p>
@@ -1092,11 +1090,10 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
             <button
               type="button"
               onClick={() => alternarModoBancada('registro')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-                modoBancada === 'registro'
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${modoBancada === 'registro'
                   ? 'bg-teal-700 text-white shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <Camera className="w-3.5 h-3.5" />
               <span>3. Registrar Fotos</span>
@@ -1104,11 +1101,10 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
             <button
               type="button"
               onClick={() => alternarModoBancada('analise')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-                modoBancada === 'analise'
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${modoBancada === 'analise'
                   ? 'bg-emerald-700 text-white shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <Microscope className="w-3.5 h-3.5" />
               <span>4. Contar Fios & Consulta</span>
@@ -1208,11 +1204,10 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                     setTipoCaptura('tricoscopia');
                     setAlteracoesNaoSalvas(true);
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-                    tipoCaptura === 'tricoscopia'
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${tipoCaptura === 'tricoscopia'
                       ? 'bg-teal-700 text-white shadow-xs'
                       : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'
-                  }`}
+                    }`}
                   title="Captura com dermatoscópio / tricoscópio digital (aumento óptico)"
                 >
                   <Microscope className="w-3.5 h-3.5" />
@@ -1224,11 +1219,10 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                     setTipoCaptura('macro');
                     setAlteracoesNaoSalvas(true);
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-                    tipoCaptura === 'macro'
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${tipoCaptura === 'macro'
                       ? 'bg-rose-700 text-white shadow-xs'
                       : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'
-                  }`}
+                    }`}
                   title="Foto panorâmica macro do couro cabeludo"
                 >
                   <Camera className="w-3.5 h-3.5" />
@@ -1275,20 +1269,18 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                         setAreaCouro(area);
                         setAlteracoesNaoSalvas(true);
                       }}
-                      className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 border ${
-                        isAtiva
+                      className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 border ${isAtiva
                           ? 'bg-gradient-to-r from-teal-700 to-teal-800 text-white border-teal-600 shadow-md shadow-teal-700/25 ring-2 ring-teal-500/40 scale-[1.02]'
                           : 'bg-stone-50 dark:bg-slate-800/80 text-stone-700 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 border-stone-200 dark:border-slate-700 hover:border-teal-400'
-                      }`}
+                        }`}
                       title={`Selecionar ${area} para registrar foto`}
                     >
                       <span>{area}</span>
                       {qtdFotos > 0 && (
-                        <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold flex items-center gap-0.5 ${
-                          isAtiva 
-                            ? 'bg-white/20 text-white' 
+                        <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold flex items-center gap-0.5 ${isAtiva
+                            ? 'bg-white/20 text-white'
                             : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
-                        }`}>
+                          }`}>
                           <Check className="w-2.5 h-2.5" />
                           <span>{qtdFotos}</span>
                         </span>
@@ -1420,13 +1412,12 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                   type="button"
                   onClick={() => handleSalvarSessao(false)}
                   disabled={salvando || (!imagemUsuarioUrl && !fotoReferenciaFinal)}
-                  className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 ${
-                    salvoComSucessoRecente
+                  className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 ${salvoComSucessoRecente
                       ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-emerald-700/20 ring-2 ring-emerald-400'
                       : alteracoesNaoSalvas
-                      ? 'bg-teal-700 hover:bg-teal-800 text-white shadow-teal-700/25 ring-2 ring-teal-400 animate-pulse'
-                      : 'bg-teal-700 hover:bg-teal-800 text-white shadow-teal-700/20'
-                  } disabled:opacity-50 disabled:pointer-events-none`}
+                        ? 'bg-teal-700 hover:bg-teal-800 text-white shadow-teal-700/25 ring-2 ring-teal-400 animate-pulse'
+                        : 'bg-teal-700 hover:bg-teal-800 text-white shadow-teal-700/20'
+                    } disabled:opacity-50 disabled:pointer-events-none`}
                   title={`Salvar foto da área "${areaCouro}" na ficha do paciente`}
                 >
                   {salvando ? (
@@ -1500,11 +1491,10 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                     <div
                       key={sess.id}
                       onClick={() => handleCarregarFotoPacienteParaContagem(sess)}
-                      className={`group relative rounded-2xl overflow-hidden border p-2 flex flex-col justify-between transition-all cursor-pointer ${
-                        isSelecionada
+                      className={`group relative rounded-2xl overflow-hidden border p-2 flex flex-col justify-between transition-all cursor-pointer ${isSelecionada
                           ? 'border-teal-500 bg-teal-50/70 dark:bg-teal-950/40 ring-2 ring-teal-500/40 shadow-md'
                           : 'border-stone-200 dark:border-slate-800 bg-stone-50/50 dark:bg-slate-950/40 hover:border-teal-400 hover:shadow-xs'
-                      }`}
+                        }`}
                       title={`Carregar foto de "${sess.area || 'Área'}" para contagem e análise no Passo 4`}
                     >
                       <div className="aspect-square w-full rounded-xl overflow-hidden bg-black relative mb-2">
@@ -1587,11 +1577,10 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                     <div
                       key={sess.id}
                       onClick={() => handleCarregarFotoPacienteParaContagem(sess)}
-                      className={`group relative rounded-2xl overflow-hidden border p-2 flex flex-col justify-between transition-all cursor-pointer ${
-                        isSelecionada
+                      className={`group relative rounded-2xl overflow-hidden border p-2 flex flex-col justify-between transition-all cursor-pointer ${isSelecionada
                           ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 ring-2 ring-emerald-500/40 shadow-md'
                           : 'border-stone-200 dark:border-slate-800 bg-stone-50/50 dark:bg-slate-950/40 hover:border-emerald-400 hover:shadow-xs'
-                      }`}
+                        }`}
                     >
                       <div className="aspect-square w-full rounded-xl overflow-hidden bg-black relative mb-2">
                         <img
@@ -1630,1097 +1619,396 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
             </div>
           )}
 
-      {/* CABEÇALHO DO WORKSPACE DE ANÁLISE & CONTAGEM */}
-      <div className="bg-white dark:bg-slate-900/90 p-5 sm:p-7 rounded-3xl border border-stone-200/90 dark:border-slate-800 space-y-4 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60">
-              <Microscope className="w-3.5 h-3.5" />
-              <span>Passo 4: Bancada de Contagem Manual & Laudo</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-slate-100 tracking-tight">
-              Análise & Contagem: {areaCouro}
-            </h1>
-            <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 max-w-2xl leading-relaxed">
-              Marque manualmente no canvas as unidades unitárias, duplas, triplas, óstios vazios e achados tricoscópicos para cálculo em tempo real e emissão do laudo.
-            </p>
-          </div>
+          {/* CABEÇALHO DO WORKSPACE DE ANÁLISE & CONTAGEM */}
+          <div className="bg-white dark:bg-slate-900/90 p-5 sm:p-7 rounded-3xl border border-stone-200/90 dark:border-slate-800 space-y-4 shadow-xs">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60">
+                  <Microscope className="w-3.5 h-3.5" />
+                  <span>Passo 4: Bancada de Contagem Manual & Laudo</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-slate-100 tracking-tight">
+                  Análise & Contagem: {areaCouro}
+                </h1>
+                <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 max-w-2xl leading-relaxed">
+                  Marque manualmente no canvas as unidades unitárias, duplas, triplas, óstios vazios e achados tricoscópicos para cálculo em tempo real e emissão do laudo.
+                </p>
+              </div>
 
-          {/* Botões de Ação */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Voltar para Capturas */}
-            <button
-              type="button"
-              onClick={() => alternarModoBancada('registro')}
-              className="px-3.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/70 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-700/80 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
-              title="Voltar para a etapa de fotos e conexão com o tricoscópio (Passo 3)"
-            >
-              <Camera className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-              <span>+ Registrar Mais Fotos (Passo 3)</span>
-            </button>
-            {/* Botão Principal: Salvar Sessão */}
-            <button
-              type="button"
-              onClick={() => handleSalvarSessao(false)}
-              disabled={salvando || (!imagemUsuarioUrl && !fotoReferenciaFinal)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 ${
-                salvoComSucessoRecente
-                  ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-emerald-700/20 ring-2 ring-emerald-400'
-                  : alteracoesNaoSalvas
-                  ? 'bg-rose-700 hover:bg-rose-800 text-white shadow-rose-700/25 ring-2 ring-rose-400 animate-pulse'
-                  : 'bg-rose-700 hover:bg-rose-800 text-white shadow-rose-700/20'
-              } disabled:opacity-50 disabled:pointer-events-none`}
-              title="Salvar todas as marcações e dados da sessão no prontuário do paciente (Ctrl+S)"
-            >
-              {salvando ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Salvando...</span>
-                </>
-              ) : salvoComSucessoRecente ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-                  <span>Sessão Salva!</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>Salvar Sessão</span>
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={() => setTourAberto(true)}
-              className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-800 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
-              title="Como usar a bancada de marcação manual"
-            >
-              <HelpCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span>Guia da Bancada</span>
-            </button>
-
-            <button
-              onClick={() => setHistoricoAberto(true)}
-              className="px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
-            >
-              <History className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-              <span>Histórico ({sessoesSalvas.length})</span>
-            </button>
-
-            <button
-              onClick={() => {
-                if (!usuarioTemAtlas) {
-                  mostrarAlerta('alerta', 'O acervo do Atlas Clínico é exclusivo dos Planos Mensal e Anual. O Plano Degustação e o Modo Gratuito possuem acesso bloqueado.');
-                  window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
-                  return;
-                }
-                const novoEstado = !exibirReferenciaAtlas;
-                setExibirReferenciaAtlas(novoEstado);
-                if (novoEstado) {
-                  setTimeout(() => {
-                    document.getElementById('secao-referencia-atlas')?.scrollIntoView({ behavior: 'smooth' });
-                  }, 150);
-                }
-              }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs ${
-                exibirReferenciaAtlas
-                  ? 'bg-rose-700 text-white shadow-md shadow-rose-700/25 ring-2 ring-rose-500/30'
-                  : 'bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200'
-              }`}
-              title="Consultar patologias e guia de conferência visual do Atlas"
-            >
-              <BookOpen className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-              <span>{exibirReferenciaAtlas ? 'Ocultar Referência' : 'Buscar Referências'}</span>
-            </button>
-
-            {imagemUsuarioUrl && (
-              <>
-                {/* Botão de Retornar caso a captura feita não seja válida */}
+              {/* Botões de Ação */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Voltar para Capturas */}
                 <button
                   type="button"
-                  onClick={() => setModalRetornarCapturaInvalida(true)}
-                  className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700/80 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
-                  title="Caso a imagem não seja válida (fora de foco, reflexo ou borrada), clique para descartar e refazer"
+                  onClick={() => alternarModoBancada('registro')}
+                  className="px-3.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/70 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-700/80 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                  title="Voltar para a etapa de fotos e conexão com o tricoscópio (Passo 3)"
                 >
-                  <RotateCcw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  <span>Captura Inválida (Retornar)</span>
+                  <Camera className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                  <span>+ Registrar Mais Fotos (Passo 3)</span>
                 </button>
-
-                {/* Botão Salvar Imagem Tricoscópica na Galeria do Dispositivo */}
+                {/* Botão Principal: Salvar Sessão */}
                 <button
                   type="button"
-                  onClick={handleSalvarImagemDispositivo}
-                  disabled={salvandoGaleria}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700/80 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
-                  title="Salvar a foto tricoscópica na galeria do seu celular, tablet ou computador"
+                  onClick={() => handleSalvarSessao(false)}
+                  disabled={salvando || (!imagemUsuarioUrl && !fotoReferenciaFinal)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 ${salvoComSucessoRecente
+                      ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-emerald-700/20 ring-2 ring-emerald-400'
+                      : alteracoesNaoSalvas
+                        ? 'bg-rose-700 hover:bg-rose-800 text-white shadow-rose-700/25 ring-2 ring-rose-400 animate-pulse'
+                        : 'bg-rose-700 hover:bg-rose-800 text-white shadow-rose-700/20'
+                    } disabled:opacity-50 disabled:pointer-events-none`}
+                  title="Salvar todas as marcações e dados da sessão no prontuário do paciente (Ctrl+S)"
                 >
-                  <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>{salvandoGaleria ? 'Salvando...' : 'Salvar na Galeria'}</span>
+                  {salvando ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Salvando...</span>
+                    </>
+                  ) : salvoComSucessoRecente ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                      <span>Sessão Salva!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Salvar Sessão</span>
+                    </>
+                  )}
                 </button>
 
                 <button
-                  onClick={handleExportarImagemMarcada}
-                  className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
-                  title="Baixar imagem com as marcações desenhadas e dados em alta resolução (PNG)"
+                  onClick={() => setTourAberto(true)}
+                  className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-800 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                  title="Como usar a bancada de marcação manual"
                 >
-                  <Sparkles className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-                  <span>Baixar Foto Marcada</span>
+                  <HelpCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <span>Guia da Bancada</span>
                 </button>
 
                 <button
-                  onClick={() => setModalLaudoAberto(true)}
+                  onClick={() => setHistoricoAberto(true)}
                   className="px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
                 >
-                  <FileText className="w-4 h-4 text-stone-600 dark:text-stone-300" />
-                  <span>Emitir Laudo</span>
+                  <History className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                  <span>Histórico ({sessoesSalvas.length})</span>
                 </button>
 
                 <button
-                  onClick={handleLimparBancada}
-                  className="p-2 rounded-xl text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors"
-                  title="Limpar bancada"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Ficha de Identificação da Cliente */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-3 border-t border-stone-200/80 dark:border-slate-800">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <User className="w-3 h-3 text-rose-600" />
-                <span>Cliente / Ficha</span>
-              </label>
-              {pacienteId && (
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
-                  <Check className="w-3 h-3" /> Vinculado
-                </span>
-              )}
-            </div>
-            <input
-              type="text"
-              list="lista-pacientes-cadastrados"
-              placeholder="Nome ou código da ficha"
-              value={clientName}
-              onChange={(e) => {
-                const val = e.target.value;
-                setClientName(val);
-                setAlteracoesNaoSalvas(true);
-                const pac = pacientesCadastrados.find(p => p.nome.toLowerCase().trim() === val.toLowerCase().trim());
-                setPacienteId(pac ? pac.id : null);
-              }}
-              className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none focus:border-rose-400 transition-colors"
-            />
-            <datalist id="lista-pacientes-cadastrados">
-              {pacientesCadastrados.map(p => (
-                <option key={p.id} value={p.nome} />
-              ))}
-            </datalist>
-          </div>
-
-          <div>
-            <label className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
-              <Calendar className="w-3 h-3 text-rose-600" />
-              <span>Data da Sessão</span>
-            </label>
-            <input
-              type="date"
-              value={sessionDate}
-              onChange={(e) => {
-                setSessionDate(e.target.value);
-                setAlteracoesNaoSalvas(true);
-              }}
-              className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none focus:border-rose-400 transition-colors"
-            />
-          </div>
-
-          <div>
-            <label className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
-              <MapPin className="w-3 h-3 text-rose-600" />
-              <span>Área Avaliada</span>
-            </label>
-            <select
-              value={areaCouro}
-              onChange={(e) => {
-                setAreaCouro(e.target.value);
-                setAlteracoesNaoSalvas(true);
-              }}
-              className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none focus:border-rose-400 transition-colors"
-            >
-              {REGIOES_COURO_CABELUDO.map((r, i) => (
-                <option key={i} value={r}>{r}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <Scale className="w-3 h-3 text-rose-600" />
-                <span>Área do Campo (cm²)</span>
-              </label>
-              {fieldAreaCm2 && (
-                <button
-                  type="button"
                   onClick={() => {
-                    setFieldAreaCm2(undefined);
-                    setAlteracoesNaoSalvas(true);
+                    if (!usuarioTemAtlas) {
+                      mostrarAlerta('alerta', 'O acervo do Atlas Clínico é exclusivo dos Planos Mensal e Anual. O Plano Degustação e o Modo Gratuito possuem acesso bloqueado.');
+                      window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+                      return;
+                    }
+                    const novoEstado = !exibirReferenciaAtlas;
+                    setExibirReferenciaAtlas(novoEstado);
+                    if (novoEstado) {
+                      setTimeout(() => {
+                        document.getElementById('secao-referencia-atlas')?.scrollIntoView({ behavior: 'smooth' });
+                      }, 150);
+                    }
                   }}
-                  className="text-[10px] text-rose-600 dark:text-rose-400 hover:underline"
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs ${exibirReferenciaAtlas
+                      ? 'bg-rose-700 text-white shadow-md shadow-rose-700/25 ring-2 ring-rose-500/30'
+                      : 'bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200'
+                    }`}
+                  title="Consultar patologias e guia de conferência visual do Atlas"
                 >
-                  Limpar
+                  <BookOpen className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                  <span>{exibirReferenciaAtlas ? 'Ocultar Referência' : 'Buscar Referências'}</span>
                 </button>
-              )}
-            </div>
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              placeholder="Ex: 0.5"
-              value={fieldAreaCm2 || ''}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value);
-                setFieldAreaCm2(isNaN(val) ? undefined : val);
-                setAlteracoesNaoSalvas(true);
-              }}
-              className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none focus:border-rose-400 transition-colors"
-            />
-            {/* Presets rápidos de lentes tricoscópicas */}
-            <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-              <span className="text-[10px] text-stone-400 font-medium">Lentes:</span>
-              {[
-                { label: '0.25 cm²', val: 0.25 },
-                { label: '0.50 cm²', val: 0.50 },
-                { label: '1.00 cm²', val: 1.00 }
-              ].map(preset => (
-                <button
-                  key={preset.val}
-                  type="button"
-                  onClick={() => setFieldAreaCm2(preset.val)}
-                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-semibold transition-all ${
-                    fieldAreaCm2 === preset.val
-                      ? 'bg-rose-600 text-white shadow-xs'
-                      : 'bg-stone-200/80 hover:bg-stone-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-300'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* SELETOR DE MODO DE COMPARAÇÃO */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-stone-100/80 dark:bg-slate-950/60 p-2.5 rounded-2xl border border-stone-200/90 dark:border-slate-800">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 px-2 uppercase tracking-wider">
-            Modo de Visualização:
-          </span>
-          <button
-            onClick={() => setModoComparacao('bipartido')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-              modoComparacao === 'bipartido'
-                ? 'bg-white dark:bg-slate-800 text-rose-700 dark:text-rose-300 shadow-xs border border-stone-200 dark:border-slate-700'
-                : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Columns className="w-3.5 h-3.5" />
-            <span>Lado a Lado</span>
-          </button>
-          <button
-            onClick={() => setModoComparacao('cortina')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-              modoComparacao === 'cortina'
-                ? 'bg-white dark:bg-slate-800 text-rose-700 dark:text-rose-300 shadow-xs border border-stone-200 dark:border-slate-700'
-                : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Cortina Deslizante</span>
-          </button>
-        </div>
-
-        {/* Filtros Ópticos Complementares */}
-        {imagemUsuarioUrl && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              onClick={() => setMostrarGrade(!mostrarGrade)}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1 transition-colors ${
-                mostrarGrade
-                  ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/70 dark:text-rose-300'
-                  : 'bg-white dark:bg-slate-900 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700'
-              }`}
-              title="Sobrepor Grade Micrométrica de 1mm"
-            >
-              <Grid className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-              <span>Régua 1mm</span>
-            </button>
-
-            <button
-              onClick={() => setFiltroVascular(!filtroVascular)}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1 transition-colors ${
-                filtroVascular
-                  ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/70 dark:text-rose-300'
-                  : 'bg-white dark:bg-slate-900 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700'
-              }`}
-              title="Realçar vasos e eritema"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-              <span>Realce Vascular</span>
-            </button>
-
-            <button
-              onClick={() => setFiltroInversao(!filtroInversao)}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1 transition-colors ${
-                filtroInversao
-                  ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/70 dark:text-rose-300'
-                  : 'bg-white dark:bg-slate-900 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700'
-              }`}
-              title="Inverter cores para realce de linhas brancas e fibrose"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-              <span>Luz Polarizada Neg.</span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ÁREA DE TRABALHO: BANCADA DE MARCAÇÃO + REFERÊNCIA */}
-      {modoComparacao === 'cortina' && imagemUsuarioUrl ? (
-        /* MODO CORTINA DESLIZANTE COM MARCAÇÕES SOBREPOSTAS */
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-stone-200/90 dark:border-slate-800 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold font-mono px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
-                Cortina Interativa
-              </span>
-              <span className="text-xs text-stone-500 dark:text-slate-400">
-                Arraste o divisor para comparar a captura da cliente com a referência do Atlas.
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="text-[11px] font-semibold text-stone-500 dark:text-slate-400">
-                Referência:
-              </label>
-              <select
-                value={casoReferenciaId}
-                onChange={(e) => setCasoReferenciaId(e.target.value)}
-                className="bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none"
-              >
-                {CASOS_ATLAS.map(c => (
-                  <option key={c.id} value={c.id}>{c.nome}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div
-            ref={containerCortinaRef}
-            onMouseDown={handleTouchOuMouseDownCortina}
-            onTouchStart={handleTouchOuMouseDownCortina}
-            className="relative w-full aspect-[16/10] sm:aspect-[16/9] max-h-[550px] rounded-2xl overflow-hidden bg-stone-950 cursor-ew-resize select-none border border-stone-800 shadow-2xl"
-          >
-            {/* Camada do Fundo: Imagem de Referência do Atlas */}
-            <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-              {fotoReferenciaFinal ? (
-                <img
-                  src={fotoReferenciaFinal}
-                  alt={casoReferencia.nome}
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center text-stone-500 text-xs">
-                  <Camera className="w-8 h-8 mb-1 text-stone-600" />
-                  <span>Referência: {casoReferencia.nome}</span>
-                </div>
-              )}
-              <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-xs border border-stone-700 text-stone-200 text-xs font-mono">
-                Atlas: {casoReferencia.nome}
-              </div>
-            </div>
-
-            {/* Camada Superior Recortada: Captura da Cliente com Marcações */}
-            <div
-              className="absolute inset-0 overflow-hidden"
-              style={{ width: `${posicaoCortina}%` }}
-            >
-              <div
-                className="w-full h-full flex items-center justify-center relative"
-                style={{
-                  width: containerCortinaRef.current ? `${containerCortinaRef.current.clientWidth}px` : '100%',
-                  height: containerCortinaRef.current ? `${containerCortinaRef.current.clientHeight}px` : '100%'
-                }}
-              >
-                {imagemUsuarioUrl ? (
-                  <img
-                    src={imagemUsuarioUrl}
-                    alt="Captura da cliente"
-                    className="w-full h-full object-contain"
-                    style={{
-                      filter: `${filtroVascular ? 'contrast(135%) saturate(145%)' : ''} ${filtroInversao ? 'invert(1) hue-rotate(180deg)' : ''}`
-                    }}
-                  />
-                ) : null}
-
-                {/* Marcações manuais sobrepostas */}
-                {visivel && annotations.map(ann => {
-                  const styleConfig = CORES_TIPO[ann.type];
-                  return (
-                    <div
-                      key={ann.id}
-                      className="absolute border-2 pointer-events-none"
-                      style={{
-                        left: `${ann.x * 100}%`,
-                        top: `${ann.y * 100}%`,
-                        width: `${ann.width * 100}%`,
-                        height: `${ann.height * 100}%`,
-                        borderColor: styleConfig.hex,
-                        backgroundColor: `rgba(${
-                          ann.type === 'unitario' ? '37, 99, 235' :
-                          ann.type === 'duplo' ? '6, 182, 212' :
-                          ann.type === 'triplo' ? '22, 163, 74' :
-                          ann.type === 'ostio_vazio' ? '249, 115, 22' :
-                          ann.type === 'inflamacao' ? '192, 38, 211' : '220, 38, 38'
-                        }, 0.25)`
-                      }}
-                    />
-                  );
-                })}
-
-                <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-rose-950/80 backdrop-blur-xs border border-rose-700/60 text-rose-200 text-xs font-mono">
-                  Cliente: {clientName || 'Em Análise'}
-                </div>
-              </div>
-            </div>
-
-            {/* Divisor Central Móvel */}
-            <div
-              className="absolute top-0 bottom-0 w-0.5 bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.8)] z-20 pointer-events-none"
-              style={{ left: `${posicaoCortina}%` }}
-            >
-              <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-rose-600 border-2 border-white flex items-center justify-center text-white shadow-xl">
-                <SlidersHorizontal className="w-4 h-4 rotate-90" />
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* BANCADA DE MARCAÇÃO MANUAL DA CLIENTE EM LARGURA TOTAL */
-        <div className={`bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-stone-200/90 dark:border-slate-800 space-y-3 shadow-xs transition-all ${
-          modoFoco ? 'fixed inset-2 sm:inset-4 z-50 overflow-y-auto shadow-2xl flex flex-col justify-between bg-white dark:bg-slate-950 border-rose-500/40' : ''
-        }`}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-mono font-bold text-rose-700 dark:text-rose-300 uppercase px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950 border border-rose-200 dark:border-rose-800">
-                Captura da Cliente
-              </span>
-              {clientName && (
-                <span className="text-xs font-semibold text-stone-700 dark:text-slate-300 truncate max-w-[200px]">
-                  {clientName}
-                </span>
-              )}
-              {salvoComSucessoRecente ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 flex items-center gap-1 animate-fadeIn">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Salvo
-                </span>
-              ) : alteracoesNaoSalvas ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" /> Alterações pendentes
-                </span>
-              ) : sessionId ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-stone-100 text-stone-600 dark:bg-slate-800 dark:text-slate-300">
-                  Sessão gravada
-                </span>
-              ) : null}
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Botão Modo Foco / Exame Ampliado */}
-              <button
-                type="button"
-                onClick={() => setModoFoco(!modoFoco)}
-                className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-all ${
-                  modoFoco 
-                    ? 'bg-rose-700 text-white border-rose-700 shadow-sm' 
-                    : 'bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-700'
-                }`}
-                title={modoFoco ? 'Sair do Modo Foco (Atalho: F)' : 'Modo Foco / Exame Ampliado (Atalho: F)'}
-              >
-                {modoFoco ? (
+                {imagemUsuarioUrl && (
                   <>
-                    <Minimize2 className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Sair do Foco</span>
-                  </>
-                ) : (
-                  <>
-                    <Maximize2 className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Modo Foco</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (!usuarioTemAtlas) {
-                    mostrarAlerta('alerta', 'O acervo do Atlas Clínico é exclusivo dos Planos Mensal e Anual. O Plano Degustação e o Modo Gratuito possuem acesso bloqueado.');
-                    window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
-                    return;
-                  }
-                  setExibirReferenciaAtlas(true);
-                  setTimeout(() => {
-                    document.getElementById('secao-referencia-atlas')?.scrollIntoView({ behavior: 'smooth' });
-                  }, 100);
-                }}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shadow-xs ${
-                  exibirReferenciaAtlas
-                    ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
-                    : 'bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200'
-                }`}
-                title="Consultar referências do Atlas e Guia de Conferência Visual ao final da página"
-              >
-                <BookOpen className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                <span>{exibirReferenciaAtlas ? 'Referência Ativa' : 'Buscar Referências'}</span>
-              </button>
-
-              {imagemUsuarioUrl && (
-                <>
-                  <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-                  <button
-                    type="button"
-                    onClick={handleSalvarImagemDispositivo}
-                    disabled={salvandoGaleria}
-                    className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-1"
-                    title="Salvar foto na galeria do seu celular, tablet ou computador"
-                  >
-                    <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>Salvar na Galeria</span>
-                  </button>
-
-                  <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-                  <button
-                    type="button"
-                    onClick={() => setModalRetornarCapturaInvalida(true)}
-                    className="text-xs text-amber-700 dark:text-amber-400 font-semibold hover:underline flex items-center gap-1"
-                    title="Caso a imagem não seja válida (fora de foco, borrada ou área incorreta), clique para retornar e capturar novamente"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                    <span>Captura Inválida (Retornar)</span>
-                  </button>
-
-                  <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-                  <button
-                    onClick={() => setModalCameraAoVivo(true)}
-                    className="text-xs text-rose-700 dark:text-rose-400 font-semibold hover:underline flex items-center gap-1"
-                    title="Conectar tricoscópio USB ou Wi-Fi ao vivo"
-                  >
-                    <Video className="w-3.5 h-3.5" />
-                    <span>Câmera ao Vivo</span>
-                  </button>
-                  <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
-                  <label className="cursor-pointer text-xs text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 font-medium hover:underline">
-                    <span>Trocar arquivo</span>
-                    <input
-                      id="input-file-bancada-substituir"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleUpload}
-                    />
-                  </label>
-                </>
-              )}
-            </div>
-          </div>
-
-          {imagemUsuarioUrl ? (
-            <BancadaMarcacao
-              imageUrl={imagemUsuarioUrl}
-              annotations={annotations}
-              onChangeAnnotations={setAnnotationsWithHistory}
-              modoAtivo={modoAtivo}
-              onChangeModoAtivo={setModoAtivo}
-              visivel={visivel}
-              onToggleVisivel={() => setVisivel(!visivel)}
-              zoom={zoom}
-              onChangeZoom={setZoom}
-              onResetZoom={() => setZoom(1)}
-              onUndo={handleUndo}
-              onRedo={handleRedo}
-              canUndo={historyIndex > 0}
-              canRedo={historyIndex < history.length - 1}
-              onClearAll={handleClearAll}
-              onEditAchado={handleAbrirEdicaoAchado}
-              selectedId={selectedAnnotationId}
-              onSelectId={setSelectedAnnotationId}
-              filtroVascular={filtroVascular}
-              filtroInversao={filtroInversao}
-              mostrarGrade={mostrarGrade}
-              onSalvar={handleSalvarSessao}
-              salvando={salvando}
-            />
-          ) : (
-            <div className="aspect-[4/3] rounded-2xl border-2 border-dashed border-stone-200 dark:border-slate-800 bg-stone-50 dark:bg-slate-950/60 flex flex-col items-center justify-center p-6 text-center space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950 border border-rose-200/80 dark:border-rose-800/60 flex items-center justify-center text-rose-600 dark:text-rose-400 shadow-xs">
-                <Camera className="w-7 h-7" />
-              </div>
-              <div>
-                <p className="text-base font-bold text-stone-900 dark:text-slate-100">
-                  Insira a captura do dermatoscópio
-                </p>
-                <p className="text-xs text-stone-500 dark:text-slate-400 max-w-sm mx-auto mt-1 leading-relaxed">
-                  Conecte a câmera do seu tricoscópio ao vivo (cabo USB ou Wi-Fi) ou carregue uma imagem já capturada.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
-                <button
-                  onClick={() => setModalCameraAoVivo(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs transition-all shadow-md active:scale-95"
-                >
-                  <Video className="w-4 h-4 text-rose-200" />
-                  <span>Conectar Câmera / Tricoscópio ao Vivo</span>
-                </button>
-                <label className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-stone-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 border border-stone-200 dark:border-slate-700 font-semibold text-xs transition-colors shadow-xs">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Carregar Arquivo</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleUpload}
-                  />
-                </label>
-                {fotoReferenciaFinal && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setImagemUsuarioUrl(fotoReferenciaFinal);
-                      setAlteracoesNaoSalvas(true);
-                      mostrarAlerta('sucesso', 'Imagem de referência do Atlas carregada na bancada para análise.');
-                    }}
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-800 font-semibold text-xs transition-colors shadow-xs"
-                  >
-                    <BookOpen className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                    <span>Usar Imagem do Atlas ({casoReferencia.nome.split('-')[0].trim()})</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 5. PAINEL DE CONTAGEM + CHECKLIST DE SINAIS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-        {/* CARD DO PAINEL DE CONTAGEM EM TEMPO REAL */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-stone-200/90 dark:border-slate-800 space-y-4 shadow-xs">
-          <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-2.5">
-            <h3 className="text-xs font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
-              <Hash className="w-3.5 h-3.5 text-rose-600" />
-              <span>Painel de Contagem Manual</span>
-            </h3>
-            <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-400">
-              {annotations.length} marcas
-            </span>
-          </div>
-
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between p-2 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" />
-                <span>Unidades unitárias (1 fio):</span>
-              </span>
-              <span className="font-mono font-bold text-sm">{summary.unitarias}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-2 rounded-xl bg-cyan-50/60 dark:bg-cyan-950/30 text-cyan-900 dark:text-cyan-200">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#06B6D4]" />
-                <span>Unidades duplas (2 fios):</span>
-              </span>
-              <span className="font-mono font-bold text-sm">{summary.duplas}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A]" />
-                <span>Unidades triplas (3 fios):</span>
-              </span>
-              <span className="font-mono font-bold text-sm">{summary.triplas}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-2 rounded-xl bg-orange-50/60 dark:bg-orange-950/30 text-orange-900 dark:text-orange-200">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#F97316]" />
-                <span>Óstios vazios:</span>
-              </span>
-              <span className="font-mono font-bold text-sm">{summary.ostiosVazios}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-2 rounded-xl bg-fuchsia-50/60 dark:bg-fuchsia-950/30 text-fuchsia-900 dark:text-fuchsia-200">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#C026D3]" />
-                <span>Focos de inflamação / eritema:</span>
-              </span>
-              <span className="font-mono font-bold text-sm">{summary.inflamacaoCount}</span>
-            </div>
-
-            <div className="pt-2 border-t border-stone-100 dark:border-slate-800 space-y-1.5 text-stone-700 dark:text-slate-300">
-              <div className="flex justify-between py-0.5">
-                <span className="font-semibold">Total de unidades foliculares (UF):</span>
-                <span className="font-mono font-bold">{summary.totalUnidadesFoliculares}</span>
-              </div>
-              <div className="flex justify-between py-0.5">
-                <span className="font-semibold">Total de fios emergentes:</span>
-                <span className="font-mono font-bold text-rose-700 dark:text-rose-400">{summary.totalFios}</span>
-              </div>
-              <div className="flex justify-between py-0.5">
-                <span className="font-semibold">Total de óstios:</span>
-                <span className="font-mono font-bold">{summary.totalOstios}</span>
-              </div>
-              <div className="flex justify-between py-0.5">
-                <span className="font-semibold">Média fios / unidade folicular:</span>
-                <span className="font-mono font-bold">{summary.mediaFiosPorUF}</span>
-              </div>
-              <div className="flex justify-between py-0.5">
-                <span className="font-semibold">% de unidades unitárias:</span>
-                <span className="font-mono font-bold">{summary.pctUnitarias}</span>
-              </div>
-
-              {fieldAreaCm2 && fieldAreaCm2 > 0 && (
-                <>
-                  <div className="flex justify-between py-0.5 text-emerald-700 dark:text-emerald-400">
-                    <span className="font-semibold">Densidade de fios:</span>
-                    <span className="font-mono font-bold">{summary.densidadeFios}</span>
-                  </div>
-                  <div className="flex justify-between py-0.5 text-emerald-700 dark:text-emerald-400">
-                    <span className="font-semibold">Densidade de UF:</span>
-                    <span className="font-mono font-bold">{summary.densidadeUF}</span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Achados e Sinais Inflamatórios Registrados */}
-            <div className="pt-2 border-t border-stone-100 dark:border-slate-800 space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626]" />
-                  <span>Achados & Inflamação:</span>
-                </span>
-                <span className="font-mono font-bold">{achadosMarcados.length}</span>
-              </div>
-
-              {achadosMarcados.length > 0 ? (
-                <div className="max-h-36 overflow-y-auto space-y-1 pt-1">
-                  {achadosMarcados.map((ann, idx) => (
-                    <div
-                      key={ann.id}
-                      onClick={() => handleFocarAchado(ann.id)}
-                      className={`p-1.5 rounded-lg border text-[11px] cursor-pointer flex items-center justify-between transition-colors ${
-                        selectedAnnotationId === ann.id
-                          ? ann.type === 'inflamacao'
-                            ? 'bg-fuchsia-100 dark:bg-fuchsia-950/80 border-fuchsia-400 text-fuchsia-950 dark:text-fuchsia-200 font-bold'
-                            : 'bg-rose-100 dark:bg-rose-950/80 border-rose-400 text-rose-950 dark:text-rose-200 font-bold'
-                          : 'bg-stone-50 dark:bg-slate-950 border-stone-200 dark:border-slate-800 text-stone-700 dark:text-slate-300 hover:bg-stone-100'
-                      }`}
+                    {/* Botão de Retornar caso a captura feita não seja válida */}
+                    <button
+                      type="button"
+                      onClick={() => setModalRetornarCapturaInvalida(true)}
+                      className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700/80 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                      title="Caso a imagem não seja válida (fora de foco, reflexo ou borrada), clique para descartar e refazer"
                     >
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${ann.type === 'inflamacao' ? 'bg-[#C026D3]' : 'bg-[#DC2626]'}`} />
-                        <span className="truncate">
-                          #{idx + 1} {ann.sign_slug || (ann.type === 'inflamacao' ? 'Inflamação perifolicular' : 'Achado')}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-stone-400 font-mono shrink-0 ml-1">
-                        {ann.intensity || 'Mod.'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[11px] text-stone-400 italic">Nenhum achado ou foco de inflamação registrado ainda.</p>
-              )}
-            </div>
-          </div>
-        </div>
+                      <RotateCcw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      <span>Captura Inválida (Retornar)</span>
+                    </button>
 
-        {/* HIPÓTESE CLÍNICA E ANOTAÇÕES */}
-        <div className="lg:col-span-2 space-y-5">
-          {/* ANOTAÇÕES CLÍNICAS E HIPÓTESE */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-stone-200/90 dark:border-slate-800 space-y-3 shadow-xs">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-rose-600" />
-                <span>Hipótese & Anotações da Sessão</span>
-              </h3>
-              <span className="text-[10px] text-stone-400 font-mono">
-                {notes.length}/1000
-              </span>
-            </div>
+                    {/* Botão Salvar Imagem Tricoscópica na Galeria do Dispositivo */}
+                    <button
+                      type="button"
+                      onClick={handleSalvarImagemDispositivo}
+                      disabled={salvandoGaleria}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700/80 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                      title="Salvar a foto tricoscópica na galeria do seu celular, tablet ou computador"
+                    >
+                      <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>{salvandoGaleria ? 'Salvando...' : 'Salvar na Galeria'}</span>
+                    </button>
 
-            <textarea
-              rows={4}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value.slice(0, 1000))}
-              placeholder="Descreva a hipótese tricoscópica, achados tricoscópicos observados, conduta e programação de sessão..."
-              className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-2xl p-3 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:border-rose-400 transition-colors resize-none leading-relaxed"
-            />
-          </div>
+                    <button
+                      onClick={handleExportarImagemMarcada}
+                      className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                      title="Baixar imagem com as marcações desenhadas e dados em alta resolução (PNG)"
+                    >
+                      <Sparkles className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                      <span>Baixar Foto Marcada</span>
+                    </button>
 
-          {/* LIBERAÇÃO PARA O PORTAL DO PACIENTE (ÁREA DO CLIENTE) */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-stone-200/90 dark:border-slate-800 space-y-3 shadow-xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <h3 className="text-xs font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider">
-                  Área do Cliente (Portal do Paciente)
-                </h3>
-              </div>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                liberadoPaciente 
-                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' 
-                  : 'bg-stone-100 text-stone-600 dark:bg-slate-800 dark:text-slate-400'
-              }`}>
-                {liberadoPaciente ? '✓ Liberado no Portal' : '🔒 Privado da Profissional'}
-              </span>
-            </div>
+                    <button
+                      onClick={() => setModalLaudoAberto(true)}
+                      className="px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                    >
+                      <FileText className="w-4 h-4 text-stone-600 dark:text-stone-300" />
+                      <span>Emitir Laudo</span>
+                    </button>
 
-            <label className="flex items-start gap-3 p-3.5 rounded-2xl bg-stone-50 dark:bg-slate-950 border border-stone-200/70 dark:border-slate-800 cursor-pointer hover:border-stone-300 dark:hover:border-slate-700 transition-colors">
-              <input
-                type="checkbox"
-                checked={liberadoPaciente}
-                onChange={(e) => setLiberadoPaciente(e.target.checked)}
-                className="mt-0.5 w-4 h-4 text-emerald-600 rounded-sm border-stone-300 focus:ring-emerald-500 cursor-pointer"
-              />
-              <div className="space-y-0.5">
-                <span className="text-xs font-semibold text-stone-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <span>Liberar esta captura e fotos para a visualização do paciente</span>
-                </span>
-                <p className="text-[11px] text-stone-500 dark:text-slate-400 leading-snug">
-                  Quando ativo, o paciente poderá visualizar a foto e os nomes dos achados tricoscópicos em sua área do cliente. Hipóteses e condutas confidenciais nunca são exibidas ao paciente.
-                </p>
-              </div>
-            </label>
-          </div>
-
-          {/* BARRA DE AÇÃO PRINCIPAL: SALVAR SESSÃO & DIAGNÓSTICO FIRESTORE */}
-          <div className="bg-gradient-to-r from-stone-100/90 via-rose-50/50 to-stone-100/90 dark:from-slate-900 dark:via-rose-950/20 dark:to-slate-900 rounded-3xl p-4 sm:p-5 border border-stone-200/90 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="space-y-1 w-full sm:w-auto">
-              <div className="flex items-center gap-2">
-                <Save className="w-4 h-4 text-rose-600" />
-                <h4 className="text-xs font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider">
-                  Salvar Exame de Tricoscopia
-                </h4>
-                {salvoComSucessoRecente ? (
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Salvo no Prontuário
-                  </span>
-                ) : alteracoesNaoSalvas ? (
-                  <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                    • Alterações pendentes
-                  </span>
-                ) : null}
-              </div>
-              <p className="text-xs text-stone-500 dark:text-slate-400 leading-snug">
-                Salva a contagem detalhada, fotos e marcações no prontuário do paciente (Atalho: <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-slate-800 font-mono text-[10px]">Ctrl+S</kbd>).
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 flex-wrap sm:flex-nowrap">
-              <button
-                type="button"
-                onClick={handleSalvarSessao}
-                disabled={salvando || (!imagemUsuarioUrl && !fotoReferenciaFinal)}
-                className={`px-6 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 flex-1 sm:flex-none shadow-md transition-all active:scale-[0.98] ${
-                  salvoComSucessoRecente
-                    ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-emerald-700/20'
-                    : alteracoesNaoSalvas
-                    ? 'bg-rose-700 hover:bg-rose-800 text-white shadow-rose-700/25 ring-2 ring-rose-400 animate-pulse'
-                    : 'bg-rose-700 hover:bg-rose-800 text-white shadow-rose-700/20'
-                } disabled:opacity-50 disabled:pointer-events-none`}
-              >
-                {salvando ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Salvando...</span>
-                  </>
-                ) : salvoComSucessoRecente ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Sessão Salva!</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    <span>Salvar Sessão</span>
+                    <button
+                      onClick={handleLimparBancada}
+                      className="p-2 rounded-xl text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors"
+                      title="Limpar bancada"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </>
                 )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* SEÇÃO AO FINAL DA PÁGINA: REFERÊNCIA DO ATLAS & GUIA DE CONFERÊNCIA VISUAL */}
-      <div id="secao-referencia-atlas" className="pt-2 pb-16">
-        {!usuarioTemAtlas ? (
-          <div className="bg-gradient-to-r from-stone-50 via-rose-50/20 to-stone-50 dark:from-slate-900 dark:via-rose-950/20 dark:to-slate-900 rounded-3xl p-5 sm:p-6 border border-amber-500/30 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20 shadow-xs">
-                <Lock className="w-6 h-6" />
               </div>
+            </div>
+
+            {/* Ficha de Identificação da Cliente */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-3 border-t border-stone-200/80 dark:border-slate-800">
               <div>
-                <h4 className="text-sm font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                  <span>Referência do Atlas Clínico HD</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300 font-bold">
-                    Exclusivo Planos Pagos
-                  </span>
-                </h4>
-                <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
-                  O acervo de patologias tricoscópicas HD e critérios diagnósticos do Atlas é exclusivo dos Planos Mensal e Anual. O Plano Degustação e o Modo Gratuito possuem acesso bloqueado.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
-              }}
-              className="px-5 py-2.5 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-teal-700/20 transition-all hover:scale-[1.01] shrink-0 cursor-pointer"
-            >
-              <Crown className="w-4 h-4 text-amber-400" />
-              <span>Desbloquear no Plano Anual ou Mensal</span>
-            </button>
-          </div>
-        ) : !exibirReferenciaAtlas ? (
-          /* CARD DE BUSCAR REFERÊNCIAS (QUANDO NÃO SELECIONADA, NÃO APARECE O CONTEÚDO) */
-          <div className="bg-gradient-to-r from-stone-50 via-rose-50/20 to-stone-50 dark:from-slate-900 dark:via-rose-950/20 dark:to-slate-900 rounded-3xl p-5 sm:p-6 border border-stone-200/90 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-700 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/20 shadow-xs">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                  <span>Referência do Atlas & Guia de Conferência Visual</span>
-                </h4>
-                <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
-                  Deseja consultar casos clínicos do Atlas com fotos em alta resolução e conferir os critérios diagnósticos?
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setExibirReferenciaAtlas(true);
-                setTimeout(() => {
-                  document.getElementById('secao-referencia-atlas')?.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
-              }}
-              className="px-5 py-2.5 rounded-2xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-rose-700/20 transition-all hover:scale-[1.01] shrink-0"
-            >
-              <Search className="w-4 h-4" />
-              <span>Buscar Referências</span>
-            </button>
-          </div>
-        ) : (
-          /* SELETOR COM INFORMAÇÕES DO ATLAS + GUIA DE CONFERÊNCIA VISUAL */
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-rose-200/80 dark:border-rose-950/60 shadow-md space-y-5 animate-fadeIn">
-            {/* Topo: Título, Filtro/Busca e Botão Fechar/Ocultar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 dark:border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-                  <BookOpen className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
-                    <span>Referência do Atlas & Guia de Conferência Visual</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
-                      {casoReferencia.categoria}
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <User className="w-3 h-3 text-rose-600" />
+                    <span>Cliente / Ficha</span>
+                  </label>
+                  {pacienteId && (
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
+                      <Check className="w-3 h-3" /> Vinculado
                     </span>
-                  </h3>
-                  <p className="text-xs text-stone-500 dark:text-slate-400">
-                    Estudo comparativo e critérios diagnósticos da patologia selecionada.
-                  </p>
+                  )}
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => onSelecionarCaso(casoReferencia.id)}
-                  className="px-3 py-1.5 rounded-xl border border-stone-200 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-800 text-stone-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                  title="Abrir ficha completa desta patologia no Atlas"
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-rose-600" />
-                  <span>Ficha Completa no Atlas</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setExibirReferenciaAtlas(false)}
-                  className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-600 dark:text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                  title="Ocultar Referência do Atlas"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  <span>Ocultar Referência</span>
-                </button>
-              </div>
-            </div>
-
-            {/* BARRA DO SELETOR: Busca rápida + Dropdown de seleção */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-stone-50/70 dark:bg-slate-950/60 border border-stone-200/80 dark:border-slate-800">
-              {/* Campo de Busca Rápida de Patologia */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  value={termoBuscaReferencia}
-                  onChange={(e) => setTermoBuscaReferencia(e.target.value)}
-                  placeholder="Filtrar patologia por nome ou achado..."
-                  className="w-full bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:border-rose-400"
+                  list="lista-pacientes-cadastrados"
+                  placeholder="Nome ou código da ficha"
+                  value={clientName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setClientName(val);
+                    setAlteracoesNaoSalvas(true);
+                    const pac = pacientesCadastrados.find(p => p.nome.toLowerCase().trim() === val.toLowerCase().trim());
+                    setPacienteId(pac ? pac.id : null);
+                  }}
+                  className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none focus:border-rose-400 transition-colors"
+                />
+                <datalist id="lista-pacientes-cadastrados">
+                  {pacientesCadastrados.map(p => (
+                    <option key={p.id} value={p.nome} />
+                  ))}
+                </datalist>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
+                  <Calendar className="w-3 h-3 text-rose-600" />
+                  <span>Data da Sessão</span>
+                </label>
+                <input
+                  type="date"
+                  value={sessionDate}
+                  onChange={(e) => {
+                    setSessionDate(e.target.value);
+                    setAlteracoesNaoSalvas(true);
+                  }}
+                  className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none focus:border-rose-400 transition-colors"
                 />
               </div>
 
-              {/* Seletor Dropdown */}
               <div>
+                <label className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
+                  <MapPin className="w-3 h-3 text-rose-600" />
+                  <span>Área Avaliada</span>
+                </label>
                 <select
-                  value={casoReferenciaId}
-                  onChange={(e) => setCasoReferenciaId(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none focus:border-rose-400"
+                  value={areaCouro}
+                  onChange={(e) => {
+                    setAreaCouro(e.target.value);
+                    setAlteracoesNaoSalvas(true);
+                  }}
+                  className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none focus:border-rose-400 transition-colors"
                 >
-                  {casosReferenciaFiltrados.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.numeroOrdem ? `#${c.numeroOrdem.toString().padStart(2, '0')} - ` : ''}{c.nome} ({c.categoria})
-                    </option>
+                  {REGIOES_COURO_CABELUDO.map((r, i) => (
+                    <option key={i} value={r}>{r}</option>
                   ))}
                 </select>
               </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <Scale className="w-3 h-3 text-rose-600" />
+                    <span>Área do Campo (cm²)</span>
+                  </label>
+                  {fieldAreaCm2 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFieldAreaCm2(undefined);
+                        setAlteracoesNaoSalvas(true);
+                      }}
+                      className="text-[10px] text-rose-600 dark:text-rose-400 hover:underline"
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="Ex: 0.5"
+                  value={fieldAreaCm2 || ''}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setFieldAreaCm2(isNaN(val) ? undefined : val);
+                    setAlteracoesNaoSalvas(true);
+                  }}
+                  className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none focus:border-rose-400 transition-colors"
+                />
+                {/* Presets rápidos de lentes tricoscópicas */}
+                <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                  <span className="text-[10px] text-stone-400 font-medium">Lentes:</span>
+                  {[
+                    { label: '0.25 cm²', val: 0.25 },
+                    { label: '0.50 cm²', val: 0.50 },
+                    { label: '1.00 cm²', val: 1.00 }
+                  ].map(preset => (
+                    <button
+                      key={preset.val}
+                      type="button"
+                      onClick={() => setFieldAreaCm2(preset.val)}
+                      className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-semibold transition-all ${fieldAreaCm2 === preset.val
+                          ? 'bg-rose-600 text-white shadow-xs'
+                          : 'bg-stone-200/80 hover:bg-stone-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-300'
+                        }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SELETOR DE MODO DE COMPARAÇÃO */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-stone-100/80 dark:bg-slate-950/60 p-2.5 rounded-2xl border border-stone-200/90 dark:border-slate-800">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 px-2 uppercase tracking-wider">
+                Modo de Visualização:
+              </span>
+              <button
+                onClick={() => setModoComparacao('bipartido')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors ${modoComparacao === 'bipartido'
+                    ? 'bg-white dark:bg-slate-800 text-rose-700 dark:text-rose-300 shadow-xs border border-stone-200 dark:border-slate-700'
+                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
+                  }`}
+              >
+                <Columns className="w-3.5 h-3.5" />
+                <span>Lado a Lado</span>
+              </button>
+              <button
+                onClick={() => setModoComparacao('cortina')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors ${modoComparacao === 'cortina'
+                    ? 'bg-white dark:bg-slate-800 text-rose-700 dark:text-rose-300 shadow-xs border border-stone-200 dark:border-slate-700'
+                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
+                  }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Cortina Deslizante</span>
+              </button>
             </div>
 
-            {/* CONTEÚDO PRINCIPAL: INFORMAÇÕES DO ATLAS + GUIA DE CONFERÊNCIA VISUAL */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-              
-              {/* LADO ESQUERDO: INFORMAÇÕES DO ATLAS & FOTO HD */}
-              <div className="space-y-3 bg-stone-50/50 dark:bg-slate-950/40 p-4 rounded-2xl border border-stone-200/70 dark:border-slate-800">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-stone-800 dark:text-slate-200 uppercase tracking-wider">
-                    {casoReferencia.nome}
+            {/* Filtros Ópticos Complementares */}
+            {imagemUsuarioUrl && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  onClick={() => setMostrarGrade(!mostrarGrade)}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1 transition-colors ${mostrarGrade
+                      ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/70 dark:text-rose-300'
+                      : 'bg-white dark:bg-slate-900 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700'
+                    }`}
+                  title="Sobrepor Grade Micrométrica de 1mm"
+                >
+                  <Grid className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                  <span>Régua 1mm</span>
+                </button>
+
+                <button
+                  onClick={() => setFiltroVascular(!filtroVascular)}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1 transition-colors ${filtroVascular
+                      ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/70 dark:text-rose-300'
+                      : 'bg-white dark:bg-slate-900 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700'
+                    }`}
+                  title="Realçar vasos e eritema"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                  <span>Realce Vascular</span>
+                </button>
+
+                <button
+                  onClick={() => setFiltroInversao(!filtroInversao)}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1 transition-colors ${filtroInversao
+                      ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/70 dark:text-rose-300'
+                      : 'bg-white dark:bg-slate-900 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700'
+                    }`}
+                  title="Inverter cores para realce de linhas brancas e fibrose"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                  <span>Luz Polarizada Neg.</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ÁREA DE TRABALHO: BANCADA DE MARCAÇÃO + REFERÊNCIA */}
+          {modoComparacao === 'cortina' && imagemUsuarioUrl ? (
+            /* MODO CORTINA DESLIZANTE COM MARCAÇÕES SOBREPOSTAS */
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-stone-200/90 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold font-mono px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                    Cortina Interativa
                   </span>
-                  <span className="text-[11px] font-mono text-stone-500">
-                    {refTotal > 1 ? `Foto ${refIndice + 1} de ${refTotal}` : (casoReferencia.imagem.aumento || '50x')}
+                  <span className="text-xs text-stone-500 dark:text-slate-400">
+                    Arraste o divisor para comparar a captura da cliente com a referência do Atlas.
                   </span>
                 </div>
 
-                {/* Imagem de Referência do Atlas */}
-                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-black border border-stone-200 dark:border-slate-800 shadow-inner flex items-center justify-center group">
+                <div className="flex items-center gap-2">
+                  <label className="text-[11px] font-semibold text-stone-500 dark:text-slate-400">
+                    Referência:
+                  </label>
+                  <select
+                    value={casoReferenciaId}
+                    onChange={(e) => setCasoReferenciaId(e.target.value)}
+                    className="bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none"
+                  >
+                    {CASOS_ATLAS.map(c => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div
+                ref={containerCortinaRef}
+                onMouseDown={handleTouchOuMouseDownCortina}
+                onTouchStart={handleTouchOuMouseDownCortina}
+                className="relative w-full aspect-[16/10] sm:aspect-[16/9] max-h-[550px] rounded-2xl overflow-hidden bg-stone-950 cursor-ew-resize select-none border border-stone-800 shadow-2xl"
+              >
+                {/* Camada do Fundo: Imagem de Referência do Atlas */}
+                <div className="absolute inset-0 w-full h-full flex items-center justify-center">
                   {fotoReferenciaFinal ? (
                     <img
                       src={fotoReferenciaFinal}
@@ -2728,126 +2016,811 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                       className="w-full h-full object-contain"
                     />
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 text-center text-stone-400 space-y-2">
-                      <Camera className="w-8 h-8 text-stone-600" />
-                      <p className="text-xs font-semibold">{casoReferencia.nome}</p>
-                      <p className="text-[11px] text-stone-500">Foto de referência do Atlas</p>
+                    <div className="flex flex-col items-center justify-center text-stone-500 text-xs">
+                      <Camera className="w-8 h-8 mb-1 text-stone-600" />
+                      <span>Referência: {casoReferencia.nome}</span>
                     </div>
                   )}
-
-                  {/* Controles de navegação se houver mais de uma foto na referência */}
-                  {refTotal > 1 && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setRefIndice(refIndice > 0 ? refIndice - 1 : refTotal - 1)}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/75 hover:bg-black/90 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md text-sm"
-                        title="Foto anterior"
-                      >
-                        ‹
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setRefIndice(refIndice < refTotal - 1 ? refIndice + 1 : 0)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/75 hover:bg-black/90 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md text-sm"
-                        title="Próxima foto"
-                      >
-                        ›
-                      </button>
-                    </>
-                  )}
-
-                  <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] font-mono text-stone-300 bg-black/75 backdrop-blur-xs px-2.5 py-1 rounded-lg">
-                    <span className="truncate max-w-[200px]">{casoReferencia.nome}</span>
-                    <span>{casoReferencia.imagem.aumento || '50x'}</span>
+                  <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-xs border border-stone-700 text-stone-200 text-xs font-mono">
+                    Atlas: {casoReferencia.nome}
                   </div>
                 </div>
 
-                {/* Resumo Clínico */}
-                <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-stone-200/80 dark:border-slate-800 text-xs space-y-1.5">
-                  <span className="text-[10px] uppercase font-bold text-stone-500 tracking-wider block">
-                    Resumo Clínico & Características:
+                {/* Camada Superior Recortada: Captura da Cliente com Marcações */}
+                <div
+                  className="absolute inset-0 overflow-hidden"
+                  style={{ width: `${posicaoCortina}%` }}
+                >
+                  <div
+                    className="w-full h-full flex items-center justify-center relative"
+                    style={{
+                      width: containerCortinaRef.current ? `${containerCortinaRef.current.clientWidth}px` : '100%',
+                      height: containerCortinaRef.current ? `${containerCortinaRef.current.clientHeight}px` : '100%'
+                    }}
+                  >
+                    {imagemUsuarioUrl ? (
+                      <img
+                        src={imagemUsuarioUrl}
+                        alt="Captura da cliente"
+                        className="w-full h-full object-contain"
+                        style={{
+                          filter: `${filtroVascular ? 'contrast(135%) saturate(145%)' : ''} ${filtroInversao ? 'invert(1) hue-rotate(180deg)' : ''}`
+                        }}
+                      />
+                    ) : null}
+
+                    {/* Marcações manuais sobrepostas */}
+                    {visivel && annotations.map(ann => {
+                      const styleConfig = CORES_TIPO[ann.type];
+                      return (
+                        <div
+                          key={ann.id}
+                          className="absolute border-2 pointer-events-none"
+                          style={{
+                            left: `${ann.x * 100}%`,
+                            top: `${ann.y * 100}%`,
+                            width: `${ann.width * 100}%`,
+                            height: `${ann.height * 100}%`,
+                            borderColor: styleConfig.hex,
+                            backgroundColor: `rgba(${ann.type === 'unitario' ? '37, 99, 235' :
+                                ann.type === 'duplo' ? '6, 182, 212' :
+                                  ann.type === 'triplo' ? '22, 163, 74' :
+                                    ann.type === 'ostio_vazio' ? '249, 115, 22' :
+                                      ann.type === 'inflamacao' ? '192, 38, 211' : '220, 38, 38'
+                              }, 0.25)`
+                          }}
+                        />
+                      );
+                    })}
+
+                    <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-rose-950/80 backdrop-blur-xs border border-rose-700/60 text-rose-200 text-xs font-mono">
+                      Cliente: {clientName || 'Em Análise'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divisor Central Móvel */}
+                <div
+                  className="absolute top-0 bottom-0 w-0.5 bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.8)] z-20 pointer-events-none"
+                  style={{ left: `${posicaoCortina}%` }}
+                >
+                  <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-rose-600 border-2 border-white flex items-center justify-center text-white shadow-xl">
+                    <SlidersHorizontal className="w-4 h-4 rotate-90" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* BANCADA DE MARCAÇÃO MANUAL DA CLIENTE EM LARGURA TOTAL */
+            <div className={`bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-stone-200/90 dark:border-slate-800 space-y-3 shadow-xs transition-all ${modoFoco ? 'fixed inset-2 sm:inset-4 z-50 overflow-y-auto shadow-2xl flex flex-col justify-between bg-white dark:bg-slate-950 border-rose-500/40' : ''
+              }`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-mono font-bold text-rose-700 dark:text-rose-300 uppercase px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950 border border-rose-200 dark:border-rose-800">
+                    Captura da Cliente
                   </span>
-                  <p className={`text-stone-600 dark:text-slate-300 leading-relaxed ${expandirDescricao ? '' : 'line-clamp-4'}`}>
-                    {casoReferencia.resumoOriginal || casoReferencia.significadoClinico}
-                  </p>
+                  {clientName && (
+                    <span className="text-xs font-semibold text-stone-700 dark:text-slate-300 truncate max-w-[200px]">
+                      {clientName}
+                    </span>
+                  )}
+                  {salvoComSucessoRecente ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 flex items-center gap-1 animate-fadeIn">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Salvo
+                    </span>
+                  ) : alteracoesNaoSalvas ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" /> Alterações pendentes
+                    </span>
+                  ) : sessionId ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-stone-100 text-stone-600 dark:bg-slate-800 dark:text-slate-300">
+                      Sessão gravada
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Botão Modo Foco / Exame Ampliado */}
                   <button
                     type="button"
-                    onClick={() => setExpandirDescricao(!expandirDescricao)}
-                    className="text-[11px] text-rose-700 dark:text-rose-400 font-semibold hover:underline"
+                    onClick={() => setModoFoco(!modoFoco)}
+                    className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-all ${modoFoco
+                        ? 'bg-rose-700 text-white border-rose-700 shadow-sm'
+                        : 'bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-700'
+                      }`}
+                    title={modoFoco ? 'Sair do Modo Foco (Atalho: F)' : 'Modo Foco / Exame Ampliado (Atalho: F)'}
                   >
-                    {expandirDescricao ? 'Ver menos' : 'Ver mais detalhes'}
+                    {modoFoco ? (
+                      <>
+                        <Minimize2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Sair do Foco</span>
+                      </>
+                    ) : (
+                      <>
+                        <Maximize2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Modo Foco</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!usuarioTemAtlas) {
+                        mostrarAlerta('alerta', 'O acervo do Atlas Clínico é exclusivo dos Planos Mensal e Anual. O Plano Degustação e o Modo Gratuito possuem acesso bloqueado.');
+                        window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+                        return;
+                      }
+                      setExibirReferenciaAtlas(true);
+                      setTimeout(() => {
+                        document.getElementById('secao-referencia-atlas')?.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
+                    }}
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shadow-xs ${exibirReferenciaAtlas
+                        ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                        : 'bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200'
+                      }`}
+                    title="Consultar referências do Atlas e Guia de Conferência Visual ao final da página"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                    <span>{exibirReferenciaAtlas ? 'Referência Ativa' : 'Buscar Referências'}</span>
+                  </button>
+
+                  {imagemUsuarioUrl && (
+                    <>
+                      <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
+                      <button
+                        type="button"
+                        onClick={handleSalvarImagemDispositivo}
+                        disabled={salvandoGaleria}
+                        className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-1"
+                        title="Salvar foto na galeria do seu celular, tablet ou computador"
+                      >
+                        <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>Salvar na Galeria</span>
+                      </button>
+
+                      <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
+                      <button
+                        type="button"
+                        onClick={() => setModalRetornarCapturaInvalida(true)}
+                        className="text-xs text-amber-700 dark:text-amber-400 font-semibold hover:underline flex items-center gap-1"
+                        title="Caso a imagem não seja válida (fora de foco, borrada ou área incorreta), clique para retornar e capturar novamente"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                        <span>Captura Inválida (Retornar)</span>
+                      </button>
+
+                      <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
+                      <button
+                        onClick={() => setModalCameraAoVivo(true)}
+                        className="text-xs text-rose-700 dark:text-rose-400 font-semibold hover:underline flex items-center gap-1"
+                        title="Conectar tricoscópio USB ou Wi-Fi ao vivo"
+                      >
+                        <Video className="w-3.5 h-3.5" />
+                        <span>Câmera ao Vivo</span>
+                      </button>
+                      <span className="text-stone-300 dark:text-stone-700 hidden sm:inline">•</span>
+                      <label className="cursor-pointer text-xs text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 font-medium hover:underline">
+                        <span>Trocar arquivo</span>
+                        <input
+                          id="input-file-bancada-substituir"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleUpload}
+                        />
+                      </label>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {imagemUsuarioUrl ? (
+                <BancadaMarcacao
+                  imageUrl={imagemUsuarioUrl}
+                  annotations={annotations}
+                  onChangeAnnotations={setAnnotationsWithHistory}
+                  modoAtivo={modoAtivo}
+                  onChangeModoAtivo={setModoAtivo}
+                  visivel={visivel}
+                  onToggleVisivel={() => setVisivel(!visivel)}
+                  zoom={zoom}
+                  onChangeZoom={setZoom}
+                  onResetZoom={() => setZoom(1)}
+                  onUndo={handleUndo}
+                  onRedo={handleRedo}
+                  canUndo={historyIndex > 0}
+                  canRedo={historyIndex < history.length - 1}
+                  onClearAll={handleClearAll}
+                  onEditAchado={handleAbrirEdicaoAchado}
+                  selectedId={selectedAnnotationId}
+                  onSelectId={setSelectedAnnotationId}
+                  filtroVascular={filtroVascular}
+                  filtroInversao={filtroInversao}
+                  mostrarGrade={mostrarGrade}
+                  onSalvar={handleSalvarSessao}
+                  salvando={salvando}
+                />
+              ) : (
+                <div className="aspect-[4/3] rounded-2xl border-2 border-dashed border-stone-200 dark:border-slate-800 bg-stone-50 dark:bg-slate-950/60 flex flex-col items-center justify-center p-6 text-center space-y-4">
+                  <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950 border border-rose-200/80 dark:border-rose-800/60 flex items-center justify-center text-rose-600 dark:text-rose-400 shadow-xs">
+                    <Camera className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-stone-900 dark:text-slate-100">
+                      Insira a captura do dermatoscópio
+                    </p>
+                    <p className="text-xs text-stone-500 dark:text-slate-400 max-w-sm mx-auto mt-1 leading-relaxed">
+                      Conecte a câmera do seu tricoscópio ao vivo (cabo USB ou Wi-Fi) ou carregue uma imagem já capturada.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+                    <button
+                      onClick={() => setModalCameraAoVivo(true)}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs transition-all shadow-md active:scale-95"
+                    >
+                      <Video className="w-4 h-4 text-rose-200" />
+                      <span>Conectar Câmera / Tricoscópio ao Vivo</span>
+                    </button>
+                    <label className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-stone-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 border border-stone-200 dark:border-slate-700 font-semibold text-xs transition-colors shadow-xs">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Carregar Arquivo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleUpload}
+                      />
+                    </label>
+                    {fotoReferenciaFinal && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImagemUsuarioUrl(fotoReferenciaFinal);
+                          setAlteracoesNaoSalvas(true);
+                          mostrarAlerta('sucesso', 'Imagem de referência do Atlas carregada na bancada para análise.');
+                        }}
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-800 font-semibold text-xs transition-colors shadow-xs"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                        <span>Usar Imagem do Atlas ({casoReferencia.nome.split('-')[0].trim()})</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 5. PAINEL DE CONTAGEM + CHECKLIST DE SINAIS */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+            {/* CARD DO PAINEL DE CONTAGEM EM TEMPO REAL */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-stone-200/90 dark:border-slate-800 space-y-4 shadow-xs">
+              <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-2.5">
+                <h3 className="text-xs font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
+                  <Hash className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Painel de Contagem Manual</span>
+                </h3>
+                <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-400">
+                  {annotations.length} marcas
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between p-2 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" />
+                    <span>Unidades unitárias (1 fio):</span>
+                  </span>
+                  <span className="font-mono font-bold text-sm">{summary.unitarias}</span>
+                </div>
+
+                <div className="flex items-center justify-between p-2 rounded-xl bg-cyan-50/60 dark:bg-cyan-950/30 text-cyan-900 dark:text-cyan-200">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#06B6D4]" />
+                    <span>Unidades duplas (2 fios):</span>
+                  </span>
+                  <span className="font-mono font-bold text-sm">{summary.duplas}</span>
+                </div>
+
+                <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A]" />
+                    <span>Unidades triplas (3 fios):</span>
+                  </span>
+                  <span className="font-mono font-bold text-sm">{summary.triplas}</span>
+                </div>
+
+                <div className="flex items-center justify-between p-2 rounded-xl bg-orange-50/60 dark:bg-orange-950/30 text-orange-900 dark:text-orange-200">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#F97316]" />
+                    <span>Óstios vazios:</span>
+                  </span>
+                  <span className="font-mono font-bold text-sm">{summary.ostiosVazios}</span>
+                </div>
+
+                <div className="flex items-center justify-between p-2 rounded-xl bg-fuchsia-50/60 dark:bg-fuchsia-950/30 text-fuchsia-900 dark:text-fuchsia-200">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#C026D3]" />
+                    <span>Focos de inflamação / eritema:</span>
+                  </span>
+                  <span className="font-mono font-bold text-sm">{summary.inflamacaoCount}</span>
+                </div>
+
+                <div className="pt-2 border-t border-stone-100 dark:border-slate-800 space-y-1.5 text-stone-700 dark:text-slate-300">
+                  <div className="flex justify-between py-0.5">
+                    <span className="font-semibold">Total de unidades foliculares (UF):</span>
+                    <span className="font-mono font-bold">{summary.totalUnidadesFoliculares}</span>
+                  </div>
+                  <div className="flex justify-between py-0.5">
+                    <span className="font-semibold">Total de fios emergentes:</span>
+                    <span className="font-mono font-bold text-rose-700 dark:text-rose-400">{summary.totalFios}</span>
+                  </div>
+                  <div className="flex justify-between py-0.5">
+                    <span className="font-semibold">Total de óstios:</span>
+                    <span className="font-mono font-bold">{summary.totalOstios}</span>
+                  </div>
+                  <div className="flex justify-between py-0.5">
+                    <span className="font-semibold">Média fios / unidade folicular:</span>
+                    <span className="font-mono font-bold">{summary.mediaFiosPorUF}</span>
+                  </div>
+                  <div className="flex justify-between py-0.5">
+                    <span className="font-semibold">% de unidades unitárias:</span>
+                    <span className="font-mono font-bold">{summary.pctUnitarias}</span>
+                  </div>
+
+                  {fieldAreaCm2 && fieldAreaCm2 > 0 && (
+                    <>
+                      <div className="flex justify-between py-0.5 text-emerald-700 dark:text-emerald-400">
+                        <span className="font-semibold">Densidade de fios:</span>
+                        <span className="font-mono font-bold">{summary.densidadeFios}</span>
+                      </div>
+                      <div className="flex justify-between py-0.5 text-emerald-700 dark:text-emerald-400">
+                        <span className="font-semibold">Densidade de UF:</span>
+                        <span className="font-mono font-bold">{summary.densidadeUF}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Achados e Sinais Inflamatórios Registrados */}
+                <div className="pt-2 border-t border-stone-100 dark:border-slate-800 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626]" />
+                      <span>Achados & Inflamação:</span>
+                    </span>
+                    <span className="font-mono font-bold">{achadosMarcados.length}</span>
+                  </div>
+
+                  {achadosMarcados.length > 0 ? (
+                    <div className="max-h-36 overflow-y-auto space-y-1 pt-1">
+                      {achadosMarcados.map((ann, idx) => (
+                        <div
+                          key={ann.id}
+                          onClick={() => handleFocarAchado(ann.id)}
+                          className={`p-1.5 rounded-lg border text-[11px] cursor-pointer flex items-center justify-between transition-colors ${selectedAnnotationId === ann.id
+                              ? ann.type === 'inflamacao'
+                                ? 'bg-fuchsia-100 dark:bg-fuchsia-950/80 border-fuchsia-400 text-fuchsia-950 dark:text-fuchsia-200 font-bold'
+                                : 'bg-rose-100 dark:bg-rose-950/80 border-rose-400 text-rose-950 dark:text-rose-200 font-bold'
+                              : 'bg-stone-50 dark:bg-slate-950 border-stone-200 dark:border-slate-800 text-stone-700 dark:text-slate-300 hover:bg-stone-100'
+                            }`}
+                        >
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${ann.type === 'inflamacao' ? 'bg-[#C026D3]' : 'bg-[#DC2626]'}`} />
+                            <span className="truncate">
+                              #{idx + 1} {ann.sign_slug || (ann.type === 'inflamacao' ? 'Inflamação perifolicular' : 'Achado')}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-stone-400 font-mono shrink-0 ml-1">
+                            {ann.intensity || 'Mod.'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-stone-400 italic">Nenhum achado ou foco de inflamação registrado ainda.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* HIPÓTESE CLÍNICA E ANOTAÇÕES */}
+            <div className="lg:col-span-2 space-y-5">
+              {/* ANOTAÇÕES CLÍNICAS E HIPÓTESE */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-stone-200/90 dark:border-slate-800 space-y-3 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Hipótese & Anotações da Sessão</span>
+                  </h3>
+                  <span className="text-[10px] text-stone-400 font-mono">
+                    {notes.length}/1000
+                  </span>
+                </div>
+
+                <textarea
+                  rows={4}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value.slice(0, 1000))}
+                  placeholder="Descreva a hipótese tricoscópica, achados tricoscópicos observados, conduta e programação de sessão..."
+                  className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-2xl p-3 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:border-rose-400 transition-colors resize-none leading-relaxed"
+                />
+              </div>
+
+              {/* LIBERAÇÃO PARA O PORTAL DO PACIENTE (ÁREA DO CLIENTE) */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-stone-200/90 dark:border-slate-800 space-y-3 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <h3 className="text-xs font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider">
+                      Área do Cliente (Portal do Paciente)
+                    </h3>
+                  </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${liberadoPaciente
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                      : 'bg-stone-100 text-stone-600 dark:bg-slate-800 dark:text-slate-400'
+                    }`}>
+                    {liberadoPaciente ? '✓ Liberado no Portal' : '🔒 Privado da Profissional'}
+                  </span>
+                </div>
+
+                <label className="flex items-start gap-3 p-3.5 rounded-2xl bg-stone-50 dark:bg-slate-950 border border-stone-200/70 dark:border-slate-800 cursor-pointer hover:border-stone-300 dark:hover:border-slate-700 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={liberadoPaciente}
+                    onChange={(e) => setLiberadoPaciente(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 text-emerald-600 rounded-sm border-stone-300 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-semibold text-stone-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <span>Liberar esta captura e fotos para a visualização do paciente</span>
+                    </span>
+                    <p className="text-[11px] text-stone-500 dark:text-slate-400 leading-snug">
+                      Quando ativo, o paciente poderá visualizar a foto e os nomes dos achados tricoscópicos em sua área do cliente. Hipóteses e condutas confidenciais nunca são exibidas ao paciente.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* BARRA DE AÇÃO PRINCIPAL: SALVAR SESSÃO & DIAGNÓSTICO FIRESTORE */}
+              <div className="bg-gradient-to-r from-stone-100/90 via-rose-50/50 to-stone-100/90 dark:from-slate-900 dark:via-rose-950/20 dark:to-slate-900 rounded-3xl p-4 sm:p-5 border border-stone-200/90 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="space-y-1 w-full sm:w-auto">
+                  <div className="flex items-center gap-2">
+                    <Save className="w-4 h-4 text-rose-600" />
+                    <h4 className="text-xs font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider">
+                      Salvar Exame de Tricoscopia
+                    </h4>
+                    {salvoComSucessoRecente ? (
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Salvo no Prontuário
+                      </span>
+                    ) : alteracoesNaoSalvas ? (
+                      <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                        • Alterações pendentes
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-stone-500 dark:text-slate-400 leading-snug">
+                    Salva a contagem detalhada, fotos e marcações no prontuário do paciente (Atalho: <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-slate-800 font-mono text-[10px]">Ctrl+S</kbd>).
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 flex-wrap sm:flex-nowrap">
+                  <button
+                    type="button"
+                    onClick={handleSalvarSessao}
+                    disabled={salvando || (!imagemUsuarioUrl && !fotoReferenciaFinal)}
+                    className={`px-6 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 flex-1 sm:flex-none shadow-md transition-all active:scale-[0.98] ${salvoComSucessoRecente
+                        ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-emerald-700/20'
+                        : alteracoesNaoSalvas
+                          ? 'bg-rose-700 hover:bg-rose-800 text-white shadow-rose-700/25 ring-2 ring-rose-400 animate-pulse'
+                          : 'bg-rose-700 hover:bg-rose-800 text-white shadow-rose-700/20'
+                      } disabled:opacity-50 disabled:pointer-events-none`}
+                  >
+                    {salvando ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Salvando...</span>
+                      </>
+                    ) : salvoComSucessoRecente ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Sessão Salva!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>Salvar Sessão</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
-
-              {/* LADO DIREITO: GUIA DE CONFERÊNCIA VISUAL */}
-              <div className="space-y-3.5 bg-stone-50/50 dark:bg-slate-950/40 p-4 rounded-2xl border border-stone-200/70 dark:border-slate-800">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200/60 dark:border-slate-800 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-                    <h3 className="text-xs font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider">
-                      Guia de Conferência Visual ({casoReferencia.nome})
-                    </h3>
-                  </div>
-
-                  <div className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-700 text-stone-700 dark:text-slate-300 font-mono">
-                    Sinais conferidos: {totalConferidos} de {totalAchadosReferencia}
-                  </div>
-                </div>
-
-                <p className="text-xs text-stone-500 dark:text-slate-400">
-                  Assinale os sinais tricoscópicos que você identificou na captura da cliente para apoiar o diagnóstico:
-                </p>
-
-                <div className="grid grid-cols-1 gap-2">
-                  {casoReferencia.oQueObservar.map((item, idx) => {
-                    const conferido = itensConferidos.includes(item);
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => {
-                          setItensConferidos(prev => 
-                            prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
-                          );
-                        }}
-                        className={`cursor-pointer p-3 rounded-xl border text-xs transition-all flex items-start gap-2.5 select-none ${
-                          conferido
-                            ? 'bg-emerald-50/90 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-100 font-medium shadow-xs'
-                            : 'bg-white hover:bg-stone-50 dark:bg-slate-900 dark:hover:bg-slate-800 border-stone-200/80 dark:border-slate-800 text-stone-700 dark:text-slate-300'
-                        }`}
-                      >
-                        <div className="mt-0.5 shrink-0">
-                          <CheckCircle2 className={`w-4 h-4 ${conferido ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-300 dark:text-slate-600'}`} />
-                        </div>
-                        <span className="leading-snug">{item}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {totalConferidos > 0 && (
-                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-900 dark:text-emerald-200 flex items-center justify-between">
-                    <span>
-                      ✓ {totalConferidos} {totalConferidos === 1 ? 'sinal compatível' : 'sinais compatíveis'} com <strong>{casoReferencia.nome}</strong>.
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setItensConferidos([])}
-                      className="text-[11px] underline hover:text-emerald-950"
-                    >
-                      Limpar seleção
-                    </button>
-                  </div>
-                )}
-              </div>
-
             </div>
           </div>
-        )}
-      </div>
-    </div>
-  )}
+
+          {/* SEÇÃO AO FINAL DA PÁGINA: REFERÊNCIA DO ATLAS & GUIA DE CONFERÊNCIA VISUAL */}
+          <div id="secao-referencia-atlas" className="pt-2 pb-16">
+            {!usuarioTemAtlas ? (
+              <div className="bg-gradient-to-r from-stone-50 via-rose-50/20 to-stone-50 dark:from-slate-900 dark:via-rose-950/20 dark:to-slate-900 rounded-3xl p-5 sm:p-6 border border-amber-500/30 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20 shadow-xs">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+                      <span>Referência do Atlas Clínico HD</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300 font-bold">
+                        Exclusivo Planos Pagos
+                      </span>
+                    </h4>
+                    <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
+                      O acervo de patologias tricoscópicas HD e critérios diagnósticos do Atlas é exclusivo dos Planos Mensal e Anual. O Plano Degustação e o Modo Gratuito possuem acesso bloqueado.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'planos' } }));
+                  }}
+                  className="px-5 py-2.5 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-teal-700/20 transition-all hover:scale-[1.01] shrink-0 cursor-pointer"
+                >
+                  <Crown className="w-4 h-4 text-amber-400" />
+                  <span>Desbloquear no Plano Anual ou Mensal</span>
+                </button>
+              </div>
+            ) : !exibirReferenciaAtlas ? (
+              /* CARD DE BUSCAR REFERÊNCIAS (QUANDO NÃO SELECIONADA, NÃO APARECE O CONTEÚDO) */
+              <div className="bg-gradient-to-r from-stone-50 via-rose-50/20 to-stone-50 dark:from-slate-900 dark:via-rose-950/20 dark:to-slate-900 rounded-3xl p-5 sm:p-6 border border-stone-200/90 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-700 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/20 shadow-xs">
+                    <BookOpen className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+                      <span>Referência do Atlas & Guia de Conferência Visual</span>
+                    </h4>
+                    <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
+                      Deseja consultar casos clínicos do Atlas com fotos em alta resolução e conferir os critérios diagnósticos?
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExibirReferenciaAtlas(true);
+                    setTimeout(() => {
+                      document.getElementById('secao-referencia-atlas')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                  }}
+                  className="px-5 py-2.5 rounded-2xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-rose-700/20 transition-all hover:scale-[1.01] shrink-0"
+                >
+                  <Search className="w-4 h-4" />
+                  <span>Buscar Referências</span>
+                </button>
+              </div>
+            ) : (
+              /* SELETOR COM INFORMAÇÕES DO ATLAS + GUIA DE CONFERÊNCIA VISUAL */
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-rose-200/80 dark:border-rose-950/60 shadow-md space-y-5 animate-fadeIn">
+                {/* Topo: Título, Filtro/Busca e Botão Fechar/Ocultar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 dark:border-slate-800 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
+                        <span>Referência do Atlas & Guia de Conferência Visual</span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                          {casoReferencia.categoria}
+                        </span>
+                      </h3>
+                      <p className="text-xs text-stone-500 dark:text-slate-400">
+                        Estudo comparativo e critérios diagnósticos da patologia selecionada.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => onSelecionarCaso(casoReferencia.id)}
+                      className="px-3 py-1.5 rounded-xl border border-stone-200 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-800 text-stone-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                      title="Abrir ficha completa desta patologia no Atlas"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Ficha Completa no Atlas</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setExibirReferenciaAtlas(false)}
+                      className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-600 dark:text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                      title="Ocultar Referência do Atlas"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Ocultar Referência</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* BARRA DO SELETOR: Busca rápida + Dropdown de seleção */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-stone-50/70 dark:bg-slate-950/60 border border-stone-200/80 dark:border-slate-800">
+                  {/* Campo de Busca Rápida de Patologia */}
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={termoBuscaReferencia}
+                      onChange={(e) => setTermoBuscaReferencia(e.target.value)}
+                      placeholder="Filtrar patologia por nome ou achado..."
+                      className="w-full bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:border-rose-400"
+                    />
+                  </div>
+
+                  {/* Seletor Dropdown */}
+                  <div>
+                    <select
+                      value={casoReferenciaId}
+                      onChange={(e) => setCasoReferenciaId(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none focus:border-rose-400"
+                    >
+                      {casosReferenciaFiltrados.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.numeroOrdem ? `#${c.numeroOrdem.toString().padStart(2, '0')} - ` : ''}{c.nome} ({c.categoria})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* CONTEÚDO PRINCIPAL: INFORMAÇÕES DO ATLAS + GUIA DE CONFERÊNCIA VISUAL */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+
+                  {/* LADO ESQUERDO: INFORMAÇÕES DO ATLAS & FOTO HD */}
+                  <div className="space-y-3 bg-stone-50/50 dark:bg-slate-950/40 p-4 rounded-2xl border border-stone-200/70 dark:border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-stone-800 dark:text-slate-200 uppercase tracking-wider">
+                        {casoReferencia.nome}
+                      </span>
+                      <span className="text-[11px] font-mono text-stone-500">
+                        {refTotal > 1 ? `Foto ${refIndice + 1} de ${refTotal}` : (casoReferencia.imagem.aumento || '50x')}
+                      </span>
+                    </div>
+
+                    {/* Imagem de Referência do Atlas */}
+                    <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-black border border-stone-200 dark:border-slate-800 shadow-inner flex items-center justify-center group">
+                      {fotoReferenciaFinal ? (
+                        <img
+                          src={fotoReferenciaFinal}
+                          alt={casoReferencia.nome}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center p-6 text-center text-stone-400 space-y-2">
+                          <Camera className="w-8 h-8 text-stone-600" />
+                          <p className="text-xs font-semibold">{casoReferencia.nome}</p>
+                          <p className="text-[11px] text-stone-500">Foto de referência do Atlas</p>
+                        </div>
+                      )}
+
+                      {/* Controles de navegação se houver mais de uma foto na referência */}
+                      {refTotal > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setRefIndice(refIndice > 0 ? refIndice - 1 : refTotal - 1)}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/75 hover:bg-black/90 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md text-sm"
+                            title="Foto anterior"
+                          >
+                            ‹
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRefIndice(refIndice < refTotal - 1 ? refIndice + 1 : 0)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/75 hover:bg-black/90 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md text-sm"
+                            title="Próxima foto"
+                          >
+                            ›
+                          </button>
+                        </>
+                      )}
+
+                      <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] font-mono text-stone-300 bg-black/75 backdrop-blur-xs px-2.5 py-1 rounded-lg">
+                        <span className="truncate max-w-[200px]">{casoReferencia.nome}</span>
+                        <span>{casoReferencia.imagem.aumento || '50x'}</span>
+                      </div>
+                    </div>
+
+                    {/* Resumo Clínico */}
+                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-stone-200/80 dark:border-slate-800 text-xs space-y-1.5">
+                      <span className="text-[10px] uppercase font-bold text-stone-500 tracking-wider block">
+                        Resumo Clínico & Características:
+                      </span>
+                      <p className={`text-stone-600 dark:text-slate-300 leading-relaxed ${expandirDescricao ? '' : 'line-clamp-4'}`}>
+                        {casoReferencia.resumoOriginal || casoReferencia.significadoClinico}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setExpandirDescricao(!expandirDescricao)}
+                        className="text-[11px] text-rose-700 dark:text-rose-400 font-semibold hover:underline"
+                      >
+                        {expandirDescricao ? 'Ver menos' : 'Ver mais detalhes'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* LADO DIREITO: GUIA DE CONFERÊNCIA VISUAL */}
+                  <div className="space-y-3.5 bg-stone-50/50 dark:bg-slate-950/40 p-4 rounded-2xl border border-stone-200/70 dark:border-slate-800">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200/60 dark:border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                        <h3 className="text-xs font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider">
+                          Guia de Conferência Visual ({casoReferencia.nome})
+                        </h3>
+                      </div>
+
+                      <div className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-700 text-stone-700 dark:text-slate-300 font-mono">
+                        Sinais conferidos: {totalConferidos} de {totalAchadosReferencia}
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-stone-500 dark:text-slate-400">
+                      Assinale os sinais tricoscópicos que você identificou na captura da cliente para apoiar o diagnóstico:
+                    </p>
+
+                    <div className="grid grid-cols-1 gap-2">
+                      {casoReferencia.oQueObservar.map((item, idx) => {
+                        const conferido = itensConferidos.includes(item);
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              setItensConferidos(prev =>
+                                prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
+                              );
+                            }}
+                            className={`cursor-pointer p-3 rounded-xl border text-xs transition-all flex items-start gap-2.5 select-none ${conferido
+                                ? 'bg-emerald-50/90 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-100 font-medium shadow-xs'
+                                : 'bg-white hover:bg-stone-50 dark:bg-slate-900 dark:hover:bg-slate-800 border-stone-200/80 dark:border-slate-800 text-stone-700 dark:text-slate-300'
+                              }`}
+                          >
+                            <div className="mt-0.5 shrink-0">
+                              <CheckCircle2 className={`w-4 h-4 ${conferido ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-300 dark:text-slate-600'}`} />
+                            </div>
+                            <span className="leading-snug">{item}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {totalConferidos > 0 && (
+                      <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-900 dark:text-emerald-200 flex items-center justify-between">
+                        <span>
+                          ✓ {totalConferidos} {totalConferidos === 1 ? 'sinal compatível' : 'sinais compatíveis'} com <strong>{casoReferencia.nome}</strong>.
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setItensConferidos([])}
+                          className="text-[11px] underline hover:text-emerald-950"
+                        >
+                          Limpar seleção
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* BOTÃO PRINCIPAL FIXO NO RODAPÉ: CONTEXTUAL PARA PASSO 3 E PASSO 4 */}
       <div className="fixed bottom-7 left-0 right-0 z-30 pointer-events-none flex justify-center px-4">
@@ -2859,8 +2832,8 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                 {clientName ? `Paciente: ${clientName}` : 'Nova Sessão'}
               </span>
               <span className="text-[10px] text-stone-400 block truncate">
-                {modoBancada === 'registro' 
-                  ? `Área: ${areaCouro} • ${tipoCaptura === 'macro' ? 'Foto Macro' : 'Tricoscopia'}` 
+                {modoBancada === 'registro'
+                  ? `Área: ${areaCouro} • ${tipoCaptura === 'macro' ? 'Foto Macro' : 'Tricoscopia'}`
                   : `Área: ${areaCouro} • ${annotations.length} marcas`}
               </span>
             </div>
@@ -2895,15 +2868,14 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
             <button
               onClick={() => handleSalvarSessao(false)}
               disabled={salvando || (!imagemUsuarioUrl && !fotoReferenciaFinal)}
-              className={`px-4 py-2.5 rounded-xl text-white font-bold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-md active:scale-95 ${
-                salvoComSucessoRecente
+              className={`px-4 py-2.5 rounded-xl text-white font-bold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-md active:scale-95 ${salvoComSucessoRecente
                   ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-700/25 ring-2 ring-emerald-400'
                   : salvando
                     ? 'bg-rose-800 opacity-80 cursor-wait'
                     : !imagemUsuarioUrl
                       ? 'bg-rose-700/70 hover:bg-rose-700 cursor-pointer'
                       : 'bg-rose-700 hover:bg-rose-800 shadow-rose-700/25'
-              } disabled:opacity-50 disabled:pointer-events-none`}
+                } disabled:opacity-50 disabled:pointer-events-none`}
               title={
                 !imagemUsuarioUrl
                   ? 'Insira ou capture uma foto para salvar'
@@ -2964,11 +2936,10 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                       setCategoriaAchadoFiltro('Todos');
                     }
                   }}
-                  className={`flex-1 py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
-                    achadoEmEdicao?.type === 'achado'
+                  className={`flex-1 py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${achadoEmEdicao?.type === 'achado'
                       ? 'bg-white dark:bg-slate-900 text-rose-700 dark:text-rose-300 shadow-xs'
                       : 'text-stone-500 hover:text-stone-800 dark:hover:text-slate-200'
-                  }`}
+                    }`}
                 >
                   <span className="w-2 h-2 rounded-full bg-[#DC2626]" />
                   <span>Achado Geral</span>
@@ -2982,11 +2953,10 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                       setAchadoSinal('Inflamação e Eritema Perifolicular (Halo Eritematoso / Colarete)');
                     }
                   }}
-                  className={`flex-1 py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
-                    achadoEmEdicao?.type === 'inflamacao'
+                  className={`flex-1 py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${achadoEmEdicao?.type === 'inflamacao'
                       ? 'bg-white dark:bg-slate-900 text-fuchsia-700 dark:text-fuchsia-300 shadow-xs ring-1 ring-fuchsia-300 dark:ring-fuchsia-800'
                       : 'text-stone-500 hover:text-stone-800 dark:hover:text-slate-200'
-                  }`}
+                    }`}
                 >
                   <span className="w-2 h-2 rounded-full bg-[#C026D3]" />
                   <span>🔥 Inflamação / Eritema</span>
@@ -3005,18 +2975,17 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                       type="button"
                       onClick={() => {
                         setCategoriaAchadoFiltro(cat);
-                        const primeiroDestaCat = cat === 'Todos' 
-                          ? ACHADOS_TRICOSCOPICOS[0]?.nome 
+                        const primeiroDestaCat = cat === 'Todos'
+                          ? ACHADOS_TRICOSCOPICOS[0]?.nome
                           : ACHADOS_TRICOSCOPICOS.find(a => a.estrutura === cat)?.nome;
                         if (primeiroDestaCat) setAchadoSinal(primeiroDestaCat);
                       }}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border active:scale-95 ${
-                        categoriaAchadoFiltro === cat
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border active:scale-95 ${categoriaAchadoFiltro === cat
                           ? cat === 'Inflamação & Eritema'
                             ? 'bg-fuchsia-100 dark:bg-fuchsia-950 text-fuchsia-800 dark:text-fuchsia-300 border-fuchsia-400 shadow-xs'
                             : 'bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border-rose-400 shadow-xs'
                           : 'bg-stone-50 dark:bg-slate-950 text-stone-600 dark:text-slate-400 border-stone-200 dark:border-slate-800 hover:bg-stone-100'
-                      }`}
+                        }`}
                     >
                       {cat === 'Inflamação & Eritema' ? '🔥 Inflamação' : cat}
                     </button>
@@ -3071,13 +3040,12 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                       key={nivel}
                       type="button"
                       onClick={() => setAchadoIntensidade(nivel)}
-                      className={`py-2 rounded-xl text-xs font-semibold border transition-all active:scale-95 ${
-                        achadoIntensidade === nivel
+                      className={`py-2 rounded-xl text-xs font-semibold border transition-all active:scale-95 ${achadoIntensidade === nivel
                           ? achadoEmEdicao?.type === 'inflamacao'
                             ? 'bg-fuchsia-50 border-fuchsia-500 text-fuchsia-800 dark:bg-fuchsia-950 dark:border-fuchsia-600 dark:text-fuchsia-200 shadow-xs'
                             : 'bg-rose-50 border-rose-500 text-rose-700 dark:bg-rose-950 dark:border-rose-600 dark:text-rose-200 shadow-xs'
                           : 'bg-stone-50 dark:bg-slate-950 border-stone-200 dark:border-slate-700 text-stone-600 dark:text-slate-400'
-                      }`}
+                        }`}
                     >
                       {nivel}
                     </button>
@@ -3218,11 +3186,10 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                             setLiberadoPaciente(novo);
                           }
                         }}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border transition-colors ${
-                          sess.liberadoPaciente
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border transition-colors ${sess.liberadoPaciente
                             ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/80 hover:bg-emerald-100'
                             : 'bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-400 border-stone-200 dark:border-slate-700 hover:bg-stone-200'
-                        }`}
+                          }`}
                         title={sess.liberadoPaciente ? 'Liberado no Portal do Paciente' : 'Oculto do paciente'}
                       >
                         {sess.liberadoPaciente ? (
@@ -3329,10 +3296,10 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                   <span className="font-semibold text-stone-600 block text-[11px]">Referência do Atlas ({casoReferencia.nome})</span>
                   <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-black border border-stone-300 flex items-center justify-center">
                     {fotoReferenciaFinal ? (
-                      <img 
-                        src={fotoReferenciaFinal} 
-                        alt="Atlas" 
-                        className="w-full h-full object-contain" 
+                      <img
+                        src={fotoReferenciaFinal}
+                        alt="Atlas"
+                        className="w-full h-full object-contain"
                       />
                     ) : (
                       <span className="text-xs text-stone-400">Sem referência</span>
