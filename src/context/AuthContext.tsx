@@ -160,13 +160,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const validadeTrial = new Date(agora);
             validadeTrial.setDate(validadeTrial.getDate() + 14);
 
-            const nomePadrao = fbUser.displayName || (ehAdmin && fbUser.email?.toLowerCase().includes('damiana') ? 'Profa. Damiana Calazans' : assinaturaPendente?.nome || 'Especialista em Tricologia');
+            const nomePadrao = fbUser.displayName || (ehAdmin && fbUser.email?.toLowerCase().includes('damiana') ? 'Profa. Damiana Calazans' : (ehAdmin && fbUser.email?.toLowerCase().includes('keven') ? 'Dr. Keven Lucas' : assinaturaPendente?.nome || 'Especialista em Tricologia'));
 
             const novoPerfil: UsuarioProfissional = {
               uid: fbUser.uid,
               nome: nomePadrao,
               email: fbUser.email || '',
-              titulo: ehAdmin ? 'Especialista & Autora — TricoCalazans' : 'Especialista em Tricoscopia & Saúde Capilar',
+              titulo: ehAdmin ? (fbUser.email?.toLowerCase().includes('damiana') ? 'Especialista & Autora — TricoCalazans' : 'Administrador & Especialista Clínico') : 'Especialista em Tricoscopia & Saúde Capilar',
               registro: '',
               clinica: 'Consultório Clínico Particular',
               nomeDoEspaco: 'Consultório Clínico Particular',
@@ -270,13 +270,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const validadeTrial = new Date(agora);
           validadeTrial.setDate(validadeTrial.getDate() + 14);
 
-          const nomePadrao = fbUser.displayName || (ehAdmin && emailLimpo.includes('damiana') ? 'Profa. Damiana Calazans' : emailLimpo.split('@')[0]);
+          const nomePadrao = fbUser.displayName || (ehAdmin && emailLimpo.includes('damiana') ? 'Profa. Damiana Calazans' : (ehAdmin && emailLimpo.includes('keven') ? 'Dr. Keven Lucas' : emailLimpo.split('@')[0]));
 
           perfil = {
             uid: fbUser.uid,
             nome: nomePadrao,
             email: fbUser.email || emailLimpo,
-            titulo: ehAdmin ? 'Especialista & Autora — TricoCalazans' : 'Especialista em Tricologia',
+            titulo: ehAdmin ? (emailLimpo.includes('damiana') ? 'Especialista & Autora — TricoCalazans' : 'Administrador & Especialista Clínico') : 'Especialista em Tricologia',
             registro: '',
             clinica: 'Consultório Particular',
             nomeDoEspaco: 'Consultório Particular',
@@ -433,13 +433,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const validadeTrial = new Date(agora);
           validadeTrial.setDate(validadeTrial.getDate() + 14);
 
-          const nomePadrao = fbUser.displayName || (ehAdmin && fbUser.email?.toLowerCase().includes('damiana') ? 'Profa. Damiana Calazans' : 'Especialista em Tricoscopia');
+          const nomePadrao = fbUser.displayName || (ehAdmin && fbUser.email?.toLowerCase().includes('damiana') ? 'Profa. Damiana Calazans' : (ehAdmin && fbUser.email?.toLowerCase().includes('keven') ? 'Dr. Keven Lucas' : 'Especialista em Tricoscopia'));
 
           perfil = {
             uid: fbUser.uid,
             nome: nomePadrao,
             email: fbUser.email || '',
-            titulo: ehAdmin ? 'Especialista & Autora — TricoCalazans' : 'Especialista em Tricoscopia & Saúde Capilar',
+            titulo: ehAdmin ? (fbUser.email?.toLowerCase().includes('damiana') ? 'Especialista & Autora — TricoCalazans' : 'Administrador & Especialista Clínico') : 'Especialista em Tricoscopia & Saúde Capilar',
             registro: '',
             clinica: 'Consultório Clínico Particular',
             nomeDoEspaco: 'Consultório Clínico Particular',

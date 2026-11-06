@@ -18,9 +18,12 @@ import {
 } from 'lucide-react';
 import { PLANOS_DISPONIVEIS, PlanoConfig, PlanoId, LINKS_KIWIFY } from '../types/assinatura';
 import { useAuth } from '../context/AuthContext';
+import { ehAdminEmail } from '../config/admins';
+import { usuarioEhAdmin } from '../utils/fotosNuvem';
 
 export const PlanosView: React.FC = () => {
   const { usuarioAtual } = useAuth();
+  const ehAdmin = usuarioEhAdmin() || ehAdminEmail(usuarioAtual?.email);
   const [faqAberta, setFaqAberta] = useState<number | null>(0);
   const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
 
@@ -32,8 +35,8 @@ export const PlanosView: React.FC = () => {
     }
   }, []);
 
-  const planoAtualId = usuarioAtual?.planoId || 'gratuito';
-  const statusAtual = usuarioAtual?.planoStatus || 'trial';
+  const planoAtualId = usuarioAtual?.planoId || (ehAdmin ? 'master' : 'gratuito');
+  const statusAtual = usuarioAtual?.planoStatus || (ehAdmin ? 'ativo' : 'trial');
 
   const formatarData = (iso?: string) => {
     if (!iso) return 'Ativo';
@@ -99,10 +102,12 @@ export const PlanosView: React.FC = () => {
   const planoAnual = PLANOS_DISPONIVEIS.find(p => p.id === 'anual') || PLANOS_DISPONIVEIS[2];
 
   const getNomePlanoAtual = () => {
+    if (ehAdmin) return 'Acesso Administrativo Vitalício (Master)';
     if (planoAtualId === 'gratuito') return 'Modo Gratuito (Demonstração)';
     if (planoAtualId === 'degustacao') return 'Plano Degustação (7 Dias)';
     if (planoAtualId === 'mensal') return 'Plano Mensal';
     if (planoAtualId === 'anual') return 'Plano Anual';
+    if (planoAtualId === 'master') return 'Acesso Administrativo Vitalício (Master)';
     return 'Plano Clínico';
   };
 
@@ -152,22 +157,54 @@ export const PlanosView: React.FC = () => {
                   {getNomePlanoAtual()}
                 </span>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                  planoAtualId === 'gratuito'
+                  ehAdmin
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                    : planoAtualId === 'gratuito'
                     ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                     : statusAtual === 'ativo' 
                     ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
                     : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                 }`}>
-                  {planoAtualId === 'gratuito' ? 'Demonstração' : statusAtual === 'trial' ? 'Período Ativo' : 'Assinatura Ativa'}
+                  {ehAdmin ? '👑 Administrador Vitalício' : planoAtualId === 'gratuito' ? 'Demonstração' : statusAtual === 'trial' ? 'Período Ativo' : 'Assinatura Ativa'}
                 </span>
               </div>
               <span className="text-[11px] text-slate-400">
-                {planoAtualId === 'gratuito' ? 'Acesso livre para demonstração' : `Vencimento: ${formatarData(usuarioAtual?.planoValidade)}`}
+                {ehAdmin ? 'Todas as funcionalidades liberadas sem cobrança' : planoAtualId === 'gratuito' ? 'Acesso livre para demonstração' : `Vencimento: ${formatarData(usuarioAtual?.planoValidade)}`}
               </span>
             </div>
           </div>
         )}
       </div>
+
+      {/* BANNER INFORMATIVO PARA ADMINISTRADORES */}
+      {ehAdmin && (
+        <div className="p-4 sm:p-5 rounded-2xl glass-card border border-emerald-500/40 bg-emerald-500/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/30">
+              <Crown className="w-5 h-5 text-amber-300" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Modo Administrador Ativo</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-extrabold uppercase">Vitalício</span>
+              </h4>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                Sua conta de administrador ({usuarioAtual?.email || 'kevenlucas915@gmail.com'}) possui liberação irrestrita de todas as ferramentas: Atlas HD, prontuários e pacientes ilimitados, laudos em PDF e IA sem cobrança.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('trico-navegar-tela', { detail: { tela: 'painel' } }));
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="shrink-0 w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+          >
+            <span>Ir para o Meu Painel</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* 3. HERO BANNER DE AUTORIDADE CLÍNICA */}
       <div className="relative overflow-hidden rounded-3xl p-6 sm:p-7 bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 text-white shadow-xl">
@@ -187,7 +224,7 @@ export const PlanosView: React.FC = () => {
       </div>
 
       {/* BANNER PARA CONTINUAR EXPLORANDO NO MODO GRATUITO */}
-      {usuarioAtual?.planoId === 'gratuito' && (
+      {!ehAdmin && usuarioAtual?.planoId === 'gratuito' && (
         <div className="p-4 sm:p-5 rounded-2xl glass-card border border-teal-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 bg-teal-500/[0.04] animate-fadeIn">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-teal-700/10 text-teal-700 dark:text-teal-400 flex items-center justify-center shrink-0">

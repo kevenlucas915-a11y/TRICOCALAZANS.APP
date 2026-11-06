@@ -1,5 +1,6 @@
 import { PlanoId } from '../types/assinatura';
 import { ehAdminEmail } from './admins';
+import { usuarioEhAdmin } from '../utils/fotosNuvem';
 
 /**
  * Plano mínimo exigido para envio de acesso ao Portal do Paciente:
@@ -14,6 +15,7 @@ export const NIVEL_MINIMO_PORTAL: string = 'anual';
  * - Plano Mensal: Bloqueado (requer upgrade para Anual) ✗
  */
 export function profissionalTemAcessoPortal(usuario: any): boolean {
+  if (usuarioEhAdmin()) return true;
   if (!usuario) return false;
 
   // Administradores possuem acesso total ao Portal do Paciente

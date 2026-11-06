@@ -156,8 +156,10 @@ export const PLANOS_DISPONIVEIS: PlanoConfig[] = [
 ];
 
 import { ehAdminEmail } from '../config/admins';
+import { usuarioEhAdmin } from '../utils/fotosNuvem';
 
 export function temAcessoAtlas(usuario: any): boolean {
+  if (usuarioEhAdmin()) return true;
   if (!usuario) return false;
   // Administradores possuem acesso total irrestrito ao Atlas Clínico
   if (ehAdminEmail(usuario.email)) return true;
@@ -171,6 +173,7 @@ export function temAcessoAtlas(usuario: any): boolean {
 }
 
 export function usuarioPodeInserirDados(usuario: any): boolean {
+  if (usuarioEhAdmin()) return true;
   if (!usuario) return false;
   // Administradores podem inserir dados livremente sem qualquer restrição de pagamento
   if (ehAdminEmail(usuario.email)) return true;
@@ -182,6 +185,7 @@ export function usuarioPodeInserirDados(usuario: any): boolean {
 }
 
 export function obterLimitePacientes(usuario: any): number {
+  if (usuarioEhAdmin()) return Infinity;
   if (!usuario) return 0;
   // Administradores possuem capacidade ilimitada de pacientes
   if (ehAdminEmail(usuario.email)) return Infinity;
@@ -193,7 +197,7 @@ export function obterLimitePacientes(usuario: any): number {
 }
 
 export function obterRotuloPlano(planoId?: string, email?: string): string {
-  if (email && ehAdminEmail(email)) return 'ADMINISTRADOR';
+  if (usuarioEhAdmin() || (email && ehAdminEmail(email))) return 'ADMINISTRADOR';
   if (!planoId || planoId === 'gratuito') return 'GRATUITO';
   if (planoId === 'degustacao') return 'DEGUSTAÇÃO';
   if (planoId === 'mensal') return 'MENSAL';
@@ -203,7 +207,7 @@ export function obterRotuloPlano(planoId?: string, email?: string): string {
 }
 
 export function obterNomeCompletoPlano(planoId?: string, email?: string): string {
-  if (email && ehAdminEmail(email)) return 'Acesso Administrativo Vitalício';
+  if (usuarioEhAdmin() || (email && ehAdminEmail(email))) return 'Acesso Administrativo Vitalício (Master)';
   if (!planoId || planoId === 'gratuito') return 'Modo Gratuito (Demonstração)';
   if (planoId === 'degustacao') return 'Plano Degustação (7 Dias - R$ 5,00)';
   if (planoId === 'mensal') return 'Plano Mensal (R$ 69,90/mês)';
