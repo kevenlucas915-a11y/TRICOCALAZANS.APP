@@ -599,6 +599,12 @@ export default function App() {
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 sidebar-teal-gradient flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
         menuMobileAberto ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
       }`}>
+        {/* Barra protetora para o topo em dispositivos móveis / notch no menu lateral */}
+        <div 
+          className="lg:hidden w-full bg-white dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/60 shrink-0" 
+          style={{ height: 'max(1.75rem, env(safe-area-inset-top, 28px))' }} 
+        />
+
         {/* Topo da Sidebar: Logo & Identidade Clínica */}
         <div className="p-4 sm:p-5 border-b border-teal-200/60 dark:border-teal-500/20 flex items-center justify-between">
           <div 
@@ -1032,8 +1038,14 @@ export default function App() {
       {/* ========================================================================= */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all w-full max-w-full">
         {/* Topbar Superior em Vidro Fosco */}
-        <header className="sticky top-0 z-30 glass-header px-3 sm:px-6 h-16 flex items-center justify-between gap-2.5 sm:gap-4 w-full max-w-full min-w-0">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        <header className="sticky top-0 z-30 glass-header flex flex-col w-full max-w-full min-w-0 shadow-xs">
+          {/* Barra protetora para o topo em dispositivos móveis / notch PWA */}
+          <div 
+            className="lg:hidden w-full bg-white dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/60 shrink-0" 
+            style={{ height: 'max(1.75rem, env(safe-area-inset-top, 28px))' }} 
+          />
+          <div className="px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2.5 sm:gap-4 w-full max-w-full min-w-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             {/* Botão Hamburger para Mobile */}
             <button
               onClick={() => setMenuMobileAberto(true)}
@@ -1236,7 +1248,8 @@ export default function App() {
               </div>
             )}
           </div>
-        </header>
+        </div>
+      </header>
 
         {/* BANNER INFORMATIVO PARA USUÁRIOS NO MODO GRATUITO DE DEMONSTRAÇÃO */}
         {estaAutenticado && !ehAdmin && usuarioAtual?.planoId === 'gratuito' && (
