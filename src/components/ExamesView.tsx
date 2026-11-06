@@ -76,8 +76,8 @@ export const ExamesView: React.FC<ExamesViewProps> = ({
   // Verificação de permissões do plano
   const planoId = usuarioAtual?.planoId || 'master';
   const planoStatus = usuarioAtual?.planoStatus || 'trial';
-  const podeAcessarManual = temPermissaoExamesManual(planoId, planoStatus);
-  const podeAcessarIa = temPermissaoExamesIa(planoId, planoStatus);
+  const podeAcessarManual = temPermissaoExamesManual(planoId, planoStatus, usuarioAtual?.email);
+  const podeAcessarIa = temPermissaoExamesIa(planoId, planoStatus, usuarioAtual?.email);
 
   // Estados principais
   const [exames, setExames] = useState<ExameLaboratorial[]>([]);

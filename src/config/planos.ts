@@ -1,3 +1,5 @@
+import { ehAdminEmail } from './admins';
+
 /**
  * Configurações de acesso e limites para a funcionalidade de Exames Laboratoriais e IA.
  */
@@ -35,7 +37,8 @@ const HIERARQUIA_PLANOS: Record<string, number> = {
 /**
  * Verifica se o usuário tem permissão para a aba de Exames (manual / tabela)
  */
-export function temPermissaoExamesManual(planoId?: string, status?: string): boolean {
+export function temPermissaoExamesManual(planoId?: string, status?: string, email?: string): boolean {
+  if (ehAdminEmail(email)) return true;
   if (!planoId || planoId === 'gratuito' || planoId === 'degustacao') return false;
   if (status === 'trial') return true;
   const nivel = HIERARQUIA_PLANOS[planoId.toLowerCase()] ?? 0;
@@ -46,7 +49,8 @@ export function temPermissaoExamesManual(planoId?: string, status?: string): boo
 /**
  * Verifica se o usuário tem permissão para a leitura de laudos com IA
  */
-export function temPermissaoExamesIa(planoId?: string, status?: string): boolean {
+export function temPermissaoExamesIa(planoId?: string, status?: string, email?: string): boolean {
+  if (ehAdminEmail(email)) return true;
   if (!planoId || planoId === 'gratuito' || planoId === 'degustacao') return false;
   if (status === 'trial') return true;
   const nivel = HIERARQUIA_PLANOS[planoId.toLowerCase()] ?? 0;
@@ -57,7 +61,8 @@ export function temPermissaoExamesIa(planoId?: string, status?: string): boolean
 /**
  * Retorna o limite mensal de transcrições por IA
  */
-export function obterLimiteMensalIa(planoId?: string, status?: string): number {
+export function obterLimiteMensalIa(planoId?: string, status?: string, email?: string): number {
+  if (ehAdminEmail(email)) return 9999;
   if (!planoId || planoId === 'gratuito' || planoId === 'degustacao') return 0;
   if (status === 'trial') return 40;
   return LIMITES_MENSAIS_IA[planoId.toLowerCase()] ?? 0;

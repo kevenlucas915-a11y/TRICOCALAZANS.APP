@@ -5,7 +5,11 @@ service firebase.storage {
     // Verificação de administrador harmonizada com firestore.rules
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email in ['kevenlucas915@gmail.com'];
+        && request.auth.token.email in [
+          'kevenlucas915@gmail.com',
+          'damiana30@iclou.com',
+          'damiana30@icloud.com'
+        ];
     }
 
     // Acervo visual oficial do Atlas de Tricoscopia (17 condições clínicas)

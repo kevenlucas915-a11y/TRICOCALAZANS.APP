@@ -15,6 +15,7 @@ import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { UsuarioProfissional } from '../types/usuario';
 import { PlanoId, CicloCobranca, MetodoPagamento } from '../types/assinatura';
+import { ehAdminEmail } from '../config/admins';
 
 const LOCAL_STORAGE_AUTH_KEY = 'trico_auth_user_active_v1';
 
@@ -51,11 +52,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const saved = window.localStorage.getItem(LOCAL_STORAGE_AUTH_KEY);
       if (!saved) return null;
       const parsed = JSON.parse(saved);
-      // Corrige sessão local de contas antigas que tinham o antigo default 'anual' sem pagamento registrado
-      if (parsed && (!parsed.planoId || (parsed.planoId === 'anual' && parsed.planoStatus === 'trial' && !parsed.planoMetodo))) {
-        parsed.planoId = 'gratuito';
-        parsed.planoCiclo = 'mensal';
-        window.localStorage.setItem(LOCAL_STORAGE_AUTH_KEY, JSON.stringify(parsed));
+      // Corrige sessão local de contas antigas ou administradores vitalícios
+      if (parsed) {
+        if (ehAdminEmail(parsed.email)) {
+          parsed.planoId = 'master';
+          parsed.planoStatus = 'ativo';
+          parsed.planoCiclo = 'anual';
+          parsed.planoMetodo = 'admin_vitalicio';
+          window.localStorage.setItem(LOCAL_STORAGE_AUTH_KEY, JSON.stringify(parsed));
+        } else if (!parsed.planoId || (parsed.planoId === 'anual' && parsed.planoStatus === 'trial' && !parsed.planoMetodo)) {
+          parsed.planoId = 'gratuito';
+          parsed.planoCiclo = 'mensal';
+          window.localStorage.setItem(LOCAL_STORAGE_AUTH_KEY, JSON.stringify(parsed));
+        }
       }
       return parsed;
     } catch {
@@ -99,9 +108,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch { }
           }
 
+          const ehAdmin = ehAdminEmail(fbUser.email);
+
           if (docSnap.exists()) {
             let data = docSnap.data() as UsuarioProfissional;
-            if (assinaturaPendente) {
+            if (ehAdmin) {
+              data = {
+                ...data,
+                planoId: 'master',
+                planoStatus: 'ativo',
+                planoCiclo: 'anual',
+                planoMetodo: 'admin_vitalicio',
+                updatedAt: new Date().toISOString()
+              };
+              try {
+                await setDoc(docRef, {
+                  planoId: 'master',
+                  planoStatus: 'ativo',
+                  planoCiclo: 'anual',
+                  planoMetodo: 'admin_vitalicio'
+                }, { merge: true });
+              } catch {}
+            } else if (assinaturaPendente) {
               data = {
                 ...data,
                 planoId: assinaturaPendente.planoId || data.planoId,
@@ -132,21 +160,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const validadeTrial = new Date(agora);
             validadeTrial.setDate(validadeTrial.getDate() + 14);
 
+            const nomePadrao = fbUser.displayName || (ehAdmin && fbUser.email?.toLowerCase().includes('damiana') ? 'Profa. Damiana Calazans' : assinaturaPendente?.nome || 'Especialista em Tricologia');
+
             const novoPerfil: UsuarioProfissional = {
               uid: fbUser.uid,
-              nome: fbUser.displayName || assinaturaPendente?.nome || 'Especialista em Tricologia',
+              nome: nomePadrao,
               email: fbUser.email || '',
-              titulo: 'Especialista em Tricoscopia & Saúde Capilar',
+              titulo: ehAdmin ? 'Especialista & Autora — TricoCalazans' : 'Especialista em Tricoscopia & Saúde Capilar',
               registro: '',
               clinica: 'Consultório Clínico Particular',
               nomeDoEspaco: 'Consultório Clínico Particular',
               fotoUrl: fbUser.photoURL || undefined,
-              planoId: assinaturaPendente?.planoId || 'gratuito',
-              planoStatus: assinaturaPendente?.planoStatus || 'trial',
-              planoCiclo: assinaturaPendente?.planoCiclo || 'mensal',
+              planoId: ehAdmin ? 'master' : (assinaturaPendente?.planoId || 'gratuito'),
+              planoStatus: ehAdmin ? 'ativo' : (assinaturaPendente?.planoStatus || 'trial'),
+              planoCiclo: ehAdmin ? 'anual' : (assinaturaPendente?.planoCiclo || 'mensal'),
               planoIniciadoEm: agora.toISOString(),
-              planoValidade: assinaturaPendente?.planoValidade || undefined,
-              planoMetodo: assinaturaPendente ? 'kiwify' : undefined,
+              planoValidade: ehAdmin ? undefined : (assinaturaPendente?.planoValidade || undefined),
+              planoMetodo: ehAdmin ? 'admin_vitalicio' : (assinaturaPendente ? 'kiwify' : undefined),
               createdAt: agora.toISOString(),
               updatedAt: agora.toISOString()
             };
@@ -155,13 +185,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } catch (err) {
           console.warn('Aviso ao sincronizar perfil do Firestore:', err);
+          const ehAdmin = ehAdminEmail(fbUser.email);
           const fallbackUser: UsuarioProfissional = {
             uid: fbUser.uid,
-            nome: fbUser.displayName || 'Especialista',
+            nome: fbUser.displayName || (ehAdmin && fbUser.email?.toLowerCase().includes('damiana') ? 'Profa. Damiana Calazans' : 'Especialista'),
             email: fbUser.email || '',
-            titulo: 'Especialista em Tricologia',
+            titulo: ehAdmin ? 'Especialista & Autora — TricoCalazans' : 'Especialista em Tricologia',
             clinica: 'Consultório Clínico',
             nomeDoEspaco: 'Consultório Clínico',
+            planoId: ehAdmin ? 'master' : 'gratuito',
+            planoStatus: ehAdmin ? 'ativo' : 'trial',
+            planoCiclo: ehAdmin ? 'anual' : 'mensal',
+            planoMetodo: ehAdmin ? 'admin_vitalicio' : undefined,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           };
@@ -198,6 +233,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       const fbUser = userCredential.user;
+      const ehAdmin = ehAdminEmail(fbUser.email || emailLimpo);
 
       let perfil: UsuarioProfissional;
       try {
@@ -206,7 +242,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (docSnap.exists()) {
           perfil = docSnap.data() as UsuarioProfissional;
-          if ((!perfil.planoId || (perfil.planoId === 'anual' && perfil.planoStatus === 'trial')) && !perfil.planoMetodo) {
+          if (ehAdmin) {
+            perfil = {
+              ...perfil,
+              planoId: 'master',
+              planoStatus: 'ativo',
+              planoCiclo: 'anual',
+              planoMetodo: 'admin_vitalicio'
+            };
+            try {
+              await setDoc(docRef, {
+                planoId: 'master',
+                planoStatus: 'ativo',
+                planoCiclo: 'anual',
+                planoMetodo: 'admin_vitalicio'
+              }, { merge: true });
+            } catch {}
+          } else if ((!perfil.planoId || (perfil.planoId === 'anual' && perfil.planoStatus === 'trial')) && !perfil.planoMetodo) {
             perfil.planoId = 'gratuito';
             perfil.planoCiclo = 'mensal';
             try {
@@ -218,17 +270,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const validadeTrial = new Date(agora);
           validadeTrial.setDate(validadeTrial.getDate() + 14);
 
+          const nomePadrao = fbUser.displayName || (ehAdmin && emailLimpo.includes('damiana') ? 'Profa. Damiana Calazans' : emailLimpo.split('@')[0]);
+
           perfil = {
             uid: fbUser.uid,
-            nome: fbUser.displayName || emailLimpo.split('@')[0],
+            nome: nomePadrao,
             email: fbUser.email || emailLimpo,
-            titulo: 'Especialista em Tricologia',
+            titulo: ehAdmin ? 'Especialista & Autora — TricoCalazans' : 'Especialista em Tricologia',
             registro: '',
             clinica: 'Consultório Particular',
             nomeDoEspaco: 'Consultório Particular',
-            planoId: 'gratuito',
-            planoStatus: 'trial',
-            planoCiclo: 'mensal',
+            planoId: ehAdmin ? 'master' : 'gratuito',
+            planoStatus: ehAdmin ? 'ativo' : 'trial',
+            planoCiclo: ehAdmin ? 'anual' : 'mensal',
+            planoMetodo: ehAdmin ? 'admin_vitalicio' : undefined,
             planoIniciadoEm: agora.toISOString(),
             createdAt: agora.toISOString(),
             updatedAt: agora.toISOString()
@@ -239,15 +294,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Aviso ao sincronizar perfil do Firestore no login (fallback ativo):', firestoreErr);
         perfil = {
           uid: fbUser.uid,
-          nome: fbUser.displayName || emailLimpo.split('@')[0],
+          nome: fbUser.displayName || (ehAdmin && emailLimpo.includes('damiana') ? 'Profa. Damiana Calazans' : emailLimpo.split('@')[0]),
           email: fbUser.email || emailLimpo,
-          titulo: 'Especialista em Tricologia',
+          titulo: ehAdmin ? 'Especialista & Autora — TricoCalazans' : 'Especialista em Tricologia',
           registro: '',
           clinica: 'Consultório Particular',
           nomeDoEspaco: 'Consultório Particular',
-          planoId: 'gratuito',
-          planoStatus: 'trial',
-          planoCiclo: 'mensal',
+          planoId: ehAdmin ? 'master' : 'gratuito',
+          planoStatus: ehAdmin ? 'ativo' : 'trial',
+          planoCiclo: ehAdmin ? 'anual' : 'mensal',
+          planoMetodo: ehAdmin ? 'admin_vitalicio' : undefined,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
@@ -294,21 +350,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch {}
 
+      const ehAdmin = ehAdminEmail(emailLimpo);
+
       const novoPerfil: UsuarioProfissional = {
         uid: fbUser.uid,
         nome: dados.nome.trim(),
         email: emailLimpo,
-        titulo: dados.titulo?.trim() || 'Especialista em Tricologia',
+        titulo: dados.titulo?.trim() || (ehAdmin ? 'Especialista & Autora — TricoCalazans' : 'Especialista em Tricologia'),
         registro: dados.registro?.trim() || '',
         clinica: dados.clinica?.trim() || 'Consultório Clínico',
         nomeDoEspaco: dados.clinica?.trim() || 'Consultório Clínico',
         telefone: dados.telefone?.trim() || '',
-        planoId: assinaturaPendente?.planoId || 'gratuito',
-        planoStatus: assinaturaPendente?.planoStatus || 'trial',
-        planoCiclo: assinaturaPendente?.planoCiclo || 'mensal',
+        planoId: ehAdmin ? 'master' : (assinaturaPendente?.planoId || 'gratuito'),
+        planoStatus: ehAdmin ? 'ativo' : (assinaturaPendente?.planoStatus || 'trial'),
+        planoCiclo: ehAdmin ? 'anual' : (assinaturaPendente?.planoCiclo || 'mensal'),
         planoIniciadoEm: agora.toISOString(),
-        planoValidade: assinaturaPendente?.planoValidade || undefined,
-        planoMetodo: assinaturaPendente ? 'kiwify' : undefined,
+        planoValidade: ehAdmin ? undefined : (assinaturaPendente?.planoValidade || undefined),
+        planoMetodo: ehAdmin ? 'admin_vitalicio' : (assinaturaPendente ? 'kiwify' : undefined),
         createdAt: agora.toISOString(),
         updatedAt: agora.toISOString()
       };
@@ -338,6 +396,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       provider.setCustomParameters({ prompt: 'select_account' });
       const result = await signInWithPopup(auth, provider);
       const fbUser = result.user;
+      const ehAdmin = ehAdminEmail(fbUser.email);
 
       let perfil: UsuarioProfissional;
       try {
@@ -346,7 +405,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (docSnap.exists()) {
           perfil = docSnap.data() as UsuarioProfissional;
-          if ((!perfil.planoId || (perfil.planoId === 'anual' && perfil.planoStatus === 'trial')) && !perfil.planoMetodo) {
+          if (ehAdmin) {
+            perfil = {
+              ...perfil,
+              planoId: 'master',
+              planoStatus: 'ativo',
+              planoCiclo: 'anual',
+              planoMetodo: 'admin_vitalicio'
+            };
+            try {
+              await setDoc(docRef, {
+                planoId: 'master',
+                planoStatus: 'ativo',
+                planoCiclo: 'anual',
+                planoMetodo: 'admin_vitalicio'
+              }, { merge: true });
+            } catch {}
+          } else if ((!perfil.planoId || (perfil.planoId === 'anual' && perfil.planoStatus === 'trial')) && !perfil.planoMetodo) {
             perfil.planoId = 'gratuito';
             perfil.planoCiclo = 'mensal';
             try {
@@ -358,18 +433,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const validadeTrial = new Date(agora);
           validadeTrial.setDate(validadeTrial.getDate() + 14);
 
+          const nomePadrao = fbUser.displayName || (ehAdmin && fbUser.email?.toLowerCase().includes('damiana') ? 'Profa. Damiana Calazans' : 'Especialista em Tricoscopia');
+
           perfil = {
             uid: fbUser.uid,
-            nome: fbUser.displayName || 'Especialista em Tricoscopia',
+            nome: nomePadrao,
             email: fbUser.email || '',
-            titulo: 'Especialista em Tricoscopia & Saúde Capilar',
+            titulo: ehAdmin ? 'Especialista & Autora — TricoCalazans' : 'Especialista em Tricoscopia & Saúde Capilar',
             registro: '',
             clinica: 'Consultório Clínico Particular',
             nomeDoEspaco: 'Consultório Clínico Particular',
             fotoUrl: fbUser.photoURL || undefined,
-            planoId: 'gratuito',
-            planoStatus: 'trial',
-            planoCiclo: 'mensal',
+            planoId: ehAdmin ? 'master' : 'gratuito',
+            planoStatus: ehAdmin ? 'ativo' : 'trial',
+            planoCiclo: ehAdmin ? 'anual' : 'mensal',
+            planoMetodo: ehAdmin ? 'admin_vitalicio' : undefined,
             planoIniciadoEm: agora.toISOString(),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
@@ -380,16 +458,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Aviso ao sincronizar perfil do Firestore no login Google:', firestoreErr);
         perfil = {
           uid: fbUser.uid,
-          nome: fbUser.displayName || 'Especialista em Tricoscopia',
+          nome: fbUser.displayName || (ehAdmin && fbUser.email?.toLowerCase().includes('damiana') ? 'Profa. Damiana Calazans' : 'Especialista em Tricoscopia'),
           email: fbUser.email || '',
-          titulo: 'Especialista em Tricoscopia & Saúde Capilar',
+          titulo: ehAdmin ? 'Especialista & Autora — TricoCalazans' : 'Especialista em Tricoscopia & Saúde Capilar',
           registro: '',
           clinica: 'Consultório Clínico Particular',
           nomeDoEspaco: 'Consultório Clínico Particular',
           fotoUrl: fbUser.photoURL || undefined,
-          planoId: 'gratuito',
-          planoStatus: 'trial',
-          planoCiclo: 'mensal',
+          planoId: ehAdmin ? 'master' : 'gratuito',
+          planoStatus: ehAdmin ? 'ativo' : 'trial',
+          planoCiclo: ehAdmin ? 'anual' : 'mensal',
+          planoMetodo: ehAdmin ? 'admin_vitalicio' : undefined,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };

@@ -10,6 +10,7 @@ import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 import { GoogleGenAI } from '@google/genai';
 import { INSTRUCAO_SISTEMA_TRANSCRICAO_LAUDO } from './src/config/promptsIA';
 import { temPermissaoExamesIa, obterLimiteMensalIa } from './src/config/planos';
+import { ehAdminEmail } from './src/config/admins';
 import { salvarSessaoSql, listarSessoesSql, obterSessaoSql, deletarSessaoSql } from './src/db/sessoes.ts';
 import { salvarPacienteSql, listarPacientesSql, deletarPacienteSql } from './src/db/pacientes.ts';
 import { getOrCreateUser, getUserByUid } from './src/db/users.ts';
@@ -968,7 +969,13 @@ app.post('/api/exames/transcrever-laudo', async (req: Request, res: Response) =>
       }
     }
 
-    if (!temPermissaoExamesIa(planoUsuario, statusUsuario)) {
+    const ehAdmin = ehAdminEmail(usuario.email);
+    if (ehAdmin) {
+      planoUsuario = 'master';
+      statusUsuario = 'ativo';
+    }
+
+    if (!ehAdmin && !temPermissaoExamesIa(planoUsuario, statusUsuario, usuario.email)) {
       return res.status(403).json({
         sucesso: false,
         erro: 'A transcrição automática por IA é exclusiva a partir do Plano Master. Faça upgrade para desbloquear.'
@@ -977,10 +984,10 @@ app.post('/api/exames/transcrever-laudo', async (req: Request, res: Response) =>
 
     // 3. Verificação de limite mensal de uso
     const mesAtual = new Date().toISOString().substring(0, 7);
-    const limite = obterLimiteMensalIa(planoUsuario, statusUsuario);
+    const limite = ehAdmin ? 9999 : obterLimiteMensalIa(planoUsuario, statusUsuario, usuario.email);
     const usado = await obterUsoMensal(usuario.uid, mesAtual);
 
-    if (limite > 0 && usado >= limite) {
+    if (!ehAdmin && limite > 0 && usado >= limite) {
       return res.status(429).json({
         sucesso: false,
         erro: `Limite mensal de leituras de laudo por IA atingido (${usado}/${limite}). O lançamento manual continua disponível.`

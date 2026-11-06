@@ -1,4 +1,5 @@
 import { PlanoId } from '../types/assinatura';
+import { ehAdminEmail } from './admins';
 
 /**
  * Plano mínimo exigido para envio de acesso ao Portal do Paciente:
@@ -8,11 +9,17 @@ export const NIVEL_MINIMO_PORTAL: string = 'anual';
 
 /**
  * Verifica se a profissional possui permissão para convidar/enviar acesso ao Portal do Paciente.
+ * - Administradores: Liberado ✓
  * - Plano Anual: Liberado ✓
  * - Plano Mensal: Bloqueado (requer upgrade para Anual) ✗
  */
 export function profissionalTemAcessoPortal(usuario: any): boolean {
   if (!usuario) return false;
+
+  // Administradores possuem acesso total ao Portal do Paciente
+  if (ehAdminEmail(usuario.email)) {
+    return true;
+  }
   
   const plano = (usuario.planoId || 'gratuito') as string;
   const ciclo = usuario.planoCiclo;

@@ -891,7 +891,7 @@ export default function App() {
                   ? 'bg-white/20 text-white' 
                   : 'bg-teal-500/15 text-teal-800 dark:text-teal-300'
               }`}>
-                {obterRotuloPlano(usuarioAtual?.planoId)}
+                {obterRotuloPlano(usuarioAtual?.planoId, usuarioAtual?.email)}
               </span>
             </button>
 
@@ -1108,7 +1108,7 @@ export default function App() {
                 <Crown className="w-3.5 h-3.5 text-amber-500" />
                 <span>Planos</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-teal-500/15 text-teal-800 dark:text-teal-300 font-bold uppercase">
-                  {obterRotuloPlano(usuarioAtual?.planoId)}
+                  {obterRotuloPlano(usuarioAtual?.planoId, usuarioAtual?.email)}
                 </span>
               </button>
             )}
@@ -1184,7 +1184,7 @@ export default function App() {
                           <span>Planos & Assinatura</span>
                         </div>
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-300 font-bold uppercase">
-                          {obterRotuloPlano(usuarioAtual?.planoId)}
+                          {obterRotuloPlano(usuarioAtual?.planoId, usuarioAtual?.email)}
                         </span>
                       </button>
 
@@ -1239,7 +1239,7 @@ export default function App() {
         </header>
 
         {/* BANNER INFORMATIVO PARA USUÁRIOS NO MODO GRATUITO DE DEMONSTRAÇÃO */}
-        {estaAutenticado && usuarioAtual?.planoId === 'gratuito' && (
+        {estaAutenticado && !ehAdmin && usuarioAtual?.planoId === 'gratuito' && (
           <div className="bg-gradient-to-r from-amber-500/15 via-amber-600/10 to-teal-500/10 border-b border-amber-500/30 px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 min-w-0">
               <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />

@@ -4,7 +4,7 @@ export type CicloCobranca = 'mensal' | 'anual';
 
 export type StatusAssinatura = 'ativo' | 'trial' | 'cancelado' | 'expirado';
 
-export type MetodoPagamento = 'pix' | 'cartao' | 'boleto' | 'kiwify' | 'stripe';
+export type MetodoPagamento = 'pix' | 'cartao' | 'boleto' | 'kiwify' | 'stripe' | 'admin_vitalicio';
 
 export const LINKS_KIWIFY = {
   degustacao: 'https://pay.kiwify.com.br/ltmVSfe',
@@ -155,8 +155,12 @@ export const PLANOS_DISPONIVEIS: PlanoConfig[] = [
   }
 ];
 
+import { ehAdminEmail } from '../config/admins';
+
 export function temAcessoAtlas(usuario: any): boolean {
   if (!usuario) return false;
+  // Administradores possuem acesso total irrestrito ao Atlas Clínico
+  if (ehAdminEmail(usuario.email)) return true;
   const plano = String(usuario.planoId || '').toLowerCase().trim();
   // Plano degustação e plano gratuito possuem acesso totalmente bloqueado ao Atlas Clínico
   if (!plano || plano === 'degustacao' || plano === 'gratuito') return false;
@@ -168,6 +172,8 @@ export function temAcessoAtlas(usuario: any): boolean {
 
 export function usuarioPodeInserirDados(usuario: any): boolean {
   if (!usuario) return false;
+  // Administradores podem inserir dados livremente sem qualquer restrição de pagamento
+  if (ehAdminEmail(usuario.email)) return true;
   // Modo gratuito/demonstração: pode navegar por todas as telas para entender como funciona,
   // mas não pode inserir nem salvar informações (prontuários, laudos, fotos, agendamentos).
   if (usuario.planoId === 'gratuito') return false;
@@ -177,6 +183,8 @@ export function usuarioPodeInserirDados(usuario: any): boolean {
 
 export function obterLimitePacientes(usuario: any): number {
   if (!usuario) return 0;
+  // Administradores possuem capacidade ilimitada de pacientes
+  if (ehAdminEmail(usuario.email)) return Infinity;
   // Modo gratuito: 0 pacientes (não pode criar novos pacientes)
   if (usuario.planoId === 'gratuito') return 0;
   // Plano Degustação: exatamente 1 paciente
@@ -184,19 +192,23 @@ export function obterLimitePacientes(usuario: any): number {
   return Infinity;
 }
 
-export function obterRotuloPlano(planoId?: string): string {
+export function obterRotuloPlano(planoId?: string, email?: string): string {
+  if (email && ehAdminEmail(email)) return 'ADMINISTRADOR';
   if (!planoId || planoId === 'gratuito') return 'GRATUITO';
   if (planoId === 'degustacao') return 'DEGUSTAÇÃO';
   if (planoId === 'mensal') return 'MENSAL';
   if (planoId === 'anual') return 'ANUAL';
+  if (planoId === 'master') return 'ADMINISTRADOR';
   return String(planoId).toUpperCase();
 }
 
-export function obterNomeCompletoPlano(planoId?: string): string {
+export function obterNomeCompletoPlano(planoId?: string, email?: string): string {
+  if (email && ehAdminEmail(email)) return 'Acesso Administrativo Vitalício';
   if (!planoId || planoId === 'gratuito') return 'Modo Gratuito (Demonstração)';
   if (planoId === 'degustacao') return 'Plano Degustação (7 Dias - R$ 5,00)';
   if (planoId === 'mensal') return 'Plano Mensal (R$ 69,90/mês)';
   if (planoId === 'anual') return 'Plano Anual (12x de R$ 49,90)';
+  if (planoId === 'master') return 'Acesso Administrativo Vitalício (Master)';
   return 'Plano Clínico';
 }
 
