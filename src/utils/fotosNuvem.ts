@@ -127,17 +127,22 @@ export async function enviarImagemAtlas(
     return { url: dataUrl, path };
   }
 
-  // Firebase Storage
+  // Detectar MIME type da imagem
+  const mimeMatch = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
+  const contentType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+
+  // Firebase Storage com timeout generoso de 60s
   const storageRef = ref(storage, path);
   try {
     await comTimeout(
       uploadString(storageRef, dataUrl, 'data_url', {
-        contentType: 'image/jpeg'
+        contentType
       }),
-      15000,
+      60000,
       'Firebase Storage Atlas Upload'
     );
-    const url = await comTimeout(getDownloadURL(storageRef), 5000, 'Firebase Storage Atlas URL');
+    const url = await comTimeout(getDownloadURL(storageRef), 15000, 'Firebase Storage Atlas URL');
+    console.info(`✅ Imagem do Atlas enviada com sucesso ao Firebase Storage: ${path}`);
     return { url, path };
   } catch (storageErr) {
     console.warn('Aviso Firebase Storage Atlas (fallback em dataUrl otimizada):', storageErr);

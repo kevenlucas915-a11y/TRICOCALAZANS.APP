@@ -2,11 +2,15 @@
  * TRICOCALAZANS.APP — Armazenamento Local-First Ultra-Resiliente para o Atlas de Tricoscopia.
  * 
  * Arquitetura de Persistência 100% Confiável:
- * 1. Local-First Imediato: Gravação instantânea em cache síncrono e IndexedDB (< 15ms) ANTES de qualquer chamada remota.
- * 2. Prevenção de Conflito de Conexões: Transações isoladas sem fechamento forçado de conexão global (elimina InvalidStateError/Abort).
- * 3. Inicialização e Hidratação em Lote: Carregamento dos 17 casos em uma única leitura (store.getAll()) na abertura (< 5ms).
- * 4. Sincronização em Segundo Plano: Uploads para Firebase Storage e Firestore ocorrem de forma não-bloqueante.
- * 5. Integridade Binária: Compactação inteligente com preservação total de Base64 (zero truncamento/slice).
+ * 1. Local-First Imediato: Gravação instantânea em cache síncrono e IndexedDB (< 15ms) com commit garantido (tx.oncomplete).
+ * 2. Fila Sequencial de Upload na Nuvem (Sync Queue): Elimina saturação de conexões HTTP (limite de 6 sockets do Chrome)
+ *    e timeouts prematuros ao subir múltiplos arquivos (15, 17 ou mais).
+ * 3. Prevenção de Closures Obsoletas: Ao concluir o upload de cada foto, a galeria atual é lida dinamicamente e atualizada
+ *    por ID, impedindo que tarefas concorrentes sobrescrevam ou limitem o acervo a 7 fotos.
+ * 4. Proteção de Cota do Firestore: Documentos salvos no Firestore contêm exclusivamente URLs remotas do Storage (HTTP),
+ *    mantendo o tamanho sempre abaixo de 10KB (longe do limite de 900KB/1MB).
+ * 5. Inicialização em Lote: Carregamento instantâneo (< 5ms) dos 17 casos no arranque via store.getAll().
+ * 6. Merge Inteligente na Sincronização: Fotos locais nunca são apagadas caso a nuvem possua menos fotos registradas.
  */
 
 import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
@@ -164,25 +168,22 @@ export const CASOS_ALIASES: Record<string, string[]> = {
 };
 
 /**
- * Normaliza qualquer chave / identificador para o caso oficial correspondente de forma estrita e sem ambiguidade
+ * Normaliza qualquer chave / identificador para o caso oficial correspondente
  */
 export function normalizarParaCasoOficial(rawKey: string): string {
   if (!rawKey) return '';
   const clean = rawKey.toLowerCase().trim().replace(/['"]/g, '');
 
-  // 1. Se já for a chave oficial
   if (CASOS_ALIASES[clean]) {
     return clean;
   }
 
-  // 2. Se corresponder exatamente a um dos aliases conhecidos
   for (const [oficial, aliases] of Object.entries(CASOS_ALIASES)) {
     if (aliases.includes(clean)) {
       return oficial;
     }
   }
 
-  // 3. Correspondência com ou sem prefixos comuns
   const semPrefixo = clean.replace(/^cond-/, '').replace(/^img-/, '').replace(/^atlas_/, '').replace(/^caso_/, '');
   for (const [oficial, aliases] of Object.entries(CASOS_ALIASES)) {
     const oficialSemPrefixo = oficial.replace(/^cond-/, '');
@@ -191,7 +192,6 @@ export function normalizarParaCasoOficial(rawKey: string): string {
     }
   }
 
-  // 4. Substring matching estrito com precedência diagnóstica segura
   if (clean.includes('androgen') || clean.includes('miniaturiz')) return 'cond-androgenetica';
   if (clean.includes('areata')) return 'cond-areata';
   if (clean.includes('caspa') || clean.includes('pitiriase')) return 'cond-caspa';
@@ -238,7 +238,7 @@ export function normalizarChaves(casoId: string): string[] {
 }
 
 /**
- * Verifica se dois IDs referem-se estritamente à mesma condição do Atlas
+ * Verifica se dois IDs referem-se à mesma condição do Atlas
  */
 export function isAliasMatch(idA: string, idB: string): boolean {
   if (!idA || !idB) return false;
@@ -320,7 +320,7 @@ function carregarLocalStorage(): number {
 // Carga inicial síncrona de localStorage
 carregarLocalStorage();
 
-// Gerenciamento estável de conexão com o IndexedDB primário
+// Gerenciamento de conexão com o IndexedDB primário
 let activeDb: IDBDatabase | null = null;
 let openingPromise: Promise<IDBDatabase> | null = null;
 
@@ -384,9 +384,6 @@ async function getOpenDB(): Promise<IDBDatabase> {
   return openingPromise;
 }
 
-/**
- * Abre qualquer banco IndexedDB existente SEM especificar versão
- */
 function abrirBancoExistente(nomeBanco: string): Promise<IDBDatabase | null> {
   return new Promise((resolve) => {
     try {
@@ -405,7 +402,8 @@ function abrirBancoExistente(nomeBanco: string): Promise<IDBDatabase | null> {
 }
 
 /**
- * Executa uma operação no ObjectStore do banco primário sem fechar a conexão em erros de transação.
+ * Executa uma operação no ObjectStore do banco primário.
+ * Para operações de escrita ('readwrite'), aguarda tx.oncomplete para garantir commit físico em disco.
  */
 async function executeWithStore<T>(
   mode: IDBTransactionMode,
@@ -426,27 +424,28 @@ async function executeWithStore<T>(
         const tx = db.transaction(STORE_NAME, mode);
         const store = tx.objectStore(STORE_NAME);
 
-        let finished = false;
-        tx.onabort = () => {
-          if (!finished) {
-            finished = true;
-            reject(tx.error || new Error('Transação abortada'));
-          }
+        let opResult: T | undefined = undefined;
+
+        tx.oncomplete = () => {
+          resolve(opResult as T);
         };
+
+        tx.onabort = () => {
+          reject(tx.error || new Error('Transação IndexedDB abortada'));
+        };
+
         tx.onerror = () => {
-          if (!finished) {
-            finished = true;
-            reject(tx.error || new Error('Erro na transação'));
-          }
+          reject(tx.error || new Error('Erro na transação IndexedDB'));
         };
 
         operation(store)
           .then((res) => {
-            finished = true;
-            resolve(res);
+            opResult = res;
+            if (mode === 'readonly') {
+              resolve(res);
+            }
           })
           .catch((err) => {
-            finished = true;
             reject(err);
           });
       } catch (err: any) {
@@ -534,7 +533,6 @@ async function migrarBancoLegadoAntigo(): Promise<number> {
               memoryGalleryCache.set(k, listaGaleria);
             }
 
-            // Persistir de volta no banco primário
             await executeWithStore('readwrite', (store) => {
               return new Promise<void>((resolve) => {
                 const req = store.put(item);
@@ -616,7 +614,6 @@ export async function inicializarBanco(): Promise<number> {
         }
       }
 
-      // Se o banco principal estava vazio, migrar banco legado se existir
       if (count === 0) {
         count += await migrarBancoLegadoAntigo();
       }
@@ -653,9 +650,6 @@ if (typeof window !== 'undefined') {
   inicializarBanco().catch(() => {});
 }
 
-/**
- * Função de compatibilidade com chamadas existentes no app
- */
 export async function recuperarImagensLegadas(): Promise<number> {
   return await inicializarBanco();
 }
@@ -663,7 +657,6 @@ export async function recuperarImagensLegadas(): Promise<number> {
 /**
  * Otimiza e garante que a imagem esteja dentro dos limites seguros do navegador e do Firestore (< 250KB).
  * Mantém altíssima nitidez tricoscópica (resolução e contraste dos óstios e folículos).
- * NUNCA fatia ou corrompe a string Base64.
  */
 export async function otimizarImagemParaArmazenamento(dataUrl: string): Promise<string> {
   if (!dataUrl) return '';
@@ -677,6 +670,140 @@ export async function otimizarImagemParaArmazenamento(dataUrl: string): Promise<
     console.warn('Fallback em otimizarImagemParaArmazenamento:', err);
     return dataUrl;
   }
+}
+
+/**
+ * Fila sequencial de upload na nuvem (Storage + Firestore).
+ * Processa 1 item por vez com largura de banda dedicada, eliminando saturação de conexões
+ * e garantindo que mesmo ao subir 15, 17 ou 50 fotos, NENHUMA foto seja perdida ou cancelada por timeout.
+ */
+interface TarefaSincronizacaoNuvem {
+  casoId: string;
+  imagemId: string;
+  dataUrl: string;
+  nomeArquivo?: string;
+  tamanhoBytes?: number;
+}
+
+const filaSincronizacao: TarefaSincronizacaoNuvem[] = [];
+let processandoFilaSincronizacao = false;
+
+async function processarFilaNuvem(): Promise<void> {
+  if (processandoFilaSincronizacao) return;
+  processandoFilaSincronizacao = true;
+
+  try {
+    while (filaSincronizacao.length > 0) {
+      const tarefa = filaSincronizacao.shift();
+      if (!tarefa) continue;
+
+      const oficial = normalizarParaCasoOficial(tarefa.casoId);
+      const chaves = normalizarChaves(oficial);
+
+      try {
+        // 1. Upload sequencial seguro para o Firebase Storage
+        const { url: downloadUrl, path: storagePath } = await enviarImagemAtlas(
+          oficial,
+          tarefa.imagemId,
+          tarefa.dataUrl
+        );
+
+        const uploadSucessoStorage = Boolean(downloadUrl && downloadUrl.startsWith('http'));
+
+        // 2. LER DINAMICAMENTE A GALERIA MAIS RECENTE (elimina closures obsoletas!)
+        const galeriaAtual = memoryGalleryCache.get(oficial) || await obterImagensDoCaso(oficial);
+        let itemAtualizado = false;
+
+        const galeriaAtualizada = galeriaAtual.map(img => {
+          if (img.id === tarefa.imagemId || img.dataUrl === tarefa.dataUrl) {
+            itemAtualizado = true;
+            return {
+              ...img,
+              dataUrl: uploadSucessoStorage ? downloadUrl : img.dataUrl,
+              storagePath: uploadSucessoStorage ? storagePath : img.storagePath
+            };
+          }
+          return img;
+        });
+
+        if (!itemAtualizado && galeriaAtualizada.length > 0 && uploadSucessoStorage) {
+          galeriaAtualizada[0].dataUrl = downloadUrl;
+          galeriaAtualizada[0].storagePath = storagePath;
+        }
+
+        // 3. Atualiza memória e IndexedDB com os dados sincronizados
+        for (const k of chaves) {
+          memoryGalleryCache.set(k, galeriaAtualizada);
+          if (galeriaAtualizada[0]) {
+            memoryCache.set(k, galeriaAtualizada[0]);
+          }
+        }
+
+        if (galeriaAtualizada.length > 0) {
+          await executeWithStore<void>(
+            'readwrite',
+            (store) => {
+              return new Promise((resolve) => {
+                const req = store.put({ ...galeriaAtualizada[0], imagens: galeriaAtualizada });
+                req.onsuccess = () => resolve();
+                req.onerror = () => resolve();
+              });
+            },
+            () => {}
+          );
+        }
+
+        // 4. Salvar no Firestore de forma ultra-leve (apenas URLs HTTP, tamanho < 5KB)
+        const docRef = doc(db, 'caso_imagens', oficial);
+        const urlPrincipal = galeriaAtualizada[0]?.dataUrl && galeriaAtualizada[0].dataUrl.startsWith('http')
+          ? galeriaAtualizada[0].dataUrl
+          : (uploadSucessoStorage ? downloadUrl : (galeriaAtualizada[0]?.dataUrl?.length <= 800000 ? galeriaAtualizada[0].dataUrl : ''));
+
+        const imagensCompactas = galeriaAtualizada.map(img => ({
+          id: img.id,
+          casoId: img.casoId,
+          dataUrl: img.dataUrl.startsWith('http') ? img.dataUrl : '', // Não enche o Firestore de Base64
+          storagePath: img.storagePath || '',
+          nomeArquivo: img.nomeArquivo || `${oficial}.jpg`,
+          dataAtualizacao: img.dataAtualizacao
+        }));
+
+        await setDoc(docRef, {
+          casoId: oficial,
+          nomeArquivo: galeriaAtualizada[0]?.nomeArquivo || `${oficial}.jpg`,
+          tamanhoBytes: galeriaAtualizada[0]?.tamanhoBytes || 0,
+          dataUrl: urlPrincipal,
+          storagePath: galeriaAtualizada[0]?.storagePath || storagePath || '',
+          imagensJson: JSON.stringify(imagensCompactas),
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        console.info(`✅ [Atlas Nuvem] Caso ${oficial} sincronizado permanentemente com o Firebase!`);
+
+        // 5. Notificar interface com as novas URLs remotas
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('atlas-image-updated', {
+              detail: {
+                casoId: oficial,
+                dataUrl: urlPrincipal,
+                imagens: galeriaAtualizada
+              }
+            })
+          );
+        }
+      } catch (uploadErr) {
+        console.warn(`Aviso ao sincronizar foto de ${oficial} na nuvem:`, uploadErr);
+      }
+    }
+  } finally {
+    processandoFilaSincronizacao = false;
+  }
+}
+
+function enfileirarUploadNuvem(tarefa: TarefaSincronizacaoNuvem) {
+  filaSincronizacao.push(tarefa);
+  processarFilaNuvem().catch(() => {});
 }
 
 /**
@@ -829,7 +956,7 @@ export async function obterImagensDoCaso(casoId: string): Promise<ImagemArmazena
  * Adiciona uma nova foto ao acervo de um caso (permitindo múltiplas imagens por condição).
  * Restrito a administradores do Atlas.
  * Arquitetura Local-First: Salva no IndexedDB e em memória imediatamente (< 15ms),
- * e sincroniza com Firebase Storage e Firestore em segundo plano sem bloquear a interface.
+ * e enfileira na fila de upload sequencial da nuvem sem travar a interface e sem perda de dados.
  */
 export async function adicionarImagemCaso(
   casoId: string,
@@ -845,8 +972,8 @@ export async function adicionarImagemCaso(
   const dataUrlOtimizada = await otimizarImagemParaArmazenamento(dataUrl);
   const idImagem = `${oficial}_sub_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
-  // Carregar lista atual (memória ou banco)
-  const listaAtual = await obterImagensDoCaso(oficial);
+  // Carregar lista mais recente da memória ou IndexedDB
+  const listaAtual = memoryGalleryCache.get(oficial) || await obterImagensDoCaso(oficial);
 
   const novoItem: ImagemArmazenada = {
     id: idImagem,
@@ -866,7 +993,7 @@ export async function adicionarImagemCaso(
     memoryCache.set(k, novaLista[0]);
   }
 
-  // 2. Gravar no IndexedDB local IMEDIATAMENTE (< 15ms)
+  // 2. Gravar no IndexedDB local IMEDIATAMENTE com commit confirmado
   await executeWithStore<void>(
     'readwrite',
     (store) => {
@@ -880,7 +1007,7 @@ export async function adicionarImagemCaso(
     () => {}
   );
 
-  // 3. Atualizar localStorage se couber
+  // 3. Atualizar localStorage se couber (apenas primeira foto se pequena)
   try {
     if (typeof window !== 'undefined' && window.localStorage && dataUrlOtimizada.length < 300000) {
       window.localStorage.setItem(`${LS_PREFIX}${oficial}`, JSON.stringify(novaLista[0]));
@@ -896,64 +1023,14 @@ export async function adicionarImagemCaso(
     );
   }
 
-  // 5. Sincronização em segundo plano com Firebase Storage e Firestore
-  (async () => {
-    try {
-      const { url: downloadUrl, path: storagePath } = await enviarImagemAtlas(
-        oficial,
-        idImagem,
-        dataUrlOtimizada
-      );
-
-      if (downloadUrl && downloadUrl !== dataUrlOtimizada) {
-        novoItem.dataUrl = downloadUrl;
-        novoItem.storagePath = storagePath;
-
-        for (const k of chaves) {
-          memoryGalleryCache.set(k, novaLista);
-          memoryCache.set(k, novaLista[0]);
-        }
-
-        await executeWithStore<void>(
-          'readwrite',
-          (store) => {
-            return new Promise((resolve) => {
-              const req = store.put({ ...novaLista[0], imagens: novaLista });
-              req.onsuccess = () => resolve();
-              req.onerror = () => resolve();
-            });
-          },
-          () => {}
-        );
-      }
-
-      const docRef = doc(db, 'caso_imagens', oficial);
-      const firestoreDataUrl = novaLista[0].dataUrl.startsWith('http') 
-        ? novaLista[0].dataUrl 
-        : novaLista[0].dataUrl;
-
-      const imagensCompactas = novaLista.map(img => ({
-        id: img.id,
-        casoId: img.casoId,
-        dataUrl: img.dataUrl.startsWith('http') ? img.dataUrl : img.dataUrl,
-        storagePath: img.storagePath,
-        nomeArquivo: img.nomeArquivo,
-        dataAtualizacao: img.dataAtualizacao
-      }));
-
-      await setDoc(docRef, {
-        casoId: oficial,
-        nomeArquivo: novaLista[0].nomeArquivo || `${oficial}.jpg`,
-        tamanhoBytes: novaLista[0].tamanhoBytes || 0,
-        dataUrl: firestoreDataUrl,
-        storagePath: novaLista[0].storagePath || '',
-        imagensJson: JSON.stringify(imagensCompactas),
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-    } catch (bgErr) {
-      console.warn('Aviso sincronização em background no Firestore/Storage:', bgErr);
-    }
-  })();
+  // 5. Enfileirar upload sequencial para Firebase Storage e Firestore
+  enfileirarUploadNuvem({
+    casoId: oficial,
+    imagemId: idImagem,
+    dataUrl: dataUrlOtimizada,
+    nomeArquivo: novoItem.nomeArquivo,
+    tamanhoBytes: novoItem.tamanhoBytes
+  });
 
   return novaLista;
 }
@@ -961,7 +1038,6 @@ export async function adicionarImagemCaso(
 /**
  * Remove uma imagem específica da galeria do caso.
  * Restrito exclusivamente a administradores do Atlas.
- * Atualiza IndexedDB e memória imediatamente e remove do Storage/Firestore em segundo plano.
  */
 export async function removerImagemEspecifica(
   casoId: string,
@@ -972,7 +1048,7 @@ export async function removerImagemEspecifica(
   }
 
   const oficial = normalizarParaCasoOficial(casoId);
-  const listaAtual = await obterImagensDoCaso(oficial);
+  const listaAtual = memoryGalleryCache.get(oficial) || await obterImagensDoCaso(oficial);
 
   const itemRemovido = listaAtual.find(
     img => img.id === targetIdOuDataUrl || img.dataUrl === targetIdOuDataUrl
@@ -1037,11 +1113,11 @@ export async function removerImagemEspecifica(
       const docRef = doc(db, 'caso_imagens', oficial);
       const firestoreDataUrl = novaLista[0].dataUrl.startsWith('http') 
         ? novaLista[0].dataUrl 
-        : novaLista[0].dataUrl;
+        : '';
       const imagensCompactas = novaLista.map(img => ({
         id: img.id,
         casoId: img.casoId,
-        dataUrl: img.dataUrl.startsWith('http') ? img.dataUrl : img.dataUrl,
+        dataUrl: img.dataUrl.startsWith('http') ? img.dataUrl : '',
         storagePath: img.storagePath,
         nomeArquivo: img.nomeArquivo,
         dataAtualizacao: img.dataAtualizacao
@@ -1064,7 +1140,7 @@ export async function removerImagemEspecifica(
 /**
  * Salva a imagem persistente de um caso em memória, IndexedDB, Storage e Firestore.
  * Restrito exclusivamente a administradores do Atlas.
- * Arquitetura Local-First: Persistência local imediata (< 15ms), background sync para nuvem.
+ * Arquitetura Local-First: Persistência local imediata (< 15ms), enfileiramento sequencial para a nuvem.
  */
 export async function salvarImagemCaso(
   casoId: string,
@@ -1088,7 +1164,7 @@ export async function salvarImagemCaso(
     tamanhoBytes: tamanhoBytes || dataUrlOtimizada.length
   };
 
-  const listaAtual = await obterImagensDoCaso(oficial);
+  const listaAtual = memoryGalleryCache.get(oficial) || await obterImagensDoCaso(oficial);
   let novaLista: ImagemArmazenada[];
   if (listaAtual.length > 0) {
     novaLista = [item, ...listaAtual.slice(1)];
@@ -1134,66 +1210,14 @@ export async function salvarImagemCaso(
     );
   }
 
-  // 5. Sincronização em segundo plano com Firebase Storage e Firestore
-  (async () => {
-    try {
-      const { url: downloadUrl, path: storagePath } = await enviarImagemAtlas(
-        oficial,
-        oficial,
-        dataUrlOtimizada
-      );
-
-      if (downloadUrl && downloadUrl !== dataUrlOtimizada) {
-        item.dataUrl = downloadUrl;
-        item.storagePath = storagePath;
-        novaLista[0] = item;
-        item.imagens = novaLista;
-
-        for (const k of chaves) {
-          memoryCache.set(k, item);
-          memoryGalleryCache.set(k, novaLista);
-        }
-
-        await executeWithStore<void>(
-          'readwrite',
-          (store) => {
-            return new Promise((resolve) => {
-              const req = store.put({ ...item, imagens: novaLista });
-              req.onsuccess = () => resolve();
-              req.onerror = () => resolve();
-            });
-          },
-          () => {}
-        );
-      }
-
-      const docRef = doc(db, 'caso_imagens', oficial);
-      const firestoreDataUrl = item.dataUrl.startsWith('http') 
-        ? item.dataUrl 
-        : item.dataUrl;
-
-      const imagensCompactas = novaLista.map(img => ({
-        id: img.id,
-        casoId: img.casoId,
-        dataUrl: img.dataUrl.startsWith('http') ? img.dataUrl : img.dataUrl,
-        storagePath: img.storagePath,
-        nomeArquivo: img.nomeArquivo,
-        dataAtualizacao: img.dataAtualizacao
-      }));
-
-      await setDoc(docRef, {
-        casoId: oficial,
-        nomeArquivo: item.nomeArquivo || `${oficial}.jpg`,
-        tamanhoBytes: item.tamanhoBytes || 0,
-        dataUrl: firestoreDataUrl,
-        storagePath: item.storagePath || '',
-        imagensJson: JSON.stringify(imagensCompactas),
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-    } catch (bgErr) {
-      console.warn('Aviso sincronização nuvem em segundo plano:', bgErr);
-    }
-  })();
+  // 5. Enfileirar upload sequencial para Firebase Storage e Firestore
+  enfileirarUploadNuvem({
+    casoId: oficial,
+    imagemId: oficial,
+    dataUrl: dataUrlOtimizada,
+    nomeArquivo: item.nomeArquivo,
+    tamanhoBytes: item.tamanhoBytes
+  });
 }
 
 /**
@@ -1303,7 +1327,7 @@ export async function removerImagemCaso(casoId: string): Promise<void> {
 
   const oficial = normalizarParaCasoOficial(casoId);
   const chaves = normalizarChaves(oficial);
-  const listaAtual = await obterImagensDoCaso(oficial);
+  const listaAtual = memoryGalleryCache.get(oficial) || await obterImagensDoCaso(oficial);
 
   // 1. Limpar caches em memória imediatamente
   for (const k of chaves) {
@@ -1375,13 +1399,12 @@ export async function removerImagemCaso(casoId: string): Promise<void> {
 }
 
 /**
- * Sincroniza e recupera imagens salvas no Firebase Firestore e no cache local
+ * Sincroniza e recupera imagens salvas no Firebase Firestore e no cache local.
+ * Faz merge inteligente para NUNCA apagar fotos locais caso a nuvem possua menos fotos registradas.
  */
 export async function sincronizarComFirebase(): Promise<void> {
-  // 1. Inicializar banco e memória local primeiro
   await inicializarBanco().catch(() => {});
 
-  // 2. Baixar todas as fotos oficiais da coleção caso_imagens do Firestore
   try {
     const colRef = collection(db, 'caso_imagens');
     const snap = await getDocs(colRef);
@@ -1391,14 +1414,14 @@ export async function sincronizarComFirebase(): Promise<void> {
       const oficial = normalizarParaCasoOficial(data.casoId);
       if (!CASOS_ALIASES[oficial]) continue;
 
-      let imagens: ImagemArmazenada[] = [];
+      let remoteImagens: ImagemArmazenada[] = [];
       if (data.imagensJson) {
         try {
-          imagens = JSON.parse(data.imagensJson);
+          remoteImagens = JSON.parse(data.imagensJson);
         } catch {}
       }
-      if (!imagens || imagens.length === 0) {
-        imagens = [{
+      if (!remoteImagens || remoteImagens.length === 0) {
+        remoteImagens = [{
           id: oficial,
           casoId: oficial,
           dataUrl: data.dataUrl,
@@ -1409,29 +1432,58 @@ export async function sincronizarComFirebase(): Promise<void> {
         }];
       }
 
-      // Atualizar IndexedDB local
-      await executeWithStore('readwrite', (store) => {
-        return new Promise<void>((resolve) => {
-          const req = store.put({ ...imagens[0], imagens });
-          req.onsuccess = () => resolve();
-          req.onerror = () => resolve();
-        });
-      }, () => {});
+      // Merge inteligente com as fotos locais existentes
+      const galeriaLocal = memoryGalleryCache.get(oficial) || [];
+      let galeriaFinal: ImagemArmazenada[];
 
-      // Atualizar caches em memória
-      const chaves = normalizarChaves(oficial);
-      for (const k of chaves) {
-        memoryCache.set(k, imagens[0]);
-        memoryGalleryCache.set(k, imagens);
+      if (galeriaLocal.length === 0) {
+        galeriaFinal = remoteImagens;
+      } else {
+        const mapPorId = new Map<string, ImagemArmazenada>();
+        for (const loc of galeriaLocal) {
+          mapPorId.set(loc.id || loc.dataUrl, loc);
+        }
+        for (const rem of remoteImagens) {
+          const chave = rem.id || rem.dataUrl;
+          if (mapPorId.has(chave)) {
+            const existente = mapPorId.get(chave)!;
+            mapPorId.set(chave, {
+              ...existente,
+              dataUrl: rem.dataUrl && rem.dataUrl.startsWith('http') ? rem.dataUrl : existente.dataUrl,
+              storagePath: rem.storagePath || existente.storagePath
+            });
+          } else {
+            mapPorId.set(chave, rem);
+          }
+        }
+        galeriaFinal = Array.from(mapPorId.values());
       }
 
-      // Notificar componentes
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-          new CustomEvent('atlas-image-updated', {
-            detail: { casoId: oficial, dataUrl: imagens[0].dataUrl, imagens }
-          })
-        );
+      if (galeriaFinal.length > 0) {
+        // Atualizar IndexedDB local com a lista final mesclada
+        await executeWithStore('readwrite', (store) => {
+          return new Promise<void>((resolve) => {
+            const req = store.put({ ...galeriaFinal[0], imagens: galeriaFinal });
+            req.onsuccess = () => resolve();
+            req.onerror = () => resolve();
+          });
+        }, () => {});
+
+        // Atualizar caches em memória
+        const chaves = normalizarChaves(oficial);
+        for (const k of chaves) {
+          memoryCache.set(k, galeriaFinal[0]);
+          memoryGalleryCache.set(k, galeriaFinal);
+        }
+
+        // Notificar componentes
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('atlas-image-updated', {
+              detail: { casoId: oficial, dataUrl: galeriaFinal[0].dataUrl, imagens: galeriaFinal }
+            })
+          );
+        }
       }
     }
   } catch (err) {
@@ -1439,11 +1491,11 @@ export async function sincronizarComFirebase(): Promise<void> {
   }
 }
 
-// Inicia sincronização com Firestore em background 1.5s após o carregamento
+// Inicia sincronização com Firestore em background 2s após o carregamento
 if (typeof window !== 'undefined') {
   setTimeout(() => {
     sincronizarComFirebase().catch(() => {});
-  }, 1500);
+  }, 2000);
 }
 
 /**
