@@ -1,27 +1,27 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  Check, 
-  CheckCircle2, 
-  Clock, 
-  FileText, 
-  Save, 
-  Sparkles, 
-  User, 
-  Heart, 
-  Activity, 
-  Moon, 
-  Scissors, 
-  Stethoscope, 
-  Edit3, 
-  Download, 
-  Share2, 
-  RotateCcw, 
-  ShieldCheck, 
-  AlertCircle, 
-  ChevronDown, 
-  ChevronUp, 
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  Clock,
+  FileText,
+  Save,
+  Sparkles,
+  User,
+  Heart,
+  Activity,
+  Moon,
+  Scissors,
+  Stethoscope,
+  Edit3,
+  Download,
+  Share2,
+  RotateCcw,
+  ShieldCheck,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
   X,
   Search,
   CheckSquare,
@@ -64,7 +64,7 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
     if (fichaExistente?.dadosFichaJson) {
       try {
         return JSON.parse(fichaExistente.dadosFichaJson);
-      } catch {}
+      } catch { }
     }
 
     const calcularIdadeInicial = (nasc?: string) => {
@@ -148,7 +148,7 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
             setUltimoRascunhoHora('Recuperado da sessão anterior');
           }
         }
-      } catch {}
+      } catch { }
     }
   }, [paciente?.id, fichaExistente]);
 
@@ -157,7 +157,7 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
     if (typeof window !== 'undefined' && paciente?.id) {
       try {
         window.localStorage.setItem(`trico_rascunho_ficha_${paciente.id}`, JSON.stringify(ficha));
-      } catch {}
+      } catch { }
     }
   }, [ficha, paciente?.id]);
 
@@ -394,7 +394,7 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
       if (novoStatus === 'finalizada' && paciente?.id && typeof window !== 'undefined') {
         try {
           window.localStorage.removeItem(`trico_rascunho_ficha_${paciente.id}`);
-        } catch {}
+        } catch { }
       }
 
       return respostaSalva;
@@ -466,22 +466,20 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
             <button
               type="button"
               onClick={() => onChange({ sim: true, qual: estadoObj?.qual || '' })}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${
-                valorSim
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${valorSim
                   ? 'bg-teal-700 text-white shadow-xs scale-102'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
+                }`}
             >
               Sim
             </button>
             <button
               type="button"
               onClick={() => onChange({ sim: false, qual: undefined })}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${
-                estadoObj?.sim === false
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${estadoObj?.sim === false
                   ? 'bg-slate-700 text-white shadow-xs scale-102'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
+                }`}
             >
               Não
             </button>
@@ -522,11 +520,10 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
               key={op}
               type="button"
               onClick={() => onToggle(op)}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all border ${
-                ativo
+              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all border ${ativo
                   ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
                   : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-teal-300 dark:hover:border-teal-700'
-              }`}
+                }`}
             >
               {ativo && '✓ '}
               {op}
@@ -595,7 +592,7 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
           {/* Barra de Progresso Suave */}
           <div className="mt-3">
             <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-teal-600 to-emerald-500 transition-all duration-300 rounded-full"
                 style={{ width: `${progressoPercentual}%` }}
               />
@@ -617,13 +614,12 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                     salvarFichaBanco('rascunho');
                     setEtapaAtual(et.id);
                   }}
-                  className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 shrink-0 transition-all ${
-                    ativa
+                  className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 shrink-0 transition-all ${ativa
                       ? 'bg-teal-700 text-white shadow-xs'
                       : concluida
                         ? 'bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-900'
                         : 'bg-white dark:bg-slate-900 text-slate-500 border border-slate-200 dark:border-slate-800 hover:text-slate-800'
-                  }`}
+                    }`}
                 >
                   <Icone className="w-3.5 h-3.5" />
                   <span>{et.titulo}</span>
@@ -712,11 +708,10 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                       key={s}
                       type="button"
                       onClick={() => setFicha(prev => ({ ...prev, sexo: s }))}
-                      className={`py-2 px-2 rounded-xl text-xs font-bold transition-all border ${
-                        ficha.sexo === s
+                      className={`py-2 px-2 rounded-xl text-xs font-bold transition-all border ${ficha.sexo === s
                           ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
                           : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-teal-400'
-                      }`}
+                        }`}
                     >
                       {s}
                     </button>
@@ -882,11 +877,10 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                     key={canal}
                     type="button"
                     onClick={() => setFicha(prev => ({ ...prev, comoConheceu: canal }))}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border ${
-                      ficha.comoConheceu === canal
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border ${ficha.comoConheceu === canal
                         ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
                         : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-teal-400'
-                    }`}
+                      }`}
                   >
                     {canal}
                   </button>
@@ -969,11 +963,10 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                           key={tipo}
                           type="button"
                           onClick={() => setFicha(prev => ({ ...prev, tipoSanguineo: tipo }))}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
-                            ficha.tipoSanguineo === tipo
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${ficha.tipoSanguineo === tipo
                               ? 'bg-rose-700 text-white border-rose-700'
                               : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800'
-                          }`}
+                            }`}
                         >
                           {tipo}
                         </button>
@@ -1042,11 +1035,10 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                       ...prev,
                       covid: { teveCovid: true, tomouVacina: prev.covid?.tomouVacina ?? true, doses: prev.covid?.doses || '3' }
                     }))}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${
-                      ficha.covid?.teveCovid
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${ficha.covid?.teveCovid
                         ? 'bg-teal-700 text-white shadow-xs'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                    }`}
+                      }`}
                   >
                     Sim
                   </button>
@@ -1056,11 +1048,10 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                       ...prev,
                       covid: { teveCovid: false, tomouVacina: prev.covid?.tomouVacina ?? false, doses: prev.covid?.doses }
                     }))}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${
-                      ficha.covid?.teveCovid === false
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${ficha.covid?.teveCovid === false
                         ? 'bg-slate-700 text-white shadow-xs'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                    }`}
+                      }`}
                   >
                     Não
                   </button>
@@ -1134,22 +1125,20 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                 <button
                   type="button"
                   onClick={() => setFicha(prev => ({ ...prev, marcapasso: true }))}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${
-                    ficha.marcapasso
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${ficha.marcapasso
                       ? 'bg-rose-700 text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
+                    }`}
                 >
                   Sim
                 </button>
                 <button
                   type="button"
                   onClick={() => setFicha(prev => ({ ...prev, marcapasso: false }))}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${
-                    ficha.marcapasso === false
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${ficha.marcapasso === false
                       ? 'bg-slate-700 text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
+                    }`}
                 >
                   Não
                 </button>
@@ -1213,11 +1202,10 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                     key={op}
                     type="button"
                     onClick={() => setFicha(prev => ({ ...prev, bebidaAlcoolica: op }))}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border ${
-                      ficha.bebidaAlcoolica === op
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border ${ficha.bebidaAlcoolica === op
                         ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
                         : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800'
-                    }`}
+                      }`}
                   >
                     {op}
                   </button>
@@ -1234,22 +1222,20 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                 <button
                   type="button"
                   onClick={() => setFicha(prev => ({ ...prev, fuma: true }))}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${
-                    ficha.fuma
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${ficha.fuma
                       ? 'bg-rose-700 text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
+                    }`}
                 >
                   Sim
                 </button>
                 <button
                   type="button"
                   onClick={() => setFicha(prev => ({ ...prev, fuma: false }))}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${
-                    ficha.fuma === false
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${ficha.fuma === false
                       ? 'bg-slate-700 text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
+                    }`}
                 >
                   Não
                 </button>
@@ -1375,22 +1361,20 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                 <button
                   type="button"
                   onClick={() => setFicha(prev => ({ ...prev, sop: true }))}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${
-                    ficha.sop
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${ficha.sop
                       ? 'bg-teal-700 text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
+                    }`}
                 >
                   Sim
                 </button>
                 <button
                   type="button"
                   onClick={() => setFicha(prev => ({ ...prev, sop: false }))}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${
-                    ficha.sop === false
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-[70px] ${ficha.sop === false
                       ? 'bg-slate-700 text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
+                    }`}
                 >
                   Não
                 </button>
@@ -1486,11 +1470,10 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                       key={freq}
                       type="button"
                       onClick={() => setFicha(prev => ({ ...prev, frequenciaLavagem: freq }))}
-                      className={`py-2 px-2 rounded-xl text-xs font-bold transition-all border ${
-                        ficha.frequenciaLavagem === freq
+                      className={`py-2 px-2 rounded-xl text-xs font-bold transition-all border ${ficha.frequenciaLavagem === freq
                           ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
                           : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800'
-                      }`}
+                        }`}
                     >
                       {freq}
                     </button>
@@ -1509,11 +1492,10 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                       key={temp}
                       type="button"
                       onClick={() => setFicha(prev => ({ ...prev, temperaturaAgua: temp }))}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border ${
-                        ficha.temperaturaAgua === temp
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border ${ficha.temperaturaAgua === temp
                           ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
                           : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800'
-                      }`}
+                        }`}
                     >
                       {temp}
                     </button>
@@ -1549,11 +1531,10 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                         key={u}
                         type="button"
                         onClick={() => setFicha(prev => ({ ...prev, chapinhaBabyliss: u }))}
-                        className={`py-2 px-2 rounded-xl text-xs font-bold transition-all border ${
-                          ficha.chapinhaBabyliss === u
+                        className={`py-2 px-2 rounded-xl text-xs font-bold transition-all border ${ficha.chapinhaBabyliss === u
                             ? 'bg-teal-700 text-white border-teal-700'
                             : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800'
-                        }`}
+                          }`}
                       >
                         {u}
                       </button>
@@ -1639,7 +1620,7 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
               </h3>
 
               {etapasDefinidas.slice(0, -1).map(et => (
-                <div 
+                <div
                   key={et.id}
                   className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 flex items-center justify-between gap-3 shadow-xs"
                 >

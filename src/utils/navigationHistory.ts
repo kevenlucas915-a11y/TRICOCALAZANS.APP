@@ -68,10 +68,10 @@ export function removerBackHandler(id: string): void {
     if (typeof window !== 'undefined' && window.history && window.history.state?.tricoNavId === id) {
       suprimirProximoPopstate = true;
       window.history.back();
-      // Reset de segurança
+      // Reset de segurança estendido para dispositivos móveis
       setTimeout(() => {
         suprimirProximoPopstate = false;
-      }, 150);
+      }, 400);
     }
   }
 }

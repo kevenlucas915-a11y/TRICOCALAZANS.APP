@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CASOS_ATLAS, ACHADOS_TRICOSCOPICOS } from './data/tricoscopiaData';
 import { CasoAtlas } from './types/tricoscopia';
 import { useTheme } from './context/ThemeContext';
@@ -395,13 +395,44 @@ export default function App() {
   // Termo de busca global do header
   const [termoBuscaHeader, setTermoBuscaHeader] = useState('');
   const [menuMobileAberto, setMenuMobileAberto] = useState(false);
+  const menuUsuarioRef = useRef<HTMLDivElement>(null);
+
+  // Fechar dropdown de usuário ao clicar fora ou pressionar Escape (sem poluir histórico do navegador)
+  useEffect(() => {
+    if (!menuUsuarioAberto) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (menuUsuarioRef.current && !menuUsuarioRef.current.contains(e.target as Node)) {
+        setMenuUsuarioAberto(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuUsuarioAberto(false);
+    };
+    document.addEventListener('pointerdown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [menuUsuarioAberto]);
 
   // Sincronização do botão Voltar para modais e gavetas (declarado com segurança após os estados)
   useBackHandler(menuMobileAberto, () => setMenuMobileAberto(false), 'menuMobile');
-  useBackHandler(menuUsuarioAberto, () => setMenuUsuarioAberto(false), 'menuUsuario');
   useBackHandler(modalLembreteGlobalAberto, () => setModalLembreteGlobalAberto(false), 'modalLembrete');
   useBackHandler(modalStripeAbertoGlobal, () => setModalStripeAbertoGlobal(false), 'modalStripe');
   useBackHandler(gerenciadorImagensAberto, () => setGerenciadorImagensAberto(false), 'gerenciadorImagens');
+
+  // Auxiliares de iniciais e primeiro nome seguros
+  const iniciaisUsuario = (usuarioAtual?.nome || 'Profissional')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(n => n[0] || '')
+    .join('')
+    .toUpperCase() || 'TC';
+
+  const primeiroNomeUsuario = (usuarioAtual?.nome || 'Profissional').trim().split(/\s+/)[0] || 'Profissional';
 
   // Navegar para ficha de um caso
   const handleAbrirCaso = (casoId: string) => {
@@ -972,13 +1003,13 @@ export default function App() {
           {/* Card do Usuário Logado ou Botão de Acesso */}
           {estaAutenticado && usuarioAtual ? (
             <div 
-              onClick={() => { setTelaAtiva('perfil'); setMenuMobileAberto(false); }}
+              onClick={() => mudarTela('perfil')}
               className="bg-white/80 dark:bg-white/[0.06] p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-xs cursor-pointer hover:border-teal-500/40 border border-teal-200/60 dark:border-teal-500/20 transition-colors group"
               title="Clique para acessar Meu Perfil, Espaço Clínico e Senha"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-600 to-teal-800 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-                  {usuarioAtual.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                  {iniciaisUsuario}
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate leading-tight group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors">
@@ -991,13 +1022,13 @@ export default function App() {
               </div>
 
               <button
+                type="button"
                 onClick={async (e) => {
                   e.stopPropagation();
                   await logout();
-                  setTelaAtiva('login');
-                  setMenuMobileAberto(false);
+                  mudarTela('login');
                 }}
-                className="p-1.5 rounded-xl bg-white/60 dark:bg-white/10 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors shrink-0"
+                className="p-1.5 rounded-xl bg-white/60 dark:bg-white/10 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors shrink-0 cursor-pointer"
                 title="Sair do Sistema"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -1038,7 +1069,7 @@ export default function App() {
       {/* ========================================================================= */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all w-full max-w-full">
         {/* Topbar Superior em Vidro Fosco */}
-        <header className="sticky top-0 z-30 glass-header flex flex-col w-full max-w-full min-w-0 shadow-xs">
+        <header className="sticky top-0 z-40 glass-header flex flex-col w-full max-w-full min-w-0 shadow-xs">
           {/* Barra protetora para o topo em dispositivos móveis / notch PWA */}
           <div 
             className="lg:hidden w-full bg-white dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/60 shrink-0" 
@@ -1048,8 +1079,9 @@ export default function App() {
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             {/* Botão Hamburger para Mobile */}
             <button
+              type="button"
               onClick={() => setMenuMobileAberto(true)}
-              className="lg:hidden p-2 rounded-xl glass-button text-slate-600 dark:text-slate-300 shrink-0"
+              className="lg:hidden p-2 rounded-xl glass-button text-slate-600 dark:text-slate-300 shrink-0 cursor-pointer"
               title="Abrir Menu Lateral"
             >
               <Menu className="w-5 h-5" />
@@ -1078,7 +1110,7 @@ export default function App() {
           {/* Busca Rápida e Ações Rápidas à Direita */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Campo de Busca Global */}
-            <form onSubmit={handleBuscar} className="relative w-28 sm:w-56 md:w-72">
+            <form onSubmit={handleBuscar} className="relative w-24 sm:w-56 md:w-72">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
@@ -1091,7 +1123,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setTermoBuscaHeader('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -1100,8 +1132,9 @@ export default function App() {
 
             {/* Botão Notificações / Lembretes de Consultas */}
             <button
+              type="button"
               onClick={() => setModalLembreteGlobalAberto(true)}
-              className="w-8 h-8 rounded-xl glass-button flex items-center justify-center text-slate-600 dark:text-slate-300 relative shrink-0"
+              className="w-8 h-8 rounded-xl glass-button flex items-center justify-center text-slate-600 dark:text-slate-300 relative shrink-0 cursor-pointer"
               title="Lembretes de Consultas Marcadas para Hoje"
             >
               <Bell className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
@@ -1113,8 +1146,9 @@ export default function App() {
             {/* Botão de Planos & Assinatura no Header */}
             {estaAutenticado && (
               <button
+                type="button"
                 onClick={() => { mudarTela('planos'); }}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-button text-xs font-semibold text-teal-800 dark:text-teal-300 hover:border-teal-500/50 shrink-0"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-button text-xs font-semibold text-teal-800 dark:text-teal-300 hover:border-teal-500/50 shrink-0 cursor-pointer"
                 title="Gerenciar Assinatura e Planos"
               >
                 <Crown className="w-3.5 h-3.5 text-amber-500" />
@@ -1127,8 +1161,9 @@ export default function App() {
 
             {/* Alternador de Tema no Header */}
             <button
+              type="button"
               onClick={toggleTheme}
-              className="w-8 h-8 rounded-xl glass-button flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0"
+              className="w-8 h-8 rounded-xl glass-button flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0 cursor-pointer"
               title={isDark ? "Alternar para Modo Claro" : "Alternar para Modo Noturno"}
             >
               {isDark ? (
@@ -1140,110 +1175,119 @@ export default function App() {
 
             {/* Dropdown Rápido do Usuário */}
             {estaAutenticado && usuarioAtual && (
-              <div className="relative shrink-0">
+              <div ref={menuUsuarioRef} className="relative shrink-0">
                 <button
-                  onClick={() => setMenuUsuarioAberto(!menuUsuarioAberto)}
-                  className="glass-button flex items-center gap-2 p-1 pr-2.5 rounded-2xl hover:scale-[1.01] transition-all"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuUsuarioAberto(prev => !prev);
+                  }}
+                  className="glass-button flex items-center gap-2 p-1 pr-2.5 rounded-2xl hover:scale-[1.01] transition-all cursor-pointer"
                   title="Menu do Especialista"
+                  aria-expanded={menuUsuarioAberto}
                 >
                   <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-teal-600 to-teal-800 text-white font-bold text-[11px] flex items-center justify-center shrink-0 shadow-xs">
-                    {usuarioAtual.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                    {iniciaisUsuario}
                   </div>
                   <div className="text-left hidden sm:block min-w-0 max-w-[100px]">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate leading-tight">
-                      {usuarioAtual.nome.split(' ')[0]}
+                      {primeiroNomeUsuario}
                     </p>
                   </div>
-                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                  <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${menuUsuarioAberto ? 'rotate-180' : ''}`} />
                 </button>
 
                 {menuUsuarioAberto && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setMenuUsuarioAberto(false)} />
-                    <div className="absolute right-0 mt-2 w-64 glass-card p-2 z-50 animate-fadeIn text-xs space-y-1 shadow-2xl">
-                      <div className="p-2 border-b border-slate-200/60 dark:border-white/[0.08]">
-                        <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">{usuarioAtual.nome}</p>
-                        <p className="text-[10px] text-slate-400 truncate">{usuarioAtual.email}</p>
-                        {usuarioAtual.registro && (
-                          <span className="inline-block mt-1 px-1.5 py-0.5 rounded-md glass-button text-[9px] font-mono text-slate-600 dark:text-slate-300">
-                            {usuarioAtual.registro}
-                          </span>
-                        )}
+                  <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-1.5rem)] glass-card p-2 z-50 animate-fadeIn text-xs space-y-1 shadow-2xl border border-teal-500/30">
+                    <div className="p-2 border-b border-slate-200/60 dark:border-white/[0.08]">
+                      <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">{usuarioAtual.nome}</p>
+                      <p className="text-[10px] text-slate-400 truncate">{usuarioAtual.email}</p>
+                      {usuarioAtual.registro && (
+                        <span className="inline-block mt-1 px-1.5 py-0.5 rounded-md glass-button text-[9px] font-mono text-slate-600 dark:text-slate-300">
+                          {usuarioAtual.registro}
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => { setMenuUsuarioAberto(false); mudarTela('painel'); }}
+                      className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center gap-2 font-medium transition-colors cursor-pointer"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                      <span>Meu Painel Clínico</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { setMenuUsuarioAberto(false); mudarTela('perfil'); }}
+                      className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-teal-50 dark:hover:bg-teal-950/40 text-teal-900 dark:text-teal-200 flex items-center gap-2 font-semibold transition-colors cursor-pointer"
+                    >
+                      <User className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                      <span>Meu Perfil & Senha</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { setMenuUsuarioAberto(false); mudarTela('planos'); }}
+                      className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-between font-medium transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Crown className="w-4 h-4 text-amber-500" />
+                        <span>Planos & Assinatura</span>
                       </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-300 font-bold uppercase">
+                        {obterRotuloPlano(usuarioAtual?.planoId, usuarioAtual?.email)}
+                      </span>
+                    </button>
 
+                    {ehAdmin && (
                       <button
-                        onClick={() => { setTelaAtiva('painel'); setMenuUsuarioAberto(false); }}
-                        className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center gap-2 font-medium transition-colors"
-                      >
-                        <LayoutDashboard className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                        <span>Meu Painel Clínico</span>
-                      </button>
-
-                      <button
-                        onClick={() => { setTelaAtiva('perfil'); setMenuUsuarioAberto(false); }}
-                        className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center gap-2 font-medium transition-colors"
-                      >
-                        <User className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                        <span>Meu Perfil & Senha</span>
-                      </button>
-
-                      <button
-                        onClick={() => { mudarTela('planos'); setMenuUsuarioAberto(false); }}
-                        className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-between font-medium transition-colors"
+                        type="button"
+                        onClick={() => { setMenuUsuarioAberto(false); setModalStripeAbertoGlobal(true); }}
+                        className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-between font-medium transition-colors cursor-pointer"
                       >
                         <div className="flex items-center gap-2">
-                          <Crown className="w-4 h-4 text-amber-500" />
-                          <span>Planos & Assinatura</span>
+                          <CreditCard className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                          <span>Configurar Stripe</span>
                         </div>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-300 font-bold uppercase">
-                          {obterRotuloPlano(usuarioAtual?.planoId, usuarioAtual?.email)}
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-300 font-bold">
+                          Gateway
                         </span>
                       </button>
+                    )}
 
-                      {ehAdmin && (
-                        <button
-                          onClick={() => { setModalStripeAbertoGlobal(true); setMenuUsuarioAberto(false); }}
-                          className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-between font-medium transition-colors"
-                        >
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                            <span>Configurar Stripe</span>
-                          </div>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-300 font-bold">
-                            Gateway
-                          </span>
-                        </button>
-                      )}
+                    <button
+                      type="button"
+                      onClick={() => { setMenuUsuarioAberto(false); mudarTela('pacientes'); }}
+                      className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center gap-2 font-medium transition-colors cursor-pointer"
+                    >
+                      <Users className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                      <span>Meus Pacientes</span>
+                    </button>
 
-                      <button
-                        onClick={() => { setTelaAtiva('pacientes'); setMenuUsuarioAberto(false); }}
-                        className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center gap-2 font-medium transition-colors"
-                      >
-                        <Users className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                        <span>Meus Pacientes</span>
-                      </button>
+                    <button
+                      type="button"
+                      onClick={() => { setMenuUsuarioAberto(false); mudarTela('login'); }}
+                      className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center gap-2 font-medium transition-colors cursor-pointer"
+                    >
+                      <UserCheck className="w-4 h-4 text-emerald-500" />
+                      <span>Trocar de Especialista</span>
+                    </button>
 
-                      <button
-                        onClick={() => { setTelaAtiva('login'); setMenuUsuarioAberto(false); }}
-                        className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center gap-2 font-medium transition-colors"
-                      >
-                        <UserCheck className="w-4 h-4 text-emerald-500" />
-                        <span>Trocar de Especialista</span>
-                      </button>
-
-                      <button
-                        onClick={async () => {
-                          setMenuUsuarioAberto(false);
-                          await logout();
-                          setTelaAtiva('login');
-                        }}
-                        className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2 font-semibold border-t border-slate-200/60 dark:border-white/[0.08] pt-1.5 transition-colors"
-                      >
-                        <LogOut className="w-4 h-4 text-rose-500" />
-                        <span>Sair do Sistema</span>
-                      </button>
-                    </div>
-                  </>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setMenuUsuarioAberto(false);
+                        await logout();
+                        mudarTela('login');
+                      }}
+                      className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2 font-semibold border-t border-slate-200/60 dark:border-white/[0.08] pt-1.5 transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4 text-rose-500" />
+                      <span>Sair do Sistema</span>
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -1298,8 +1342,7 @@ export default function App() {
           {telaAtiva === 'painel' && (
             <PainelUsuarioView
               onNavegarPara={(tela) => {
-                setTelaAtiva(tela);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                mudarTela(tela);
               }}
               onSelecionarPaciente={(paciente) => {
                 handleIniciarCapturaPaciente({ id: paciente.id, nome: paciente.nome });
@@ -1392,12 +1435,10 @@ export default function App() {
               modoInicial={modoBancadaAtual}
               onMudarModoBancada={(modo) => setModoBancadaAtual(modo)}
               onNavegarParaAnamnese={() => {
-                setTelaAtiva('anamnese');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                mudarTela('anamnese');
               }}
               onNavegarParaPacientes={() => {
-                setTelaAtiva('pacientes');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                mudarTela('pacientes');
               }}
             />
           )}

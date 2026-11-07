@@ -1,26 +1,26 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  FileText, 
-  Camera, 
-  Clock, 
-  Sparkles, 
-  CheckCircle, 
-  AlertCircle, 
-  Plus, 
-  Download, 
-  Share2, 
-  Eye, 
-  GitCompare, 
-  Layers, 
-  Calendar, 
-  CheckSquare, 
-  PlusCircle, 
-  ArrowRight, 
-  Trash2, 
-  X, 
-  Check, 
-  Microscope, 
-  Upload, 
+import {
+  FileText,
+  Camera,
+  Clock,
+  Sparkles,
+  CheckCircle,
+  AlertCircle,
+  Plus,
+  Download,
+  Share2,
+  Eye,
+  GitCompare,
+  Layers,
+  Calendar,
+  CheckSquare,
+  PlusCircle,
+  ArrowRight,
+  Trash2,
+  X,
+  Check,
+  Microscope,
+  Upload,
   ChevronRight,
   Pill,
   Sliders,
@@ -33,18 +33,18 @@ import {
 } from 'lucide-react';
 import { Paciente, ConsultaRegistro, FotoGlobalPaciente } from '../types/paciente';
 import { RespostaAnamnese, FichaAvaliacaoCapilarData } from '../types/anamnese';
-import { 
-  ProtocoloPaciente, 
-  SessaoProtocoloRegistro, 
-  CategoriaProtocolo, 
+import {
+  ProtocoloPaciente,
+  SessaoProtocoloRegistro,
+  CategoriaProtocolo,
   StatusProtocolo,
-  TEMPLATES_PROTOCOLOS_PADRAO 
+  TEMPLATES_PROTOCOLOS_PADRAO
 } from '../types/protocolo';
-import { 
-  salvarProtocoloPaciente, 
-  registrarSessaoProtocolo, 
-  atualizarStatusProtocolo, 
-  deletarProtocoloPaciente 
+import {
+  salvarProtocoloPaciente,
+  registrarSessaoProtocolo,
+  atualizarStatusProtocolo,
+  deletarProtocoloPaciente
 } from '../services/protocolosService';
 
 interface HistoricoClinicoViewProps {
@@ -88,7 +88,7 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
   // Sub-filtro do histórico: 'tudo' | 'fichas' | 'consultas' | 'fotos' | 'protocolos'
   const [subAba, setSubAba] = useState<'tudo' | 'fichas' | 'consultas' | 'fotos' | 'protocolos'>('tudo');
   const [filtroTipoFoto, setFiltroTipoFoto] = useState<'todas' | 'globais' | 'tricoscopia' | 'consultas'>('todas');
-  
+
   // Modais de Protocolo
   const [modalNovoProtocoloAberto, setModalNovoProtocoloAberto] = useState(false);
   const [modalRegistrarSessaoAberto, setModalRegistrarSessaoAberto] = useState<{ aberto: boolean; protocolo: ProtocoloPaciente | null }>({
@@ -305,7 +305,7 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
       if (ficha.dadosFichaJson) {
         return JSON.parse(ficha.dadosFichaJson);
       }
-    } catch {}
+    } catch { }
     return null;
   };
 
@@ -313,11 +313,10 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
     <div className="space-y-6 animate-fadeIn">
       {/* ALERTA DE NOTIFICAÇÃO */}
       {alerta && (
-        <div className={`p-4 rounded-2xl flex items-center justify-between text-xs font-semibold shadow-md animate-fadeIn ${
-          alerta.tipo === 'sucesso'
+        <div className={`p-4 rounded-2xl flex items-center justify-between text-xs font-semibold shadow-md animate-fadeIn ${alerta.tipo === 'sucesso'
             ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800'
             : 'bg-rose-50 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800'
-        }`}>
+          }`}>
           <div className="flex items-center gap-2">
             {alerta.tipo === 'sucesso' ? <Check className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-rose-600" />}
             <span>{alerta.mensagem}</span>
@@ -331,7 +330,7 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
       {/* CABEÇALHO DO HISTÓRICO CLÍNICO UNIFICADO */}
       <div className="bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 text-white rounded-3xl p-6 sm:p-7 shadow-lg relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-teal-500/20 to-transparent pointer-events-none" />
-        
+
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
@@ -402,7 +401,7 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
         {/* 4 CARDS DE MÉTRICAS RÁPIDAS DOS 4 PILARES */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-6 mt-6 border-t border-teal-700/60 text-slate-100">
           {/* Pilar 1: Ficha Clínica & Anamnese Integrada */}
-          <div 
+          <div
             onClick={() => setSubAba('fichas')}
             className="p-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 transition-all cursor-pointer group"
           >
@@ -419,7 +418,7 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
           </div>
 
           {/* Pilar 2: Consultas & Evolução */}
-          <div 
+          <div
             onClick={() => setSubAba('consultas')}
             className="p-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 transition-all cursor-pointer group"
           >
@@ -436,7 +435,7 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
           </div>
 
           {/* Pilar 3: Registros Fotográficos */}
-          <div 
+          <div
             onClick={() => setSubAba('fotos')}
             className="p-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 transition-all cursor-pointer group"
           >
@@ -453,7 +452,7 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
           </div>
 
           {/* Pilar 4: Protocolos */}
-          <div 
+          <div
             onClick={() => setSubAba('protocolos')}
             className="p-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 transition-all cursor-pointer group"
           >
@@ -476,11 +475,10 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
         <button
           type="button"
           onClick={() => setSubAba('tudo')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border whitespace-nowrap ${
-            subAba === 'tudo'
+          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border whitespace-nowrap ${subAba === 'tudo'
               ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs'
               : 'bg-white dark:bg-slate-900 text-stone-600 dark:text-slate-400 border-stone-200 dark:border-slate-800 hover:bg-stone-50'
-          }`}
+            }`}
         >
           <Layers className="w-3.5 h-3.5" />
           <span>Visão Geral Consolidada</span>
@@ -489,17 +487,15 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
         <button
           type="button"
           onClick={() => setSubAba('fichas')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border whitespace-nowrap ${
-            subAba === 'fichas'
+          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border whitespace-nowrap ${subAba === 'fichas'
               ? 'bg-teal-700 text-white border-teal-700 shadow-md shadow-teal-700/20'
               : 'bg-white dark:bg-slate-900 text-stone-600 dark:text-slate-400 border-stone-200 dark:border-slate-800 hover:bg-stone-50'
-          }`}
+            }`}
         >
           <FileText className="w-3.5 h-3.5" />
           <span>Ficha Clínica & Anamnese Integrada</span>
-          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-            subAba === 'fichas' ? 'bg-white/20 text-white' : 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300'
-          }`}>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${subAba === 'fichas' ? 'bg-white/20 text-white' : 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300'
+            }`}>
             {fichas.length}
           </span>
         </button>
@@ -507,17 +503,15 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
         <button
           type="button"
           onClick={() => setSubAba('consultas')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border whitespace-nowrap ${
-            subAba === 'consultas'
+          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border whitespace-nowrap ${subAba === 'consultas'
               ? 'bg-teal-700 text-white border-teal-700 shadow-md shadow-teal-700/20'
               : 'bg-white dark:bg-slate-900 text-stone-600 dark:text-slate-400 border-stone-200 dark:border-slate-800 hover:bg-stone-50'
-          }`}
+            }`}
         >
           <Clock className="w-3.5 h-3.5" />
           <span>Consultas & Retornos</span>
-          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-            subAba === 'consultas' ? 'bg-white/20 text-white' : 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300'
-          }`}>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${subAba === 'consultas' ? 'bg-white/20 text-white' : 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300'
+            }`}>
             {consultas.length}
           </span>
         </button>
@@ -525,17 +519,15 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
         <button
           type="button"
           onClick={() => setSubAba('fotos')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border whitespace-nowrap ${
-            subAba === 'fotos'
+          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border whitespace-nowrap ${subAba === 'fotos'
               ? 'bg-teal-700 text-white border-teal-700 shadow-md shadow-teal-700/20'
               : 'bg-white dark:bg-slate-900 text-stone-600 dark:text-slate-400 border-stone-200 dark:border-slate-800 hover:bg-stone-50'
-          }`}
+            }`}
         >
           <Camera className="w-3.5 h-3.5" />
           <span>Registros Fotográficos</span>
-          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-            subAba === 'fotos' ? 'bg-white/20 text-white' : 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300'
-          }`}>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${subAba === 'fotos' ? 'bg-white/20 text-white' : 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300'
+            }`}>
             {todasFotos.length}
           </span>
         </button>
@@ -543,17 +535,15 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
         <button
           type="button"
           onClick={() => setSubAba('protocolos')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border whitespace-nowrap ${
-            subAba === 'protocolos'
+          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border whitespace-nowrap ${subAba === 'protocolos'
               ? 'bg-teal-700 text-white border-teal-700 shadow-md shadow-teal-700/20'
               : 'bg-white dark:bg-slate-900 text-stone-600 dark:text-slate-400 border-stone-200 dark:border-slate-800 hover:bg-stone-50'
-          }`}
+            }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
           <span>Protocolos Terapêuticos</span>
-          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-            subAba === 'protocolos' ? 'bg-white/20 text-white' : 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300'
-          }`}>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${subAba === 'protocolos' ? 'bg-white/20 text-white' : 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300'
+            }`}>
             {protocolos.length}
           </span>
         </button>
@@ -638,11 +628,10 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
                           <span className="font-bold text-stone-900 dark:text-slate-100 text-xs sm:text-sm">
                             {f.modeloTitulo}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            f.status === 'rascunho'
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${f.status === 'rascunho'
                               ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                               : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                          }`}>
+                            }`}>
                             {f.status === 'rascunho' ? 'Rascunho' : 'Finalizada & Assinada ✓'}
                           </span>
                           {f.assinaturaUrl && (
@@ -890,44 +879,40 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
             <button
               type="button"
               onClick={() => setFiltroTipoFoto('todas')}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold shrink-0 transition-all border ${
-                filtroTipoFoto === 'todas'
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold shrink-0 transition-all border ${filtroTipoFoto === 'todas'
                   ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-slate-900'
                   : 'bg-stone-50 dark:bg-slate-800/60 text-stone-600 dark:text-slate-400 border-stone-200/80 dark:border-slate-700'
-              }`}
+                }`}
             >
               Todas ({todasFotos.length})
             </button>
             <button
               type="button"
               onClick={() => setFiltroTipoFoto('globais')}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold shrink-0 transition-all border ${
-                filtroTipoFoto === 'globais'
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold shrink-0 transition-all border ${filtroTipoFoto === 'globais'
                   ? 'bg-teal-700 text-white border-teal-700 shadow-2xs'
                   : 'bg-stone-50 dark:bg-slate-800/60 text-stone-600 dark:text-slate-400 border-stone-200/80 dark:border-slate-700'
-              }`}
+                }`}
             >
               Globais Macroscópicas ({fotosGlobais.length})
             </button>
             <button
               type="button"
               onClick={() => setFiltroTipoFoto('tricoscopia')}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold shrink-0 transition-all border ${
-                filtroTipoFoto === 'tricoscopia'
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold shrink-0 transition-all border ${filtroTipoFoto === 'tricoscopia'
                   ? 'bg-teal-700 text-white border-teal-700 shadow-2xs'
                   : 'bg-stone-50 dark:bg-slate-800/60 text-stone-600 dark:text-slate-400 border-stone-200/80 dark:border-slate-700'
-              }`}
+                }`}
             >
               Tricoscopia por Área ({todasFotos.filter(f => f.tipo === 'tricoscopia').length})
             </button>
             <button
               type="button"
               onClick={() => setFiltroTipoFoto('consultas')}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold shrink-0 transition-all border ${
-                filtroTipoFoto === 'consultas'
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold shrink-0 transition-all border ${filtroTipoFoto === 'consultas'
                   ? 'bg-teal-700 text-white border-teal-700 shadow-2xs'
                   : 'bg-stone-50 dark:bg-slate-800/60 text-stone-600 dark:text-slate-400 border-stone-200/80 dark:border-slate-700'
-              }`}
+                }`}
             >
               Consultas & Retornos ({todasFotos.filter(f => f.tipo === 'consulta').length})
             </button>
@@ -960,13 +945,12 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
                       <Eye className="w-4 h-4" />
                       <span>Ampliar</span>
                     </div>
-                    <span className={`absolute top-2 left-2 px-2 py-0.5 rounded-md font-bold text-[9px] shadow-xs backdrop-blur-xs ${
-                      foto.tipo === 'global'
+                    <span className={`absolute top-2 left-2 px-2 py-0.5 rounded-md font-bold text-[9px] shadow-xs backdrop-blur-xs ${foto.tipo === 'global'
                         ? 'bg-teal-900/90 text-white'
                         : foto.tipo === 'tricoscopia'
                           ? 'bg-rose-900/90 text-white'
                           : 'bg-blue-900/90 text-white'
-                    }`}>
+                      }`}>
                       {foto.tag}
                     </span>
                   </div>
@@ -1073,13 +1057,12 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
                           <h4 className="font-bold text-stone-900 dark:text-slate-100 text-sm">
                             {prot.titulo}
                           </h4>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            prot.status === 'concluido'
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${prot.status === 'concluido'
                               ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
                               : prot.status === 'pausado'
                                 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                                 : 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300'
-                          }`}>
+                            }`}>
                             {prot.status === 'concluido' ? 'Concluído ✓' : prot.status === 'pausado' ? 'Pausado' : 'Em Andamento'}
                           </span>
                           <span className="px-2 py-0.5 rounded-md bg-stone-200/70 dark:bg-slate-800 text-stone-700 dark:text-slate-300 text-[10px] font-medium">
@@ -1142,11 +1125,10 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
                       </div>
                       <div className="w-full h-2.5 rounded-full bg-stone-200 dark:bg-slate-800 overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            percentual >= 100
+                          className={`h-full rounded-full transition-all duration-500 ${percentual >= 100
                               ? 'bg-emerald-600'
                               : 'bg-gradient-to-r from-teal-600 to-teal-500'
-                          }`}
+                            }`}
                           style={{ width: `${percentual}%` }}
                         />
                       </div>
