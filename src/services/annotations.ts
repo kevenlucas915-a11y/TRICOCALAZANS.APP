@@ -817,3 +817,98 @@ export async function alternarLiberacaoCaptura(id: string, liberado: boolean): P
   }
 }
 
+/**
+ * Atualiza a zona/área avaliada de uma sessão/captura (tricoscopia ou macro)
+ * Auxilia o usuário que preenche rápido e comete erros de digitação ou seleção
+ */
+export async function atualizarAreaSessao(id: string, novaArea: string): Promise<Session | null> {
+  const areaLimpa = novaArea.trim() || 'Vértice / Vértex';
+  const currentUid = auth.currentUser?.uid;
+  const store = getStoredSessions(currentUid);
+  
+  let sessaoRetorno: Session | null = null;
+
+  if (store[id]) {
+    store[id].session.area = areaLimpa;
+    sessaoRetorno = store[id].session;
+    inMemorySessionsCache.set(id, store[id]);
+    saveStoredSessions(store, currentUid);
+    salvarSessaoIndexedDB(store[id]).catch(() => {});
+  }
+
+  // 1. Atualizar no Firestore em capturas_paciente
+  try {
+    const docRef = doc(db, 'capturas_paciente', id);
+    const docSnap = await getDoc(docRef);
+    let anotacoesAtualizadas: string | undefined;
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (data.anotacoes && typeof data.anotacoes === 'string' && data.anotacoes.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(data.anotacoes);
+          parsed.area = areaLimpa;
+          anotacoesAtualizadas = JSON.stringify(parsed);
+        } catch {
+          // ignore
+        }
+      }
+
+      if (!sessaoRetorno) {
+        sessaoRetorno = {
+          id: data.id,
+          userId: data.userId,
+          client_name: data.nomePaciente || 'Cliente',
+          session_date: data.dataCaptura || new Date().toISOString().split('T')[0],
+          area: areaLimpa,
+          image_url: data.imagemUrl || data.imagemDataUrl || '',
+          image_path: data.imagemPath,
+          created_at: data.createdAt || new Date().toISOString(),
+          caso_referencia_id: data.casoReferenciaId,
+          paciente_id: data.pacienteId || data.paciente_id,
+          liberadoPaciente: data.liberadoPaciente ?? false
+        };
+      }
+    }
+
+    const payloadAtualizacao: Record<string, any> = {
+      area: areaLimpa,
+      updatedAt: new Date().toISOString()
+    };
+    if (anotacoesAtualizadas) {
+      payloadAtualizacao.anotacoes = anotacoesAtualizadas;
+    }
+
+    await setDoc(docRef, payloadAtualizacao, { merge: true });
+    console.info(`✅ Zona avaliada da captura ${id} atualizada para "${areaLimpa}" no Firestore`);
+  } catch (err) {
+    console.warn('Erro ao atualizar área da captura no Firestore (capturas_paciente):', err);
+  }
+
+  // 2. Sincronizar também com consultas_paciente caso exista vínculo
+  try {
+    const consRef = doc(db, 'consultas_paciente', `cons_${id}`);
+    await setDoc(consRef, {
+      area: areaLimpa,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (consErr) {
+    // silencioso para não interromper caso cons_id não exista
+  }
+
+  // 3. Notificar toda a aplicação em tempo real
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('trico-session-saved', { 
+      detail: store[id] || { id, area: areaLimpa } 
+    }));
+    window.dispatchEvent(new CustomEvent('trico-paciente-captura-salva', {
+      detail: {
+        sessionId: id,
+        area: areaLimpa
+      }
+    }));
+  }
+
+  return sessaoRetorno;
+}
+

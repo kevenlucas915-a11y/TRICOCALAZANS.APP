@@ -9,6 +9,7 @@ import {
   listSessions,
   deleteSession,
   alternarLiberacaoCaptura,
+  atualizarAreaSessao,
   calculateCountingSummary
 } from '../services/annotations';
 import { listPacientes } from '../services/pacientes';
@@ -203,7 +204,14 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
     mensagem: string;
     tempoMs: number;
     area: string;
+    sessionId?: string;
   } | null>(null);
+
+  // Estado para edição pós-registro da zona avaliada (tricoscópico ou macro)
+  const [sessaoEdicaoZona, setSessaoEdicaoZona] = useState<Session | null>(null);
+  const [novaZonaSelecionada, setNovaZonaSelecionada] = useState<string>('');
+  const [zonaPersonalizada, setZonaPersonalizada] = useState<string>('');
+  const [salvandoNovaZona, setSalvandoNovaZona] = useState<boolean>(false);
 
   // Tour rápido guiado da bancada de marcação
   const [tourAberto, setTourAberto] = useState<boolean>(() => {
@@ -465,7 +473,8 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
         visivel: true,
         mensagem: `Registro da área "${areaCouro}" salvo com sucesso no banco de dados e arquivado no prontuário de ${saved.session.client_name}!`,
         tempoMs,
-        area: areaCouro
+        area: areaCouro,
+        sessionId: saved.session.id
       });
       setTimeout(() => {
         setConfirmacaoBanco(prev => prev ? { ...prev, visivel: false } : null);
@@ -747,6 +756,43 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
         setSessionId(null);
       }
       mostrarAlerta('sucesso', 'Sessão excluída.');
+    }
+  };
+
+  // Abrir modal de edição da zona avaliada (tricoscópico ou macro)
+  const handleAbrirEdicaoZona = (sess: Session) => {
+    setSessaoEdicaoZona(sess);
+    setNovaZonaSelecionada(sess.area || REGIOES_COURO_CABELUDO[0]);
+    if (sess.area && !REGIOES_COURO_CABELUDO.includes(sess.area)) {
+      setZonaPersonalizada(sess.area);
+    } else {
+      setZonaPersonalizada('');
+    }
+  };
+
+  // Confirmar e salvar alteração da zona avaliada
+  const handleConfirmarNovaZona = async () => {
+    if (!sessaoEdicaoZona) return;
+    const zonaFinal = (zonaPersonalizada.trim() || novaZonaSelecionada || 'Vértice / Vértex').trim();
+    setSalvandoNovaZona(true);
+    try {
+      await atualizarAreaSessao(sessaoEdicaoZona.id, zonaFinal);
+
+      // Atualizar lista de sessões no estado local
+      setSessoesSalvas(prev => prev.map(s => s.id === sessaoEdicaoZona.id ? { ...s, area: zonaFinal } : s));
+
+      // Se a sessão em edição for a mesma aberta na bancada, atualiza a área ativa
+      if (sessionId === sessaoEdicaoZona.id) {
+        setAreaCouro(zonaFinal);
+      }
+
+      mostrarAlerta('sucesso', `Zona avaliada alterada para "${zonaFinal}" com sucesso!`);
+      setSessaoEdicaoZona(null);
+    } catch (err: any) {
+      console.error('Erro ao atualizar zona avaliada:', err);
+      mostrarAlerta('erro', 'Erro ao salvar alteração da zona avaliada.');
+    } finally {
+      setSalvandoNovaZona(false);
     }
   };
 
@@ -1034,14 +1080,37 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setConfirmacaoBanco(null)}
-            className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-950 p-2 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors"
-            title="Fechar confirmação"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {confirmacaoBanco.sessionId && (
+              <button
+                type="button"
+                onClick={() => {
+                  const sess = sessoesSalvas.find(s => s.id === confirmacaoBanco.sessionId) || {
+                    id: confirmacaoBanco.sessionId!,
+                    client_name: clientName || 'Paciente',
+                    session_date: sessionDate,
+                    area: confirmacaoBanco.area,
+                    image_url: imagemUsuarioUrl || '',
+                    created_at: new Date().toISOString()
+                  };
+                  handleAbrirEdicaoZona(sess);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-200 font-bold text-xs border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-slate-700 shadow-xs flex items-center gap-1.5 transition-all"
+                title="Errou a zona ao preencher rápido? Clique para corrigir agora"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Corrigir Zona</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setConfirmacaoBanco(null)}
+              className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-950 p-2 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors"
+              title="Fechar confirmação"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -1510,12 +1579,36 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                       </div>
 
                       <div className="space-y-1">
-                        <span className="px-2 py-0.5 rounded-lg bg-teal-700 text-white font-bold text-[10px] block truncate text-center">
-                          {sess.area || 'Área'}
-                        </span>
-                        <p className="text-[10px] text-stone-400 font-mono text-center truncate">
-                          {sess.session_date}
-                        </p>
+                        <div className="flex items-center justify-between gap-1 bg-teal-700 text-white px-2 py-0.5 rounded-lg shadow-xs">
+                          <span className="font-bold text-[10px] truncate" title={sess.area || 'Área'}>
+                            {sess.area || 'Área'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAbrirEdicaoZona(sess);
+                            }}
+                            className="p-0.5 hover:bg-white/20 rounded text-teal-100 hover:text-white transition-colors shrink-0"
+                            title="Editar ou corrigir zona avaliada desta foto"
+                          >
+                            <Edit3 className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-stone-400 font-mono px-0.5">
+                          <span className="truncate">{sess.session_date}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAbrirEdicaoZona(sess);
+                            }}
+                            className="text-[9px] font-sans font-bold text-teal-700 dark:text-teal-400 hover:underline cursor-pointer"
+                            title="Corrigir zona avaliada"
+                          >
+                            Trocar Zona
+                          </button>
+                        </div>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -1595,12 +1688,36 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                       </div>
 
                       <div className="space-y-1">
-                        <span className="px-2 py-0.5 rounded-lg bg-emerald-700 text-white font-bold text-[10px] block truncate text-center">
-                          {sess.area || 'Área'}
-                        </span>
-                        <p className="text-[10px] text-stone-400 font-mono text-center truncate">
-                          {sess.session_date}
-                        </p>
+                        <div className="flex items-center justify-between gap-1 bg-emerald-700 text-white px-2 py-0.5 rounded-lg shadow-xs">
+                          <span className="font-bold text-[10px] truncate" title={sess.area || 'Área'}>
+                            {sess.area || 'Área'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAbrirEdicaoZona(sess);
+                            }}
+                            className="p-0.5 hover:bg-white/20 rounded text-emerald-100 hover:text-white transition-colors shrink-0"
+                            title="Editar ou corrigir zona avaliada desta foto"
+                          >
+                            <Edit3 className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-stone-400 font-mono px-0.5">
+                          <span className="truncate">{sess.session_date}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAbrirEdicaoZona(sess);
+                            }}
+                            className="text-[9px] font-sans font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                            title="Corrigir zona avaliada"
+                          >
+                            Trocar Zona
+                          </button>
+                        </div>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -1627,9 +1744,25 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                   <Microscope className="w-3.5 h-3.5" />
                   <span>Passo 4: Bancada de Contagem Manual & Laudo</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-slate-100 tracking-tight">
-                  Análise & Contagem: {areaCouro}
-                </h1>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-slate-100 tracking-tight">
+                    Análise & Contagem: {areaCouro}
+                  </h1>
+                  {sessionId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const sess = sessoesSalvas.find(s => s.id === sessionId);
+                        if (sess) handleAbrirEdicaoZona(sess);
+                      }}
+                      className="px-2.5 py-1 rounded-xl bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-200 border border-teal-200 dark:border-teal-800 text-xs font-bold flex items-center gap-1 transition-all shadow-xs"
+                      title="Alterar a zona anatômica deste registro"
+                    >
+                      <Edit3 className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+                      <span>Alterar Zona</span>
+                    </button>
+                  )}
+                </div>
                 <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 max-w-2xl leading-relaxed">
                   Marque manualmente no canvas as unidades unitárias, duplas, triplas, óstios vazios e achados tricoscópicos para cálculo em tempo real e emissão do laudo.
                 </p>
@@ -1826,21 +1959,51 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
-                  <MapPin className="w-3 h-3 text-rose-600" />
-                  <span>Área Avaliada</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-rose-600" />
+                    <span>Área Avaliada</span>
+                  </label>
+                  {sessionId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const sess = sessoesSalvas.find(s => s.id === sessionId);
+                        if (sess) handleAbrirEdicaoZona(sess);
+                      }}
+                      className="text-[10px] font-bold text-teal-700 dark:text-teal-400 hover:underline flex items-center gap-0.5"
+                      title="Editar ou personalizar a zona anatômica deste registro"
+                    >
+                      <Edit3 className="w-2.5 h-2.5" />
+                      <span>Trocar Zona</span>
+                    </button>
+                  )}
+                </div>
                 <select
                   value={areaCouro}
-                  onChange={(e) => {
-                    setAreaCouro(e.target.value);
+                  onChange={async (e) => {
+                    const nova = e.target.value;
+                    setAreaCouro(nova);
                     setAlteracoesNaoSalvas(true);
+                    if (sessionId) {
+                      try {
+                        await atualizarAreaSessao(sessionId, nova);
+                        setSessoesSalvas(prev => prev.map(s => s.id === sessionId ? { ...s, area: nova } : s));
+                        mostrarAlerta('sucesso', `Zona avaliada atualizada para "${nova}" no registro!`);
+                      } catch (err) {
+                        console.warn('Erro ao atualizar zona do registro:', err);
+                      }
+                    }
                   }}
                   className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-stone-900 dark:text-slate-100 font-medium focus:outline-none focus:border-rose-400 transition-colors"
                 >
                   {REGIOES_COURO_CABELUDO.map((r, i) => (
                     <option key={i} value={r}>{r}</option>
                   ))}
+                  {/* Se a área atual for personalizada e não estiver na lista padrão, exibe-a aqui */}
+                  {!REGIOES_COURO_CABELUDO.includes(areaCouro) && (
+                    <option value={areaCouro}>{areaCouro} (Personalizada)</option>
+                  )}
                 </select>
               </div>
 
@@ -3176,6 +3339,19 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAbrirEdicaoZona(sess);
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border border-stone-200 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 text-stone-700 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-teal-700 dark:hover:text-teal-300 hover:border-teal-300 transition-colors"
+                        title="Corrigir ou alterar a zona anatômica avaliada"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                        <span className="hidden sm:inline">Editar Zona</span>
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={async (e) => {
                           e.stopPropagation();
                           const novo = !sess.liberadoPaciente;
@@ -3216,6 +3392,145 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDITAR ZONA AVALIADA (CORREÇÃO RÁPIDA PÓS-REGISTRO) */}
+      {sessaoEdicaoZona && (
+        <div className="fixed inset-0 z-[110] bg-black/75 backdrop-blur-sm flex justify-center items-center p-3 sm:p-6 overflow-y-auto animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 text-stone-900 dark:text-slate-100 border border-stone-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden my-auto flex flex-col">
+            {/* Cabeçalho */}
+            <div className="p-5 border-b border-stone-200 dark:border-slate-800 flex items-center justify-between bg-stone-50/80 dark:bg-slate-950/80">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-teal-500/10 text-teal-700 dark:text-teal-400 flex items-center justify-center border border-teal-500/20">
+                  <Edit3 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900 dark:text-slate-100">
+                    Editar Zona Avaliada do Registro
+                  </h3>
+                  <p className="text-[11px] text-stone-500 dark:text-slate-400">
+                    Corrija a área anatômica deste registro (tricoscópico ou macro)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSessaoEdicaoZona(null)}
+                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors"
+                title="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Corpo do Modal */}
+            <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+              {/* Preview do Registro */}
+              <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-800">
+                {sessaoEdicaoZona.image_url ? (
+                  <img
+                    src={sessaoEdicaoZona.image_url}
+                    alt={sessaoEdicaoZona.area}
+                    className="w-16 h-16 rounded-xl object-cover bg-black border border-stone-200 dark:border-slate-700 shrink-0"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-xl bg-stone-900 flex items-center justify-center text-stone-400 shrink-0">
+                    <Camera className="w-6 h-6" />
+                  </div>
+                )}
+                <div className="min-w-0 space-y-1">
+                  <p className="text-xs font-bold text-stone-900 dark:text-slate-100 truncate">
+                    {sessaoEdicaoZona.client_name || clientName || 'Paciente'}
+                  </p>
+                  <p className="text-[11px] text-stone-500 dark:text-slate-400">
+                    Data: <span className="font-mono">{sessaoEdicaoZona.session_date}</span>
+                  </p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] text-stone-500 dark:text-slate-400">Zona Atual:</span>
+                    <span className="px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 font-bold text-[10px] border border-rose-200 dark:border-rose-900">
+                      {sessaoEdicaoZona.area || 'Não definida'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Seleção Rápida de Zonas Padrão */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-stone-700 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider">
+                  <MapPin className="w-3.5 h-3.5 text-teal-600" />
+                  <span>Selecione a Nova Zona Anatômica:</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {REGIOES_COURO_CABELUDO.map((regiao) => {
+                    const isSelecionada = !zonaPersonalizada.trim() && novaZonaSelecionada === regiao;
+                    return (
+                      <button
+                        key={regiao}
+                        type="button"
+                        onClick={() => {
+                          setNovaZonaSelecionada(regiao);
+                          setZonaPersonalizada('');
+                        }}
+                        className={`p-2.5 rounded-xl text-xs font-semibold text-left transition-all border flex items-center justify-between ${
+                          isSelecionada
+                            ? 'bg-teal-700 text-white border-teal-600 shadow-sm ring-2 ring-teal-500/30'
+                            : 'bg-stone-50 dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:border-teal-400 hover:bg-teal-50/50 dark:hover:bg-teal-950/30'
+                        }`}
+                      >
+                        <span className="truncate">{regiao}</span>
+                        {isSelecionada && <Check className="w-3.5 h-3.5 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Ou Zona Personalizada */}
+              <div className="space-y-1.5 pt-2 border-t border-stone-100 dark:border-slate-800">
+                <label className="text-[11px] font-semibold text-stone-600 dark:text-slate-400">
+                  Ou digite uma zona personalizada:
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Sobrancelha, Barba, Vértice Posterior, etc."
+                  value={zonaPersonalizada}
+                  onChange={(e) => setZonaPersonalizada(e.target.value)}
+                  className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:border-teal-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Rodapé com Ações */}
+            <div className="p-4 bg-stone-50 dark:bg-slate-950/80 border-t border-stone-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSessaoEdicaoZona(null)}
+                disabled={salvandoNovaZona}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-stone-600 dark:text-slate-400 hover:bg-stone-200/60 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarNovaZona}
+                disabled={salvandoNovaZona || (!novaZonaSelecionada && !zonaPersonalizada.trim())}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-teal-700 to-emerald-600 hover:from-teal-800 hover:to-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-teal-700/20 disabled:opacity-50 transition-all cursor-pointer"
+              >
+                {salvandoNovaZona ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Salvando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Salvar Nova Zona</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
