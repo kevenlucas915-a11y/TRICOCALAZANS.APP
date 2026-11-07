@@ -14,6 +14,11 @@ export interface Paciente {
   genero?: string;
   queixaPrincipal?: string;
   historicoClinico?: string;
+  endereco?: string;
+  cidade?: string;
+  bairro?: string;
+  cep?: string;
+  profissao?: string;
   consentimentoIaExames?: {
     autorizado: boolean;
     data: string;

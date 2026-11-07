@@ -76,6 +76,7 @@ import { ProtocoloPaciente } from '../types/protocolo';
 import { listarProtocolosDoPaciente } from '../services/protocolosService';
 import { HistoricoClinicoView } from './HistoricoClinicoView';
 import { ComparadorPacienteView } from './ComparadorPacienteView';
+import { FichaAvaliacaoCapilarWizard } from './FichaAvaliacaoCapilarWizard';
 import { obterLimitePacientes, usuarioPodeInserirDados } from '../types/assinatura';
 
 interface PacientesViewProps {
@@ -186,6 +187,9 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
   // Fichas de Avaliação e Anamneses do Paciente
   const [fichasPaciente, setFichasPaciente] = useState<RespostaAnamnese[]>([]);
   const [carregandoFichas, setCarregandoFichas] = useState(false);
+  const [modalFichaWizardAberta, setModalFichaWizardAberta] = useState(false);
+  const [fichaParaEditar, setFichaParaEditar] = useState<RespostaAnamnese | null>(null);
+  const [pacienteParaFichaWizard, setPacienteParaFichaWizard] = useState<Paciente | null>(null);
 
   // Modais
   const [modalPacienteAberto, setModalPacienteAberto] = useState(false);
@@ -276,6 +280,11 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
   useBackHandler(modalConviteAberto, () => setModalConviteAberto(false), 'modalConvite');
   useBackHandler(modalProdutoAberto, () => setModalProdutoAberto(false), 'modalProduto');
   useBackHandler(modalProximoPassoFluxo.aberto, () => setModalProximoPassoFluxo({ aberto: false, paciente: null }), 'modalProximoPasso');
+  useBackHandler(modalFichaWizardAberta, () => {
+    setModalFichaWizardAberta(false);
+    setFichaParaEditar(null);
+    setPacienteParaFichaWizard(null);
+  }, 'modalFichaWizard');
 
   // Sub-abas do prontuário: se estiver em Evolução/Exames/Histórico, voltar retorna à aba Geral
   useBackHandler(
@@ -327,17 +336,44 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
   }, [pacienteAtivo?.id]);
 
   // Carregar fichas de anamnese do paciente selecionado
+  const carregarFichasDoPaciente = async (id?: string) => {
+    const targetId = id || pacienteAtivo?.id;
+    if (!targetId) {
+      setFichasPaciente([]);
+      return;
+    }
+    setCarregandoFichas(true);
+    try {
+      const lista = await listRespostasDoPaciente(targetId, usuarioAtual?.uid);
+      setFichasPaciente(lista);
+    } catch {
+      setFichasPaciente([]);
+    } finally {
+      setCarregandoFichas(false);
+    }
+  };
+
   useEffect(() => {
     if (!pacienteAtivo) {
       setFichasPaciente([]);
       return;
     }
-    setCarregandoFichas(true);
-    listRespostasDoPaciente(pacienteAtivo.id, usuarioAtual?.uid)
-      .then(lista => setFichasPaciente(lista))
-      .catch(() => setFichasPaciente([]))
-      .finally(() => setCarregandoFichas(false));
+    carregarFichasDoPaciente(pacienteAtivo.id);
   }, [pacienteAtivo?.id, usuarioAtual?.uid]);
+
+  // Listener para sincronização automática quando um paciente for salvo ou atualizado pela ficha
+  useEffect(() => {
+    const handlePacienteAtualizado = () => {
+      recarregarPacientes();
+      if (pacienteAtivo?.id) {
+        carregarFichasDoPaciente(pacienteAtivo.id);
+      }
+    };
+    window.addEventListener('trico-paciente-atualizado', handlePacienteAtualizado);
+    return () => {
+      window.removeEventListener('trico-paciente-atualizado', handlePacienteAtualizado);
+    };
+  }, [pacienteAtivo?.id]);
 
   // Carregar protocolos terapêuticos do paciente selecionado
   useEffect(() => {
@@ -835,13 +871,29 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={handleAbrirNovoPaciente}
-          className="px-4 py-2.5 rounded-2xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm shrink-0 hover:scale-[1.02]"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Novo Paciente</span>
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => {
+              setPacienteParaFichaWizard(null);
+              setFichaParaEditar(null);
+              setModalFichaWizardAberta(true);
+            }}
+            className="px-4 py-2.5 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm shrink-0 hover:scale-[1.02]"
+            title="Preencher o cadastro do paciente e a anamnese completa juntos em uma única ficha clínica integrada"
+          >
+            <Sparkles className="w-4 h-4 text-teal-200" />
+            <span>Nova Ficha Completa (Cadastro + Anamnese)</span>
+          </button>
+
+          <button
+            onClick={handleAbrirNovoPaciente}
+            className="px-3.5 py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all shrink-0 hover:scale-[1.01]"
+            title="Cadastro rápido apenas com dados básicos"
+          >
+            <UserPlus className="w-4 h-4 text-stone-500 dark:text-slate-400" />
+            <span>Cadastro Rápido</span>
+          </button>
+        </div>
       </div>
 
       {/* GRID PRINCIPAL: LISTA LATERAL + PRONTUÁRIO DETALHADO */}
@@ -1501,7 +1553,16 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                   consultas={consultasPaciente}
                   fotosGlobais={fotosGlobais}
                   protocolos={protocolosPaciente}
-                  onIniciarAnamnese={onIniciarAnamnese}
+                  onIniciarAnamnese={() => {
+                    setPacienteParaFichaWizard(pacienteAtivo);
+                    setFichaParaEditar(null);
+                    setModalFichaWizardAberta(true);
+                  }}
+                  onEditarFicha={(f) => {
+                    setPacienteParaFichaWizard(pacienteAtivo);
+                    setFichaParaEditar(f);
+                    setModalFichaWizardAberta(true);
+                  }}
                   onCarregarSessaoNaBancada={onCarregarSessaoNaBancada}
                   onAbrirComparador={(antes, depois, titAntes, titDepois) => {
                     setComparadorFotoAUrl(antes);
@@ -1568,17 +1629,17 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
               ) : (
                 <>
 
-              {/* SEÇÃO: FICHAS DE AVALIAÇÃO & ANAMNESES DO PACIENTE */}
+              {/* SEÇÃO: FICHA CLÍNICA & ANAMNESE INTEGRADA DO PACIENTE */}
               <div className="bg-white dark:bg-slate-900 rounded-3xl border border-stone-200/90 dark:border-slate-800 p-5 sm:p-6 space-y-4 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 dark:border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-teal-600" />
                     <div>
                       <h3 className="text-sm font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider">
-                        Fichas de Avaliação & Anamneses
+                        Ficha Clínica & Anamnese Integrada
                       </h3>
                       <p className="text-[11px] text-stone-400">
-                        Questionário dinâmico por etapas, registro de sessões de retorno e laudos em PDF (A4).
+                        Prontuário unificado: identificação cadastral, hábitos, antecedentes de saúde, queixas, avaliação clínica e laudo.
                       </p>
                     </div>
                   </div>
@@ -1587,42 +1648,47 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                     <span className="text-xs font-semibold text-stone-500 font-mono">
                       {fichasPaciente.length} {fichasPaciente.length === 1 ? 'ficha' : 'fichas'}
                     </span>
-                    {onIniciarAnamnese && (
-                      <button
-                        onClick={() => onIniciarAnamnese(pacienteAtivo)}
-                        className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                        <span>Nova Ficha</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        setPacienteParaFichaWizard(pacienteAtivo);
+                        setFichaParaEditar(null);
+                        setModalFichaWizardAberta(true);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+                      title="Preencher ou atualizar ficha integrada com cadastro e anamnese unificados"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Nova Ficha Integrada</span>
+                    </button>
                   </div>
                 </div>
 
                 {carregandoFichas ? (
                   <div className="text-center py-6 text-stone-400 text-xs animate-pulse">
-                    Carregando fichas do paciente...
+                    Carregando ficha clínica integrada do paciente...
                   </div>
                 ) : fichasPaciente.length === 0 ? (
                   <div className="text-center py-8 px-4 space-y-3 bg-stone-50/50 dark:bg-slate-950/40 rounded-2xl border border-dashed border-stone-200 dark:border-slate-800">
                     <FileText className="w-8 h-8 text-stone-300 dark:text-slate-700 mx-auto" />
                     <div className="space-y-1">
                       <p className="text-xs font-bold text-stone-700 dark:text-slate-300">
-                        Nenhuma ficha de avaliação registrada para {pacienteAtivo.nome}
+                        Nenhuma ficha clínica integrada registrada para {pacienteAtivo.nome}
                       </p>
                       <p className="text-[11px] text-stone-500 dark:text-slate-400 max-w-sm mx-auto">
-                        Inicie o preenchimento da Ficha de Avaliação Capilar com preenchimento automático dos dados do cadastro.
+                        Inicie o preenchimento da Ficha Integrada com dados cadastrais, histórico de saúde, queixas e avaliação unificados em um só documento.
                       </p>
                     </div>
-                    {onIniciarAnamnese && (
-                      <button
-                        onClick={() => onIniciarAnamnese(pacienteAtivo)}
-                        className="px-4 py-2 rounded-xl bg-teal-700 text-white text-xs font-bold shadow-xs hover:bg-teal-800 transition-colors inline-flex items-center gap-1.5"
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                        <span>Preencher Ficha de Avaliação Capilar</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        setPacienteParaFichaWizard(pacienteAtivo);
+                        setFichaParaEditar(null);
+                        setModalFichaWizardAberta(true);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-teal-700 text-white text-xs font-bold shadow-xs hover:bg-teal-800 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-teal-200" />
+                      <span>Preencher Ficha Completa (Cadastro + Anamnese)</span>
+                    </button>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1649,7 +1715,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                                 </span>
                               ) : (
                                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">
-                                  Finalizada
+                                  Finalizada & Assinada ✓
                                 </span>
                               )}
                               {sessoesList.length > 0 && (
@@ -1666,6 +1732,20 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPacienteParaFichaWizard(pacienteAtivo);
+                                setFichaParaEditar(f);
+                                setModalFichaWizardAberta(true);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                              title="Editar respostas ou evolução da ficha integrada"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Editar Ficha</span>
+                            </button>
+
                             {isFichaCapilar && (
                               <>
                                 <button
@@ -2538,6 +2618,31 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
               </button>
             </div>
 
+            {/* Banner de atalho para Ficha Clínica Integrada */}
+            <div className="p-3.5 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/30 border border-teal-200/80 dark:border-teal-800/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="space-y-0.5">
+                <p className="font-bold text-teal-900 dark:text-teal-200 text-xs flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                  <span>Prefere preencher tudo de uma vez só?</span>
+                </p>
+                <p className="text-[11px] text-teal-700 dark:text-teal-300 leading-snug">
+                  Crie a ficha com cadastro e anamnese integrados em um único processo e gere laudo unificado.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setModalPacienteAberto(false);
+                  setPacienteParaFichaWizard(pacienteEmEdicao || null);
+                  setFichaParaEditar(null);
+                  setModalFichaWizardAberta(true);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shrink-0 transition-colors shadow-xs"
+              >
+                Ficha Completa ➜
+              </button>
+            </div>
+
             <form onSubmit={handleSalvarPaciente} className="space-y-3.5 text-xs">
               <div>
                 <label className="font-semibold text-stone-700 dark:text-slate-300 block mb-1">
@@ -3042,26 +3147,27 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
                 Paciente Cadastrado com Sucesso!
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                <strong>{modalProximoPassoFluxo.paciente.nome}</strong> foi criado no prontuário. Para um atendimento completo e organizado, o próximo passo do fluxo é realizar a <strong>Anamnese Capilar</strong> antes do exame de Tricoscopia.
+                <strong>{modalProximoPassoFluxo.paciente.nome}</strong> foi criado no prontuário. Para um atendimento completo e sem fichas duplicadas, continue para a <strong>Ficha Clínica & Anamnese Integrada</strong>.
               </p>
             </div>
 
             <div className="space-y-2.5 pt-2">
-              {onIniciarAnamnese && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const pac = modalProximoPassoFluxo.paciente!;
-                    setModalProximoPassoFluxo({ aberto: false, paciente: null });
-                    onDefinirPacienteAtivo?.(pac);
-                    onIniciarAnamnese(pac);
-                  }}
-                  className="w-full py-3 px-4 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg transition-all hover:scale-[1.01]"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>Avançar para Passo 2: Fazer Anamnese ➜</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  const pac = modalProximoPassoFluxo.paciente!;
+                  setModalProximoPassoFluxo({ aberto: false, paciente: null });
+                  setPacienteSelecionadoId(pac.id);
+                  onDefinirPacienteAtivo?.(pac);
+                  setPacienteParaFichaWizard(pac);
+                  setFichaParaEditar(null);
+                  setModalFichaWizardAberta(true);
+                }}
+                className="w-full py-3 px-4 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg transition-all hover:scale-[1.01]"
+              >
+                <Sparkles className="w-4 h-4 text-teal-200" />
+                <span>Preencher Ficha Clínica & Anamnese Integrada ➜</span>
+              </button>
 
               <button
                 type="button"
@@ -3551,6 +3657,52 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* MODAL / TELA CHEIA: FICHA CLÍNICA & ANAMNESE INTEGRADA (WIZARD) */}
+      {modalFichaWizardAberta && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-xs animate-fadeIn">
+          <FichaAvaliacaoCapilarWizard
+            paciente={pacienteParaFichaWizard || (pacienteAtivo ? pacienteAtivo : null)}
+            profissional={usuarioAtual}
+            fichaExistente={fichaParaEditar}
+            onFechar={() => {
+              setModalFichaWizardAberta(false);
+              setFichaParaEditar(null);
+              setPacienteParaFichaWizard(null);
+              recarregarPacientes();
+              if (pacienteAtivo?.id) {
+                carregarFichasDoPaciente(pacienteAtivo.id);
+              }
+            }}
+            onFichaSalva={async (respostaSalva) => {
+              await recarregarPacientes();
+              if (respostaSalva.pacienteId && respostaSalva.pacienteId !== 'paciente_avulso') {
+                setPacienteSelecionadoId(respostaSalva.pacienteId);
+                await carregarFichasDoPaciente(respostaSalva.pacienteId);
+              }
+              setModalFichaWizardAberta(false);
+              setFichaParaEditar(null);
+              setPacienteParaFichaWizard(null);
+              mostrarAlerta('sucesso', 'Ficha clínica e cadastro integrados salvos com sucesso!');
+            }}
+            onNavegarParaPlanos={onNavegarParaPlanos}
+            onAvancarParaTricoscopia={(pac) => {
+              setModalFichaWizardAberta(false);
+              setFichaParaEditar(null);
+              setPacienteParaFichaWizard(null);
+              onIniciarCapturaPaciente(pac);
+            }}
+            onEncaminharParaRelatorioPaciente={(pac) => {
+              setModalFichaWizardAberta(false);
+              setFichaParaEditar(null);
+              setPacienteParaFichaWizard(null);
+              setPacienteSelecionadoId(pac.id);
+              onDefinirPacienteAtivo?.(pac);
+              setAbaProntuario('historico');
+            }}
+          />
         </div>
       )}
     </div>

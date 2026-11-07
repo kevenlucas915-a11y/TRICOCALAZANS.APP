@@ -28,7 +28,8 @@ import {
   Heart,
   Smile,
   ShieldAlert,
-  Info
+  Info,
+  Edit3
 } from 'lucide-react';
 import { Paciente, ConsultaRegistro, FotoGlobalPaciente } from '../types/paciente';
 import { RespostaAnamnese, FichaAvaliacaoCapilarData } from '../types/anamnese';
@@ -54,6 +55,7 @@ interface HistoricoClinicoViewProps {
   fotosGlobais: FotoGlobalPaciente[];
   protocolos: ProtocoloPaciente[];
   onIniciarAnamnese?: (paciente: Paciente) => void;
+  onEditarFicha?: (ficha: RespostaAnamnese) => void;
   onCarregarSessaoNaBancada?: (sessionId: string) => void;
   onAbrirComparador?: (antes: string, depois: string, titAntes?: string, titDepois?: string) => void;
   onAbrirUploadFotoGlobal?: (anguloPreDefinido?: any) => void;
@@ -73,6 +75,7 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
   fotosGlobais,
   protocolos,
   onIniciarAnamnese,
+  onEditarFicha,
   onCarregarSessaoNaBancada,
   onAbrirComparador,
   onAbrirUploadFotoGlobal,
@@ -82,8 +85,8 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
   onBaixarPdfFicha,
   onCompartilharPdfFicha
 }) => {
-  // Sub-filtro do histórico: 'tudo' | 'fichas' | 'anamneses' | 'fotos' | 'protocolos'
-  const [subAba, setSubAba] = useState<'tudo' | 'fichas' | 'anamneses' | 'fotos' | 'protocolos'>('tudo');
+  // Sub-filtro do histórico: 'tudo' | 'fichas' | 'consultas' | 'fotos' | 'protocolos'
+  const [subAba, setSubAba] = useState<'tudo' | 'fichas' | 'consultas' | 'fotos' | 'protocolos'>('tudo');
   const [filtroTipoFoto, setFiltroTipoFoto] = useState<'todas' | 'globais' | 'tricoscopia' | 'consultas'>('todas');
   
   // Modais de Protocolo
@@ -398,7 +401,7 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
 
         {/* 4 CARDS DE MÉTRICAS RÁPIDAS DOS 4 PILARES */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-6 mt-6 border-t border-teal-700/60 text-slate-100">
-          {/* Pilar 1: Fichas Preenchidas */}
+          {/* Pilar 1: Ficha Clínica & Anamnese Integrada */}
           <div 
             onClick={() => setSubAba('fichas')}
             className="p-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 transition-all cursor-pointer group"
@@ -406,29 +409,29 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-teal-200 uppercase tracking-wider flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-teal-300" />
-                <span>Fichas</span>
+                <span>Ficha & Anamnese</span>
               </span>
               <span className="text-lg font-bold font-mono">{fichas.length}</span>
             </div>
             <p className="text-[11px] text-teal-100/70 truncate mt-1">
-              {fichas.length > 0 ? `${fichas.length} avaliação(ões) salva(s)` : 'Nenhuma ficha ainda'}
+              {fichas.length > 0 ? `${fichas.length} ficha integrada salva` : 'Nenhuma ficha ainda'}
             </p>
           </div>
 
-          {/* Pilar 2: Anamneses */}
+          {/* Pilar 2: Consultas & Evolução */}
           <div 
-            onClick={() => setSubAba('anamneses')}
+            onClick={() => setSubAba('consultas')}
             className="p-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 transition-all cursor-pointer group"
           >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-teal-200 uppercase tracking-wider flex items-center gap-1.5">
-                <CheckSquare className="w-3.5 h-3.5 text-teal-300" />
-                <span>Anamneses</span>
+                <Clock className="w-3.5 h-3.5 text-teal-300" />
+                <span>Consultas</span>
               </span>
-              <span className="text-lg font-bold font-mono">{fichas.length}</span>
+              <span className="text-lg font-bold font-mono">{consultas.length}</span>
             </div>
             <p className="text-[11px] text-teal-100/70 truncate mt-1">
-              Antecedentes e queixas
+              {consultas.length > 0 ? `${consultas.length} consulta(s) registrada(s)` : 'Sem consultas registradas'}
             </p>
           </div>
 
@@ -493,7 +496,7 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
           }`}
         >
           <FileText className="w-3.5 h-3.5" />
-          <span>Fichas Preenchidas</span>
+          <span>Ficha Clínica & Anamnese Integrada</span>
           <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
             subAba === 'fichas' ? 'bg-white/20 text-white' : 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300'
           }`}>
@@ -503,19 +506,19 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
 
         <button
           type="button"
-          onClick={() => setSubAba('anamneses')}
+          onClick={() => setSubAba('consultas')}
           className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 border whitespace-nowrap ${
-            subAba === 'anamneses'
+            subAba === 'consultas'
               ? 'bg-teal-700 text-white border-teal-700 shadow-md shadow-teal-700/20'
               : 'bg-white dark:bg-slate-900 text-stone-600 dark:text-slate-400 border-stone-200 dark:border-slate-800 hover:bg-stone-50'
           }`}
         >
-          <CheckSquare className="w-3.5 h-3.5" />
-          <span>Anamneses</span>
+          <Clock className="w-3.5 h-3.5" />
+          <span>Consultas & Retornos</span>
           <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-            subAba === 'anamneses' ? 'bg-white/20 text-white' : 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300'
+            subAba === 'consultas' ? 'bg-white/20 text-white' : 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300'
           }`}>
-            {fichas.length}
+            {consultas.length}
           </span>
         </button>
 
@@ -557,7 +560,7 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* 1. SEÇÃO: FICHAS PREENCHIDAS */}
+      {/* 1. SEÇÃO UNIFICADA: FICHA CLÍNICA & ANAMNESE INTEGRADA */}
       {/* ========================================================================= */}
       {(subAba === 'tudo' || subAba === 'fichas') && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-stone-200/90 dark:border-slate-800 p-5 sm:p-6 space-y-4 shadow-xs">
@@ -568,13 +571,13 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
               </div>
               <div>
                 <h3 className="text-sm font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                  <span>Fichas Preenchidas de {paciente.nome}</span>
+                  <span>Ficha Clínica & Anamnese Integrada</span>
                   <span className="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 text-[10px] font-mono">
                     {fichas.length}
                   </span>
                 </h3>
                 <p className="text-[11px] text-stone-400">
-                  Fichas de avaliação capilar completas com dados cadastrais, saúde, hábitos, queixas e sessões.
+                  Prontuário unificado: identificação cadastral, hábitos, antecedentes de saúde, queixas, avaliação clínica e assinatura digital.
                 </p>
               </div>
             </div>
@@ -584,9 +587,10 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
                 type="button"
                 onClick={() => onIniciarAnamnese(paciente)}
                 className="px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs self-start sm:self-auto"
+                title="Preencher ou atualizar a ficha completa do paciente"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>+ Preencher Nova Ficha</span>
+                <span>+ Nova Ficha Integrada</span>
               </button>
             )}
           </div>
@@ -595,10 +599,10 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
             <div className="text-center py-8 px-4 bg-stone-50/50 dark:bg-slate-950/40 rounded-2xl border border-dashed border-stone-200 dark:border-slate-800 space-y-2">
               <FileText className="w-8 h-8 text-stone-300 dark:text-slate-700 mx-auto" />
               <p className="text-xs font-bold text-stone-700 dark:text-slate-300">
-                Nenhuma ficha de avaliação preenchida para {paciente.nome}
+                Nenhuma ficha integrada registrada para {paciente.nome}
               </p>
               <p className="text-[11px] text-stone-400 max-w-sm mx-auto">
-                Inicie uma ficha de avaliação para coletar dados de saúde, rotina, fotos e gerar o relatório em PDF.
+                Preencha a ficha clínica completa para reunir cadastro, histórico de saúde, queixas, hábitos e laudo em um único documento oficial.
               </p>
               {onIniciarAnamnese && (
                 <button
@@ -606,8 +610,8 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
                   onClick={() => onIniciarAnamnese(paciente)}
                   className="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-xs transition-colors inline-flex items-center gap-1.5 mt-1"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Preencher 1ª Ficha</span>
+                  <Sparkles className="w-3.5 h-3.5 text-teal-200" />
+                  <span>Preencher Ficha Completa (Cadastro + Anamnese)</span>
                 </button>
               )}
             </div>
@@ -626,7 +630,7 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
                 return (
                   <div
                     key={f.id}
-                    className="p-4 rounded-2xl bg-stone-50/70 dark:bg-slate-950/60 border border-stone-200/80 dark:border-slate-800 hover:border-teal-400 transition-all shadow-2xs space-y-3"
+                    className="p-4 sm:p-5 rounded-2xl bg-stone-50/70 dark:bg-slate-950/60 border border-stone-200/80 dark:border-slate-800 hover:border-teal-400 transition-all shadow-2xs space-y-3"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                       <div className="space-y-1">
@@ -639,8 +643,14 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
                               ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                               : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
                           }`}>
-                            {f.status === 'rascunho' ? 'Rascunho' : 'Finalizada ✓'}
+                            {f.status === 'rascunho' ? 'Rascunho' : 'Finalizada & Assinada ✓'}
                           </span>
+                          {f.assinaturaUrl && (
+                            <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 text-[10px] font-bold flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              <span>Assinatura Digital</span>
+                            </span>
+                          )}
                           {sessoesList.length > 0 && (
                             <span className="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 text-[10px] font-bold flex items-center gap-1">
                               <Layers className="w-3 h-3" />
@@ -655,6 +665,18 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
 
                       {/* Ações da Ficha */}
                       <div className="flex items-center gap-2 flex-wrap">
+                        {onEditarFicha && (
+                          <button
+                            type="button"
+                            onClick={() => onEditarFicha(f)}
+                            className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                            title="Editar ficha ou adicionar evolução"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Editar Ficha</span>
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => setModalFichaDetalhada(f)}
@@ -669,42 +691,57 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
                           type="button"
                           onClick={() => onBaixarPdfFicha(f)}
                           className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-stone-100 text-stone-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-stone-200 dark:border-slate-700"
-                          title="Baixar PDF A4 Oficial com todas as etapas"
+                          title="Baixar PDF A4 Oficial com todas as informações consolidadas"
                         >
                           <Download className="w-3.5 h-3.5 text-teal-600" />
-                          <span>Baixar PDF</span>
+                          <span>Baixar PDF (A4)</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => onCompartilharPdfFicha(f)}
                           className="p-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-stone-100 text-stone-600 dark:text-slate-300 border border-stone-200 dark:border-slate-700 transition-colors"
-                          title="Compartilhar PDF"
+                          title="Compartilhar via WhatsApp"
                         >
                           <Share2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
 
-                    {/* Resumo clínico da ficha */}
+                    {/* Resumo consolidado da ficha (Cadastro + Anamnese) */}
                     {fichaData && (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-stone-200/60 dark:border-slate-800 text-[11px]">
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2 border-t border-stone-200/60 dark:border-slate-800 text-[11px]">
+                        <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-stone-100 dark:border-slate-800 space-y-0.5">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase">Cadastro & Contato</span>
+                          <p className="text-stone-800 dark:text-slate-200 font-semibold truncate">
+                            {fichaData.nomeCliente || paciente.nome}
+                          </p>
+                          <p className="text-stone-500 text-[10px] truncate">
+                            {fichaData.celular || paciente.telefone || 'Sem telefone'} • {fichaData.sexo || paciente.genero || 'Sexo não inf.'}
+                          </p>
+                        </div>
+
                         <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-stone-100 dark:border-slate-800 space-y-0.5">
                           <span className="text-[10px] font-bold text-stone-400 uppercase">Queixa Principal</span>
-                          <p className="text-stone-800 dark:text-slate-200 font-medium truncate">
-                            {fichaData.queixaPrincipal || 'Não informada'}
+                          <p className="text-stone-800 dark:text-slate-200 font-medium line-clamp-2">
+                            {fichaData.queixaPrincipal || paciente.queixaPrincipal || 'Não informada'}
                           </p>
                         </div>
+
                         <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-stone-100 dark:border-slate-800 space-y-0.5">
-                          <span className="text-[10px] font-bold text-stone-400 uppercase">Histórico Familiar</span>
+                          <span className="text-[10px] font-bold text-stone-400 uppercase">Saúde & Familiar</span>
                           <p className="text-stone-800 dark:text-slate-200 font-medium truncate">
-                            {fichaData.doencaFamiliar?.sim ? `Sim (${fichaData.doencaFamiliar.qual || 'calvície'})` : 'Não'}
+                            {fichaData.doencaFamiliar?.sim ? `Calvície familiar (${fichaData.doencaFamiliar.qual || 'hereditária'})` : 'Sem calvície familiar'}
+                          </p>
+                          <p className="text-stone-500 text-[10px] truncate">
+                            {fichaData.medicacaoContinua?.sim ? `Uso contínuo: ${fichaData.medicacaoContinua.qual}` : 'Sem medicação contínua'}
                           </p>
                         </div>
+
                         <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-stone-100 dark:border-slate-800 space-y-0.5">
                           <span className="text-[10px] font-bold text-stone-400 uppercase">Tratamento Sugerido</span>
-                          <p className="text-stone-800 dark:text-slate-200 font-medium truncate">
-                            {fichaData.tratamentoSugerido || 'Em definição'}
+                          <p className="text-stone-800 dark:text-slate-200 font-medium line-clamp-2">
+                            {fichaData.tratamentoSugerido || 'Em definição pelo profissional'}
                           </p>
                         </div>
                       </div>
@@ -718,180 +755,67 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* 2. SEÇÃO: ANAMNESES */}
+      {/* 2. SEÇÃO: CONSULTAS CLÍNICAS (EXIBIDA QUANDO FILTRADO POR CONSULTAS)     */}
       {/* ========================================================================= */}
-      {(subAba === 'tudo' || subAba === 'anamneses') && (
+      {subAba === 'consultas' && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-stone-200/90 dark:border-slate-800 p-5 sm:p-6 space-y-4 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 flex items-center justify-center border border-teal-200/60 dark:border-teal-800 shrink-0">
-                <CheckSquare className="w-4 h-4" />
+                <Clock className="w-4 h-4" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-stone-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                  <span>Anamneses & Questionários Clínicos</span>
+                  <span>Consultas & Retornos Clínicos</span>
                   <span className="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 text-[10px] font-mono">
-                    {fichas.length}
+                    {consultas.length}
                   </span>
                 </h3>
                 <p className="text-[11px] text-stone-400">
-                  Respostas estruturadas sobre hábitos de vida, histórico capilar, químicas e rotina.
+                  Histórico de atendimentos clínicos, contagens de fios, registros e evolução do paciente.
                 </p>
               </div>
             </div>
 
-            {onIniciarAnamnese && (
+            {onAbrirNovaConsulta && (
               <button
                 type="button"
-                onClick={() => onIniciarAnamnese(paciente)}
-                className="px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs self-start sm:self-auto"
+                onClick={onAbrirNovaConsulta}
+                className="px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>+ Nova Anamnese</span>
+                <span>+ Nova Consulta</span>
               </button>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-xs">
-            <div className="p-4 rounded-2xl bg-stone-50/70 dark:bg-slate-950/60 border border-stone-200/80 dark:border-slate-800 space-y-2">
-              <span className="text-[10px] uppercase font-bold text-teal-800 dark:text-teal-300 tracking-wider flex items-center gap-1.5">
-                <Heart className="w-3.5 h-3.5 text-rose-500" />
-                <span>Resumo Clínico da Anamnese:</span>
-              </span>
-              <p className="text-stone-700 dark:text-slate-300 leading-relaxed font-medium">
-                {paciente.queixaPrincipal || 'Queixa principal não registrada.'}
-              </p>
-              <div className="pt-2 text-[11px] text-stone-500 border-t border-stone-200/60 dark:border-slate-800">
-                <strong>Antecedentes:</strong> {paciente.historicoClinico || 'Sem antecedentes clínicos ou cirúrgicos descritos.'}
-              </div>
+          {consultas.length === 0 ? (
+            <div className="text-center py-8 text-stone-400 text-xs">
+              Nenhuma consulta clínica registrada para este paciente ainda.
             </div>
-
-            <div className="p-4 rounded-2xl bg-teal-50/40 dark:bg-teal-950/20 border border-teal-200/80 dark:border-teal-800/60 space-y-2 flex flex-col justify-between">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-teal-900 dark:text-teal-300 tracking-wider flex items-center gap-1.5">
-                  <Smile className="w-3.5 h-3.5 text-teal-600" />
-                  <span>Acesso aos Questionários de Saúde:</span>
-                </span>
-                <p className="text-stone-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
-                  As anamneses preenchidas detalham histórico ginecológico, uso de medicamentos contínuos, estresse, rotina de higienização e antecedentes familiares.
-                </p>
-              </div>
-              {onIniciarAnamnese && (
-                <button
-                  type="button"
-                  onClick={() => onIniciarAnamnese(paciente)}
-                  className="w-full py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs mt-2"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Acessar Módulo Completo de Anamnese ➜</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* LISTA DE QUESTIONÁRIOS DE ANAMNESE PREENCHIDOS */}
-          <div className="pt-2 space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-stone-600 dark:text-slate-400 flex items-center gap-2">
-              <CheckSquare className="w-3.5 h-3.5 text-teal-600" />
-              <span>Questionários de Anamnese Arquivados no Prontuário</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-300 font-mono">
-                {fichas.length}
-              </span>
-            </h4>
-
-            {fichas.length === 0 ? (
-              <div className="text-center py-6 px-4 bg-stone-50/40 dark:bg-slate-950/30 rounded-2xl border border-dashed border-stone-200 dark:border-slate-800 text-xs text-stone-400 space-y-2">
-                <p>Nenhuma anamnese arquivada para este paciente.</p>
-                {onIniciarAnamnese && (
-                  <button
-                    type="button"
-                    onClick={() => onIniciarAnamnese(paciente)}
-                    className="px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold inline-flex items-center gap-1.5"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Preencher Questionário de Anamnese</span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {fichas.map(f => {
-                  const fichaData = parseFichaData(f);
-                  return (
-                    <div
-                      key={`anamnese_${f.id}`}
-                      className="p-4 rounded-2xl bg-stone-50/70 dark:bg-slate-950/60 border border-stone-200/80 dark:border-slate-800 hover:border-teal-400 transition-all shadow-2xs space-y-3"
+          ) : (
+            <div className="space-y-3">
+              {consultas.map(cons => (
+                <div key={cons.id} className="p-3.5 rounded-2xl bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-800 flex items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="font-bold text-stone-900 dark:text-slate-100 block">
+                      {cons.tipoConsulta || 'Consulta Clínica'} — {cons.area}
+                    </span>
+                    <span className="text-[11px] text-stone-500 font-mono">Data: {cons.data}</span>
+                  </div>
+                  {cons.sessionId && onCarregarSessaoNaBancada && (
+                    <button
+                      type="button"
+                      onClick={() => onCarregarSessaoNaBancada(cons.sessionId!)}
+                      className="px-3 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950 text-teal-800 dark:text-teal-200 text-xs font-bold border border-teal-200 dark:border-teal-800 hover:bg-teal-100"
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-bold text-stone-900 dark:text-slate-100 text-xs sm:text-sm">
-                              {f.modeloTitulo}
-                            </span>
-                            <span className="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 text-[10px] font-bold">
-                              {f.status === 'rascunho' ? 'Rascunho' : 'Concluída ✓'}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-stone-500 font-mono">
-                            Data de preenchimento: {new Date(f.dataPreenchimento).toLocaleDateString('pt-BR')} às {new Date(f.dataPreenchimento).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setModalFichaDetalhada(f)}
-                            className="px-3 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950 hover:bg-teal-100 text-teal-800 dark:text-teal-200 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-teal-200 dark:border-teal-800"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>Ver Detalhes da Anamnese</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onBaixarPdfFicha(f)}
-                            className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-stone-100 text-stone-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-stone-200 dark:border-slate-700"
-                          >
-                            <Download className="w-3.5 h-3.5 text-teal-600" />
-                            <span>PDF</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Respostas estruturadas em destaque */}
-                      {fichaData && (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-stone-200/60 dark:border-slate-800 text-[11px]">
-                          <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-stone-100 dark:border-slate-800 space-y-0.5">
-                            <span className="text-[9px] font-bold text-stone-400 uppercase">Familiar Calvície</span>
-                            <p className="text-stone-800 dark:text-slate-200 font-semibold truncate">
-                              {fichaData.doencaFamiliar?.sim ? `Sim (${fichaData.doencaFamiliar.qual || 'hereditária'})` : 'Não'}
-                            </p>
-                          </div>
-                          <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-stone-100 dark:border-slate-800 space-y-0.5">
-                            <span className="text-[9px] font-bold text-stone-400 uppercase">Medicação Contínua</span>
-                            <p className="text-stone-800 dark:text-slate-200 font-semibold truncate">
-                              {fichaData.medicacaoContinua?.sim ? `Sim (${fichaData.medicacaoContinua.qual || 'em uso'})` : 'Não'}
-                            </p>
-                          </div>
-                          <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-stone-100 dark:border-slate-800 space-y-0.5">
-                            <span className="text-[9px] font-bold text-stone-400 uppercase">Lavagem Capilar</span>
-                            <p className="text-stone-800 dark:text-slate-200 font-semibold truncate">
-                              {fichaData.frequenciaLavagem || 'Não inf.'}
-                            </p>
-                          </div>
-                          <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-stone-100 dark:border-slate-800 space-y-0.5">
-                            <span className="text-[9px] font-bold text-stone-400 uppercase">Químicas Prévias</span>
-                            <p className="text-stone-800 dark:text-slate-200 font-semibold truncate">
-                              {fichaData.quimicas && fichaData.quimicas.length > 0 ? fichaData.quimicas.join(', ') : 'Nenhuma'}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                      Abrir na Bancada
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1602,6 +1526,21 @@ export const HistoricoClinicoView: React.FC<HistoricoClinicoViewProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
+                {onEditarFicha && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const f = modalFichaDetalhada;
+                      setModalFichaDetalhada(null);
+                      onEditarFicha(f);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-semibold flex items-center gap-1.5 shadow-xs"
+                    title="Editar ou atualizar respostas desta ficha"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Editar</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => onBaixarPdfFicha(modalFichaDetalhada)}

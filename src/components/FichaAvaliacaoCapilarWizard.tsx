@@ -34,6 +34,7 @@ import { Paciente } from '../types/paciente';
 import { UsuarioProfissional } from '../types/usuario';
 import { FichaAvaliacaoCapilarData, RespostaAnamnese, SessaoEvolucaoFicha } from '../types/anamnese';
 import { saveRespostaAnamnese } from '../services/anamneseService';
+import { savePaciente } from '../services/pacientes';
 import { baixarPdfFicha, compartilharPdfFicha } from '../services/fichaPdfGenerator';
 import { MODELO_FICHA_AVALIACAO_CAPILAR_ID } from '../data/anamneseTemplates';
 
@@ -100,6 +101,7 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
   }, [paciente, fichaExistente]);
 
   const [ficha, setFicha] = useState<FichaAvaliacaoCapilarData>(estadoInicial);
+  const [pacienteVinculado, setPacienteVinculado] = useState<Paciente | null>(paciente);
   const [etapaAtual, setEtapaAtual] = useState<number>(1);
   const [secaoComplementarAberta, setSecaoComplementarAberta] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
@@ -316,6 +318,49 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
     setErroValidacao(null);
 
     try {
+      let pacienteVinculadoId = paciente?.id;
+
+      // 1. Sincronizar dados cadastrais ou criar paciente automaticamente
+      // Garante que o cadastro do paciente e a anamnese estejam sempre integrados em uma ficha única
+      if (ficha.nomeCliente.trim()) {
+        try {
+          const historicoClinicoConsolidado = [
+            ficha.doencasGraves?.sim ? `Doenças: ${ficha.doencasGraves.qual || 'Sim'}` : '',
+            ficha.cirurgias?.sim ? `Cirurgias: ${ficha.cirurgias.qual || 'Sim'}` : '',
+            ficha.medicacaoContinua?.sim ? `Medicamentos: ${ficha.medicacaoContinua.qual || 'Sim'}` : '',
+            ficha.alergias?.sim ? `Alergias: ${ficha.alergias.qual || 'Sim'}` : ''
+          ].filter(Boolean).join(' | ') || paciente?.historicoClinico || '';
+
+          const dadosCadastro = {
+            id: pacienteVinculadoId || undefined,
+            userId: profissional?.uid,
+            nome: ficha.nomeCliente.trim(),
+            telefone: (ficha.celular || paciente?.telefone || '').trim(),
+            email: (ficha.email || paciente?.email || '').trim(),
+            dataNascimento: ficha.dataNascimento || paciente?.dataNascimento || '',
+            genero: ficha.sexo || paciente?.genero || '',
+            queixaPrincipal: ficha.queixaPrincipal?.trim() || paciente?.queixaPrincipal || '',
+            historicoClinico: historicoClinicoConsolidado,
+            endereco: ficha.endereco || paciente?.endereco || '',
+            cidade: ficha.cidade || paciente?.cidade || '',
+            bairro: ficha.bairro || paciente?.bairro || '',
+            cep: ficha.cep || paciente?.cep || '',
+            profissao: ficha.profissao || paciente?.profissao || '',
+            createdAt: paciente?.createdAt
+          };
+
+          const pacienteSalvo = await savePaciente(dadosCadastro);
+          pacienteVinculadoId = pacienteSalvo.id;
+          setPacienteVinculado(pacienteSalvo);
+
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('trico-paciente-atualizado', { detail: pacienteSalvo }));
+          }
+        } catch (syncErr) {
+          console.warn('Aviso ao sincronizar cadastro com ficha de anamnese:', syncErr);
+        }
+      }
+
       const dadosFichaJson = JSON.stringify(ficha);
       const sessoesJson = JSON.stringify(ficha.sessoes || []);
 
@@ -323,7 +368,7 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
         id: respostaId,
         modeloId: MODELO_FICHA_AVALIACAO_CAPILAR_ID,
         modeloTitulo: 'Ficha de Avaliação Capilar',
-        pacienteId: paciente?.id || 'paciente_avulso',
+        pacienteId: pacienteVinculadoId || 'paciente_avulso',
         pacienteNome: ficha.nomeCliente.trim(),
         userId: profissional?.uid,
         status: novoStatus,
@@ -1781,7 +1826,7 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                 type="button"
                 onClick={() => {
                   setModalSucessoAberto(false);
-                  const pac = paciente || { id: fichaExistente?.pacienteId || 'pac_temp', nome: ficha.nomeCliente };
+                  const pac = pacienteVinculado || paciente || { id: fichaExistente?.pacienteId || 'pac_temp', nome: ficha.nomeCliente };
                   onAvancarParaTricoscopia(pac as Paciente);
                 }}
                 className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-teal-700 to-emerald-600 hover:from-teal-800 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg transition-all hover:scale-[1.01]"
@@ -1796,7 +1841,7 @@ export const FichaAvaliacaoCapilarWizard: React.FC<FichaAvaliacaoCapilarWizardPr
                 type="button"
                 onClick={() => {
                   setModalSucessoAberto(false);
-                  const pac = paciente || { id: fichaExistente?.pacienteId || 'pac_temp', nome: ficha.nomeCliente };
+                  const pac = pacienteVinculado || paciente || { id: fichaExistente?.pacienteId || 'pac_temp', nome: ficha.nomeCliente };
                   onEncaminharParaRelatorioPaciente(pac as Paciente);
                 }}
                 className="w-full py-2.5 px-4 rounded-2xl bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 text-teal-800 dark:text-teal-300 text-xs font-bold flex items-center justify-center gap-2 border border-teal-200 dark:border-teal-800 transition-colors shadow-xs"
