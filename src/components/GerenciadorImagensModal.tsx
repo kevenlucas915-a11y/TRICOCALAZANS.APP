@@ -94,6 +94,14 @@ export const GerenciadorImagensModal: React.FC<GerenciadorImagensModalProps> = (
         return;
       }
       recarregarImagens();
+
+      const handleUpdate = () => {
+        recarregarImagens();
+      };
+      window.addEventListener('atlas-image-updated', handleUpdate);
+      return () => {
+        window.removeEventListener('atlas-image-updated', handleUpdate);
+      };
     }
   }, [isOpen, onClose]);
 
@@ -468,7 +476,10 @@ export const GerenciadorImagensModal: React.FC<GerenciadorImagensModalProps> = (
                         accept="image/*" 
                         multiple
                         className="hidden" 
-                        onChange={(e) => handleUploadFotos(caso.id, e.target.files)}
+                        onChange={(e) => {
+                          handleUploadFotos(caso.id, e.target.files);
+                          e.target.value = '';
+                        }}
                       />
                     </label>
 
