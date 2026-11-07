@@ -9,6 +9,8 @@
  * 6. Cache síncrono em memória com notificação em tempo real para os componentes React.
  */
 
+import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
 import { usuarioEhAdmin, enviarImagemAtlas, removerArquivo } from './fotosNuvem';
 import { 
   comprimirImagem, 
@@ -39,7 +41,7 @@ export const LS_PREFIX = 'atlas_img_v1_';
 const memoryCache = new Map<string, ImagemArmazenada>();
 const memoryGalleryCache = new Map<string, ImagemArmazenada[]>();
 
-// Mapeamento minucioso dos 17 Casos Oficiais e todas as suas possíveis variantes de identificação
+// Mapeamento rigoroso e inequívoco dos 17 Casos Oficiais (sem números soltos ou colisões de páginas)
 export const CASOS_ALIASES: Record<string, string[]> = {
   'cond-androgenetica': [
     'androgenetica',
@@ -47,27 +49,12 @@ export const CASOS_ALIASES: Record<string, string[]> = {
     'aac',
     'img-aag-p16',
     'img-androgenetica',
-    'p16',
-    'pag16',
-    'p-16',
-    '1',
-    'caso-1',
-    'caso1',
     'alopecia-androgenetica'
   ],
   'cond-areata': [
     'areata',
-    'aa',
     'img-areata-p08',
     'img-areata',
-    'p08',
-    'p8',
-    'p10',
-    'pag08',
-    'pag8',
-    '2',
-    'caso-2',
-    'caso2',
     'cond-areata-placa',
     'areata-placa',
     'alopecia-areata'
@@ -76,92 +63,50 @@ export const CASOS_ALIASES: Record<string, string[]> = {
     'caspa',
     'pitiriase',
     'pitiriase-simples',
-    'img-caspa-p17',
-    'img-caspa',
-    'p17',
-    'pag17',
-    '3',
-    'caso-3',
-    'caso3'
+    'img-caspa-p12',
+    'img-caspa'
   ],
   'cond-dermatite-contato': [
     'dermatite-contato',
-    'contato',
+    'dermatite_contato',
     'cond-contato',
-    'img-contato-p22',
-    'img-dermatite-contato',
-    'p22',
-    'pag22',
-    '4',
-    'caso-4',
-    'caso4'
+    'img-dermatite-contato-p14',
+    'img-dermatite-contato'
   ],
   'cond-dermatite-seborreica': [
     'dermatite-seborreica',
-    'ds',
-    'cond-ds',
+    'dermatite_seborreica',
+    'dermatite-seb',
     'img-ds-p28',
-    'img-dermatite-seborreica',
-    'p13',
-    'p28',
-    'pag13',
-    'pag28',
-    '5',
-    'caso-5',
-    'caso5'
+    'img-dermatite-seborreica'
   ],
   'cond-efluvio-anageno': [
     'efluvio-anageno',
+    'efluvio_anageno',
     'efluvio-anag',
     'anageno',
     'cond-efluvio-anag',
-    'img-efl-anag-p18',
-    'p18',
-    'pag18',
-    '6',
-    'caso-6',
-    'caso6'
+    'img-efluvio-anageno-p06'
   ],
   'cond-efluvio-telogeno': [
     'efluvio-telogeno',
-    'efluvio',
+    'efluvio_telogeno',
     'telogeno',
     'cond-efluvio',
-    'img-efl-telo-p07',
-    'img-efluvio-telogeno',
-    'p07',
-    'p7',
-    'p19',
-    'pag07',
-    'pag19',
-    '7',
-    'caso-7',
-    'caso7'
+    'img-efluvio-p07',
+    'img-efluvio-telogeno'
   ],
   'cond-escabiose': [
     'escabiose',
     'sarna',
-    'img-escabiose-p24',
-    'p24',
-    'pag24',
-    '8',
-    'caso-8',
-    'caso8'
+    'img-escabiose-p19'
   ],
   'cond-frontal-fibrosante': [
     'frontal-fibrosante',
     'fibrosante-frontal',
-    'aff',
-    'cond-aff',
-    'img-aff-p21',
+    'fibrosante',
+    'img-aff-p22',
     'img-frontal-fibrosante',
-    'p21',
-    'p22',
-    'pag21',
-    'pag22',
-    '9',
-    'caso-9',
-    'caso9',
     'alopecia-fibrosante-frontal'
   ],
   'cond-foliculite-decalvante': [
@@ -169,100 +114,57 @@ export const CASOS_ALIASES: Record<string, string[]> = {
     'foliculite',
     'decalvante',
     'cond-foliculite',
-    'img-folic-p25',
-    'p25',
-    'pag25',
-    '10',
-    'caso-10',
-    'caso10'
+    'img-fd-p25',
+    'img-foliculite-decalvante'
   ],
   'cond-liquen-plano-pilar': [
     'liquen-plano-pilar',
     'liquen',
+    'liquen-plano',
     'lpp',
     'cond-lpp',
-    'img-lpp-p23',
-    'p21',
-    'p23',
-    'pag23',
-    '11',
-    'caso-11',
-    'caso11'
+    'img-lpp-p23'
   ],
   'cond-pediculose': [
     'pediculose',
     'piolho',
     'lendeas',
-    'img-pediculose-p25',
-    'p25',
-    'pag25',
-    '12',
-    'caso-12',
-    'caso12'
+    'img-pediculose-p19'
   ],
   'cond-psoriase': [
     'psoriase',
-    'pso',
-    'img-pso-p27',
-    'img-psoriase',
-    'p15',
-    'p27',
-    'pag15',
-    'pag27',
-    '13',
-    'caso-13',
-    'caso13'
+    'psoríase',
+    'img-psoriase-p27',
+    'img-psoriase'
   ],
   'cond-seborreia': [
     'seborreia',
     'hiperseborreia',
-    'img-seborreia-p19',
-    'p19',
-    'pag19',
-    '14',
-    'caso-14',
-    'caso14'
+    'img-seborreia-p11'
   ],
   'cond-tinea-capitis': [
     'tinea-capitis',
     'tinea',
     'micose',
     'img-tinea-p20',
-    'img-tinea',
-    'p20',
-    'p27',
-    'pag20',
-    '15',
-    'caso-15',
-    'caso15'
+    'img-tinea'
   ],
   'cond-tracao': [
     'tracao',
     'tração',
     'alopecia-tracao',
-    'img-tracao-p12',
-    'p12',
-    'p18',
-    'pag12',
-    '16',
-    'caso-16',
-    'caso16',
+    'img-tracao-p18',
     'alopecia-por-tracao'
   ],
   'cond-xerose': [
     'xerose',
     'ressecamento',
-    'img-xerose-p30',
-    'p30',
-    'pag30',
-    '17',
-    'caso-17',
-    'caso17'
+    'img-xerose-p12'
   ]
 };
 
 /**
- * Normaliza qualquer chave / identificador / texto para o caso oficial correspondente
+ * Normaliza qualquer chave / identificador para o caso oficial correspondente de forma estrita e sem ambiguidade
  */
 export function normalizarParaCasoOficial(rawKey: string): string {
   if (!rawKey) return '';
@@ -280,7 +182,7 @@ export function normalizarParaCasoOficial(rawKey: string): string {
     }
   }
 
-  // 3. Correspondência com ou sem prefixo "cond-"
+  // 3. Correspondência com ou sem prefixos comuns
   const semPrefixo = clean.replace(/^cond-/, '').replace(/^img-/, '').replace(/^atlas_/, '').replace(/^caso_/, '');
   for (const [oficial, aliases] of Object.entries(CASOS_ALIASES)) {
     const oficialSemPrefixo = oficial.replace(/^cond-/, '');
@@ -289,20 +191,20 @@ export function normalizarParaCasoOficial(rawKey: string): string {
     }
   }
 
-  // 4. Fuzzy / Substring matching inteligente
-  if (clean.includes('androgen') || clean.includes('aag') || clean.includes('miniaturiz')) return 'cond-androgenetica';
+  // 4. Substring matching estrito e com precedência diagnóstica segura
+  if (clean.includes('androgen') || clean.includes('miniaturiz')) return 'cond-androgenetica';
   if (clean.includes('areata')) return 'cond-areata';
   if (clean.includes('caspa') || clean.includes('pitiriase')) return 'cond-caspa';
-  if (clean.includes('contato')) return 'cond-dermatite-contato';
-  if (clean.includes('seborreica') || clean.includes('ds') || clean.includes('dermatite-seb')) return 'cond-dermatite-seborreica';
-  if (clean.includes('anagen')) return 'cond-efluvio-anageno';
-  if (clean.includes('telogen') || clean.includes('efluvio')) return 'cond-efluvio-telogeno';
+  if (clean.includes('dermatite-contato') || clean.includes('dermatite_contato') || clean.includes('dermatite de contato')) return 'cond-dermatite-contato';
+  if (clean.includes('seborreica') || clean.includes('dermatite-seb') || clean.includes('dermatite_seb')) return 'cond-dermatite-seborreica';
+  if (clean.includes('efluvio-anagen') || clean.includes('efluvio_anagen') || clean.includes('anagen')) return 'cond-efluvio-anageno';
+  if (clean.includes('efluvio-telogen') || clean.includes('efluvio_telogen') || clean.includes('telogen') || clean.includes('efluvio')) return 'cond-efluvio-telogeno';
   if (clean.includes('escabiose') || clean.includes('sarna')) return 'cond-escabiose';
-  if (clean.includes('frontal') || clean.includes('fibrosante') || clean.includes('aff')) return 'cond-frontal-fibrosante';
+  if (clean.includes('frontal') || clean.includes('fibrosante')) return 'cond-frontal-fibrosante';
   if (clean.includes('foliculite') || clean.includes('decalvante')) return 'cond-foliculite-decalvante';
   if (clean.includes('liquen') || clean.includes('lpp')) return 'cond-liquen-plano-pilar';
   if (clean.includes('pedicul') || clean.includes('piolho') || clean.includes('lendea')) return 'cond-pediculose';
-  if (clean.includes('psoria') || clean.includes('pso')) return 'cond-psoriase';
+  if (clean.includes('psoria')) return 'cond-psoriase';
   if (clean.includes('seborreia')) return 'cond-seborreia';
   if (clean.includes('tinea') || clean.includes('micose')) return 'cond-tinea-capitis';
   if (clean.includes('tracao') || clean.includes('tração')) return 'cond-tracao';
@@ -336,7 +238,7 @@ export function normalizarChaves(casoId: string): string[] {
 }
 
 /**
- * Verifica se dois IDs referem-se à mesma condição
+ * Verifica se dois IDs referem-se estritamente à mesma condição do Atlas
  */
 export function isAliasMatch(idA: string, idB: string): boolean {
   if (!idA || !idB) return false;
@@ -347,7 +249,7 @@ export function isAliasMatch(idA: string, idB: string): boolean {
   return false;
 }
 
-// 1. Carga imediata e irrestrita de todo o localStorage
+// 1. Carga seletiva de localStorage (somente chaves prefixadas do atlas)
 function carregarLocalStorage(): number {
   if (typeof window === 'undefined' || !window.localStorage) return 0;
   let count = 0;
@@ -355,13 +257,15 @@ function carregarLocalStorage(): number {
     for (let i = 0; i < window.localStorage.length; i++) {
       const key = window.localStorage.key(i);
       if (!key) continue;
+      // Aceita SOMENTE chaves pertinentes ao atlas
+      if (!key.startsWith('atlas_') && !key.startsWith('cond-')) continue;
       const raw = window.localStorage.getItem(key);
       if (!raw) continue;
 
       let dataUrl: string | null = null;
       let targetId: string = key;
 
-      if (raw.startsWith('data:image/') || raw.startsWith('blob:')) {
+      if (raw.startsWith('data:image/') || raw.startsWith('blob:') || raw.startsWith('http')) {
         dataUrl = raw;
       } else if (raw.startsWith('{')) {
         try {
@@ -377,6 +281,8 @@ function carregarLocalStorage(): number {
 
       if (dataUrl) {
         const oficial = normalizarParaCasoOficial(targetId);
+        if (!CASOS_ALIASES[oficial]) continue; // deve ser uma das 17 condições oficiais
+
         const item: ImagemArmazenada = {
           casoId: oficial,
           dataUrl,
@@ -516,7 +422,7 @@ export function recuperarImagensLegadas(): Promise<number> {
       return totalRecuperadas;
     }
 
-    // 2. Coletar todos os nomes possíveis de banco de dados
+    // 2. Coletar nomes canônicos e seguros de bancos do Atlas
     const nomesBancos = new Set<string>([
       'TricoscopiaAtlasDB',
       'TricoscopiaAtlasDB_v1',
@@ -526,30 +432,10 @@ export function recuperarImagensLegadas(): Promise<number> {
       'tricoscopia_atlas',
       'atlas_tricoscopia',
       'AtlasTricoscopia',
-      'TricoscopiaDB',
-      'atlas_db',
-      'atlas-db',
       'AtlasDB',
-      'atlas',
-      'db',
-      'casos_db',
-      'dermatoscopia_db',
-      'tricoscopia'
+      'atlas_db',
+      'atlas-db'
     ]);
-
-    // Se o navegador suportar window.indexedDB.databases(), inclui todos os bancos reais
-    if (window.indexedDB.databases) {
-      try {
-        const bancos = await window.indexedDB.databases();
-        for (const b of bancos) {
-          if (b && b.name) {
-            nomesBancos.add(b.name);
-          }
-        }
-      } catch {
-        // ignore
-      }
-    }
 
     // 3. Processar cada banco
     for (const bName of Array.from(nomesBancos)) {
@@ -615,22 +501,38 @@ export function recuperarImagensLegadas(): Promise<number> {
 
                     if (dataUrl && candidateId) {
                       const oficial = normalizarParaCasoOficial(candidateId);
+                      if (!CASOS_ALIASES[oficial]) continue; // Não poluir o atlas com capturas de outras tabelas!
+
+                      let listaGaleria: ImagemArmazenada[] = [];
+                      if (rawVal && Array.isArray(rawVal.imagens)) {
+                        listaGaleria = rawVal.imagens;
+                      }
+
                       const item: ImagemArmazenada = {
                         casoId: oficial,
                         dataUrl,
-                        dataAtualizacao: Date.now()
+                        storagePath: rawVal?.storagePath,
+                        nomeArquivo: rawVal?.nomeArquivo,
+                        tamanhoBytes: rawVal?.tamanhoBytes,
+                        dataAtualizacao: Date.now(),
+                        imagens: listaGaleria.length > 0 ? listaGaleria : undefined
                       };
 
-                      const chaves = normalizarChaves(oficial);
-                      for (const k of chaves) {
+                      memoryCache.set(oficial, item);
+                      if (listaGaleria.length > 0) {
+                        memoryGalleryCache.set(oficial, listaGaleria);
+                      }
+                      for (const k of normalizarChaves(oficial)) {
                         memoryCache.set(k, item);
+                        if (listaGaleria.length > 0) {
+                          memoryGalleryCache.set(k, listaGaleria);
+                        }
                       }
 
-                      // Persistir de volta no localStorage para redundância máxima
+                      // Persistir de volta no localStorage para redundância
                       try {
-                        if (window.localStorage && dataUrl.length < 3500000) {
+                        if (window.localStorage && dataUrl.length < 500000) {
                           window.localStorage.setItem(`${LS_PREFIX}${oficial}`, JSON.stringify(item));
-                          window.localStorage.setItem(`atlas_img_v2_${oficial}`, JSON.stringify(item));
                         }
                       } catch {
                         // ignore
@@ -705,13 +607,22 @@ export function recuperarImagensLegadas(): Promise<number> {
         // ignore
       }
 
-      // 5. Notificar todos os componentes React
+      // 5. Notificar componentes React para casos oficiais
+      const jaNotificados = new Set<string>();
       for (const [chave, item] of memoryCache.entries()) {
-        window.dispatchEvent(
-          new CustomEvent('atlas-image-updated', {
-            detail: { casoId: chave, dataUrl: item.dataUrl }
-          })
-        );
+        const oficial = normalizarParaCasoOficial(chave);
+        if (!jaNotificados.has(oficial)) {
+          jaNotificados.add(oficial);
+          window.dispatchEvent(
+            new CustomEvent('atlas-image-updated', {
+              detail: { 
+                casoId: oficial, 
+                dataUrl: item.dataUrl, 
+                imagens: memoryGalleryCache.get(oficial) || [item] 
+              }
+            })
+          );
+        }
       }
     }
 
@@ -864,7 +775,53 @@ export async function obterImagensDoCaso(casoId: string): Promise<ImagemArmazena
     return localDb;
   }
 
-  // 4. Fallback para obterImagemCaso único
+  // 4. Checagem no Firebase Firestore (Nuvem Oficial dos Casos)
+  try {
+    const docRef = doc(db, 'caso_imagens', oficial);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data) {
+        let imagens: ImagemArmazenada[] = [];
+        if (data.imagensJson) {
+          try {
+            imagens = JSON.parse(data.imagensJson);
+          } catch {}
+        }
+        if (!imagens || imagens.length === 0) {
+          if (data.dataUrl) {
+            imagens = [{
+              id: oficial,
+              casoId: oficial,
+              dataUrl: data.dataUrl,
+              storagePath: data.storagePath,
+              nomeArquivo: data.nomeArquivo,
+              tamanhoBytes: data.tamanhoBytes,
+              dataAtualizacao: Date.now()
+            }];
+          }
+        }
+        if (imagens.length > 0) {
+          for (const k of chaves) {
+            memoryGalleryCache.set(k, imagens);
+            memoryCache.set(k, imagens[0]);
+          }
+          await executeWithStore('readwrite', (store) => {
+            return new Promise<void>((resolve) => {
+              const req = store.put({ ...imagens[0], imagens });
+              req.onsuccess = () => resolve();
+              req.onerror = () => resolve();
+            });
+          }, () => {});
+          return imagens;
+        }
+      }
+    }
+  } catch (err) {
+    console.debug('Aviso leitura galeria Firestore:', err);
+  }
+
+  // 5. Fallback para obterImagemCaso único
   const single = await obterImagemCaso(oficial);
   if (single) {
     const list = [single];
@@ -879,7 +836,7 @@ export async function obterImagensDoCaso(casoId: string): Promise<ImagemArmazena
 
 /**
  * Adiciona uma nova foto ao acervo de um caso (permitindo múltiplas imagens por condição).
- * Restrito exclusivamente a administradores do Atlas.
+ * Restrito a administradores do Atlas. Salva em Storage, Firestore, IndexedDB e Memória.
  */
 export async function adicionarImagemCaso(
   casoId: string,
@@ -893,7 +850,6 @@ export async function adicionarImagemCaso(
 
   const oficial = normalizarParaCasoOficial(casoId);
   const dataUrlOtimizada = await otimizarImagemParaArmazenamento(dataUrl);
-
   const idImagem = `${oficial}_sub_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
   
   // 1. Enviar imagem para o Firebase Storage
@@ -931,7 +887,7 @@ export async function adicionarImagemCaso(
       window.localStorage.setItem(`${LS_PREFIX}${oficial}`, JSON.stringify(novaLista[0]));
     }
   } catch {
-    // quota excedida
+    // quota
   }
 
   // 4. Salvar no IndexedDB
@@ -948,15 +904,42 @@ export async function adicionarImagemCaso(
     () => {}
   );
 
-  // 5. Disparar evento para todos os componentes
+  // 5. Salvar na coleção caso_imagens do Firestore (persistência centralizada)
+  try {
+    const docRef = doc(db, 'caso_imagens', oficial);
+    const firestoreDataUrl = novaLista[0].dataUrl.startsWith('http') 
+      ? novaLista[0].dataUrl 
+      : (novaLista[0].dataUrl.length <= 800000 ? novaLista[0].dataUrl : await otimizarImagemParaArmazenamento(novaLista[0].dataUrl));
+
+    const imagensCompactas = novaLista.map(img => ({
+      id: img.id,
+      casoId: img.casoId,
+      dataUrl: img.dataUrl.startsWith('http') ? img.dataUrl : (img.dataUrl.length > 200000 ? img.dataUrl.slice(0, 200000) : img.dataUrl),
+      storagePath: img.storagePath,
+      nomeArquivo: img.nomeArquivo,
+      dataAtualizacao: img.dataAtualizacao
+    }));
+
+    await setDoc(docRef, {
+      casoId: oficial,
+      nomeArquivo: novaLista[0].nomeArquivo || `${oficial}.jpg`,
+      tamanhoBytes: novaLista[0].tamanhoBytes || 0,
+      dataUrl: firestoreDataUrl,
+      storagePath: novaLista[0].storagePath || '',
+      imagensJson: JSON.stringify(imagensCompactas),
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (firestoreErr) {
+    console.warn('Aviso ao persistir galeria no Firestore:', firestoreErr);
+  }
+
+  // 6. Disparar evento para os componentes com o ID canônico
   if (typeof window !== 'undefined') {
-    for (const k of chaves) {
-      window.dispatchEvent(
-        new CustomEvent('atlas-image-updated', { 
-          detail: { casoId: k, dataUrl: novaLista[0].dataUrl, imagens: novaLista } 
-        })
-      );
-    }
+    window.dispatchEvent(
+      new CustomEvent('atlas-image-updated', { 
+        detail: { casoId: oficial, dataUrl: novaLista[0].dataUrl, imagens: novaLista } 
+      })
+    );
   }
 
   return novaLista;
@@ -1025,14 +1008,37 @@ export async function removerImagemEspecifica(
     () => {}
   );
 
+  // 5. Atualizar Firestore
+  try {
+    const docRef = doc(db, 'caso_imagens', oficial);
+    const firestoreDataUrl = novaLista[0].dataUrl.startsWith('http') 
+      ? novaLista[0].dataUrl 
+      : (novaLista[0].dataUrl.length <= 800000 ? novaLista[0].dataUrl : novaLista[0].dataUrl.slice(0, 800000));
+    const imagensCompactas = novaLista.map(img => ({
+      id: img.id,
+      casoId: img.casoId,
+      dataUrl: img.dataUrl.startsWith('http') ? img.dataUrl : (img.dataUrl.length > 200000 ? img.dataUrl.slice(0, 200000) : img.dataUrl),
+      storagePath: img.storagePath,
+      nomeArquivo: img.nomeArquivo,
+      dataAtualizacao: img.dataAtualizacao
+    }));
+    await setDoc(docRef, {
+      casoId: oficial,
+      dataUrl: firestoreDataUrl,
+      storagePath: novaLista[0].storagePath || '',
+      imagensJson: JSON.stringify(imagensCompactas),
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (err) {
+    console.warn('Erro ao atualizar exclusão no Firestore:', err);
+  }
+
   if (typeof window !== 'undefined') {
-    for (const k of chaves) {
-      window.dispatchEvent(
-        new CustomEvent('atlas-image-updated', {
-          detail: { casoId: k, dataUrl: novaLista[0].dataUrl, imagens: novaLista }
-        })
-      );
-    }
+    window.dispatchEvent(
+      new CustomEvent('atlas-image-updated', {
+        detail: { casoId: oficial, dataUrl: novaLista[0].dataUrl, imagens: novaLista }
+      })
+    );
   }
 
   return novaLista;
@@ -1068,7 +1074,7 @@ export async function salvarImagemCaso(
     dataUrl: downloadUrl,
     storagePath,
     dataAtualizacao: Date.now(),
-    nomeArquivo,
+    nomeArquivo: nomeArquivo || `${oficial}.jpg`,
     tamanhoBytes: tamanhoBytes || dataUrlOtimizada.length
   };
 
@@ -1107,7 +1113,8 @@ export async function salvarImagemCaso(
     'readwrite',
     (store) => {
       return new Promise((resolve, reject) => {
-        const req = store.put(item);
+        const payload = { ...item, imagens: novaLista };
+        const req = store.put(payload);
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
       });
@@ -1115,20 +1122,48 @@ export async function salvarImagemCaso(
     () => {}
   );
 
-  // 5. Disparar evento para todos os componentes
+  // 5. Salvar na coleção caso_imagens do Firestore (persistência centralizada perpétua)
+  try {
+    const docRef = doc(db, 'caso_imagens', oficial);
+    const firestoreDataUrl = downloadUrl.startsWith('http') 
+      ? downloadUrl 
+      : (downloadUrl.length <= 800000 ? downloadUrl : await otimizarImagemParaArmazenamento(downloadUrl));
+
+    const imagensCompactas = novaLista.map(img => ({
+      id: img.id,
+      casoId: img.casoId,
+      dataUrl: img.dataUrl.startsWith('http') ? img.dataUrl : (img.dataUrl.length > 200000 ? img.dataUrl.slice(0, 200000) : img.dataUrl),
+      storagePath: img.storagePath,
+      nomeArquivo: img.nomeArquivo,
+      dataAtualizacao: img.dataAtualizacao
+    }));
+
+    await setDoc(docRef, {
+      casoId: oficial,
+      nomeArquivo: item.nomeArquivo || `${oficial}.jpg`,
+      tamanhoBytes: item.tamanhoBytes || 0,
+      dataUrl: firestoreDataUrl,
+      storagePath: storagePath || '',
+      imagensJson: JSON.stringify(imagensCompactas),
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    console.info(`✅ Imagem do caso ${oficial} persistida com sucesso no Firestore!`);
+  } catch (firestoreErr) {
+    console.warn('Aviso ao persistir imagem do caso no Firestore:', firestoreErr);
+  }
+
+  // 6. Disparar evento para todos os componentes com o ID canônico
   if (typeof window !== 'undefined') {
-    for (const k of chaves) {
-      window.dispatchEvent(
-        new CustomEvent('atlas-image-updated', { 
-          detail: { casoId: k, dataUrl: downloadUrl, imagens: novaLista } 
-        })
-      );
-    }
+    window.dispatchEvent(
+      new CustomEvent('atlas-image-updated', { 
+        detail: { casoId: oficial, dataUrl: downloadUrl, imagens: novaLista } 
+      })
+    );
   }
 }
 
 /**
- * Obtém a imagem de um caso com prioridade: Memória -> Recuperação -> IndexedDB -> LocalStorage -> Firebase Firestore
+ * Obtém a imagem de um caso com prioridade: Memória -> IndexedDB -> Firestore -> LocalStorage
  */
 export async function obterImagemCaso(casoId: string): Promise<ImagemArmazenada | null> {
   if (!casoId) return null;
@@ -1209,7 +1244,7 @@ export async function obterImagemCaso(casoId: string): Promise<ImagemArmazenada 
                   memoryCache.set(alias, parsed);
                 }
                 return parsed;
-              } else if (raw.startsWith('data:image/')) {
+              } else if (raw.startsWith('data:image/') || raw.startsWith('http')) {
                 const item: ImagemArmazenada = {
                   casoId: oficial,
                   dataUrl: raw,
@@ -1232,6 +1267,47 @@ export async function obterImagemCaso(casoId: string): Promise<ImagemArmazenada 
 
   if (localItem) {
     return localItem;
+  }
+
+  // 4. Checagem no Firebase Firestore
+  try {
+    const docRef = doc(db, 'caso_imagens', oficial);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data && data.dataUrl) {
+        let imagens: ImagemArmazenada[] = [];
+        if (data.imagensJson) {
+          try { imagens = JSON.parse(data.imagensJson); } catch {}
+        }
+        const item: ImagemArmazenada = {
+          id: oficial,
+          casoId: oficial,
+          dataUrl: data.dataUrl,
+          storagePath: data.storagePath,
+          nomeArquivo: data.nomeArquivo,
+          tamanhoBytes: data.tamanhoBytes,
+          dataAtualizacao: Date.now(),
+          imagens: imagens.length > 0 ? imagens : undefined
+        };
+        for (const alias of chaves) {
+          memoryCache.set(alias, item);
+          if (imagens.length > 0) {
+            memoryGalleryCache.set(alias, imagens);
+          }
+        }
+        await executeWithStore('readwrite', (store) => {
+          return new Promise<void>((resolve) => {
+            const req = store.put({ ...item, imagens: imagens.length > 0 ? imagens : [item] });
+            req.onsuccess = () => resolve();
+            req.onerror = () => resolve();
+          });
+        }, () => {});
+        return item;
+      }
+    }
+  } catch (err) {
+    console.debug('Aviso leitura Firestore caso_imagens:', err);
   }
 
   return null;
@@ -1261,7 +1337,15 @@ export async function removerImagemCaso(casoId: string): Promise<void> {
     }
   }
 
-  // 2. Limpar caches
+  // 2. Limpar Firestore
+  try {
+    const docRef = doc(db, 'caso_imagens', oficial);
+    await deleteDoc(docRef);
+  } catch (err) {
+    console.warn('Erro ao remover do Firestore caso_imagens:', err);
+  }
+
+  // 3. Limpar caches
   for (const k of chaves) {
     memoryCache.delete(k);
     memoryGalleryCache.delete(k);
@@ -1303,19 +1387,82 @@ export async function removerImagemCaso(casoId: string): Promise<void> {
   );
 
   if (typeof window !== 'undefined') {
-    for (const k of chaves) {
-      window.dispatchEvent(
-        new CustomEvent('atlas-image-updated', { detail: { casoId: k, dataUrl: null, imagens: [] } })
-      );
-    }
+    window.dispatchEvent(
+      new CustomEvent('atlas-image-updated', { detail: { casoId: oficial, dataUrl: null, imagens: [] } })
+    );
   }
 }
 
 /**
- * Sincroniza e recupera imagens salvas no Firebase / cache local
+ * Sincroniza e recupera imagens salvas no Firebase Firestore e no cache local
  */
 export async function sincronizarComFirebase(): Promise<void> {
+  // 1. Recuperar fotos legadas locais seguras
   await recuperarImagensLegadas().catch(() => {});
+
+  // 2. Baixar todas as fotos oficiais da coleção caso_imagens do Firestore
+  try {
+    const colRef = collection(db, 'caso_imagens');
+    const snap = await getDocs(colRef);
+    for (const docSnap of snap.docs) {
+      const data = docSnap.data();
+      if (!data || !data.casoId || !data.dataUrl) continue;
+      const oficial = normalizarParaCasoOficial(data.casoId);
+      if (!CASOS_ALIASES[oficial]) continue;
+
+      let imagens: ImagemArmazenada[] = [];
+      if (data.imagensJson) {
+        try {
+          imagens = JSON.parse(data.imagensJson);
+        } catch {}
+      }
+      if (!imagens || imagens.length === 0) {
+        imagens = [{
+          id: oficial,
+          casoId: oficial,
+          dataUrl: data.dataUrl,
+          storagePath: data.storagePath,
+          nomeArquivo: data.nomeArquivo,
+          tamanhoBytes: data.tamanhoBytes,
+          dataAtualizacao: Date.now()
+        }];
+      }
+
+      // Atualizar IndexedDB local
+      await executeWithStore('readwrite', (store) => {
+        return new Promise<void>((resolve) => {
+          const req = store.put({ ...imagens[0], imagens });
+          req.onsuccess = () => resolve();
+          req.onerror = () => resolve();
+        });
+      }, () => {});
+
+      // Atualizar caches em memória
+      const chaves = normalizarChaves(oficial);
+      for (const k of chaves) {
+        memoryCache.set(k, imagens[0]);
+        memoryGalleryCache.set(k, imagens);
+      }
+
+      // Notificar componentes com o ID canônico
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('atlas-image-updated', {
+            detail: { casoId: oficial, dataUrl: imagens[0].dataUrl, imagens }
+          })
+        );
+      }
+    }
+  } catch (err) {
+    console.warn('Aviso ao sincronizar coleção caso_imagens do Firestore:', err);
+  }
+}
+
+// Inicia sincronização com o Firestore em background logo após o carregamento da página
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    sincronizarComFirebase().catch(() => {});
+  }, 1200);
 }
 
 /**
@@ -1323,6 +1470,7 @@ export async function sincronizarComFirebase(): Promise<void> {
  */
 export async function obterTodasImagensGaleria(): Promise<Record<string, ImagemArmazenada[]>> {
   await recuperarImagensLegadas().catch(() => {});
+  await sincronizarComFirebase().catch(() => {});
   const map: Record<string, ImagemArmazenada[]> = {};
 
   for (const [k, v] of memoryGalleryCache.entries()) {
@@ -1347,6 +1495,7 @@ export async function obterTodasImagensGaleria(): Promise<Record<string, ImagemA
  */
 export async function obterTodasImagens(): Promise<Record<string, ImagemArmazenada>> {
   await recuperarImagensLegadas().catch(() => {});
+  await sincronizarComFirebase().catch(() => {});
 
   return executeWithStore<Record<string, ImagemArmazenada>>(
     'readonly',

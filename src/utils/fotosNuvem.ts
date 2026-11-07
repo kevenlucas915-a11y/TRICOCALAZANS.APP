@@ -12,9 +12,14 @@ export function usuarioEhAdmin(): boolean {
       const saved = window.localStorage.getItem('trico_auth_user_active_v1');
       if (saved) {
         const u = JSON.parse(saved);
-        if (u && u.email) {
-          const emailLimpo = u.email.toLowerCase().trim();
-          if (ADMIN_EMAILS.some(adm => adm.toLowerCase().trim() === emailLimpo)) {
+        if (u) {
+          if (u.email) {
+            const emailLimpo = u.email.toLowerCase().trim();
+            if (ADMIN_EMAILS.some(adm => adm.toLowerCase().trim() === emailLimpo)) {
+              return true;
+            }
+          }
+          if (u.planoMetodo === 'admin_vitalicio' || u.tipo === 'admin' || u.role === 'admin' || u.isAdmin === true) {
             return true;
           }
         }
@@ -129,12 +134,13 @@ export async function enviarImagemAtlas(
       uploadString(storageRef, dataUrl, 'data_url', {
         contentType: 'image/jpeg'
       }),
-      4000,
+      15000,
       'Firebase Storage Atlas Upload'
     );
-    const url = await comTimeout(getDownloadURL(storageRef), 2000, 'Firebase Storage Atlas URL');
+    const url = await comTimeout(getDownloadURL(storageRef), 5000, 'Firebase Storage Atlas URL');
     return { url, path };
-  } catch {
+  } catch (storageErr) {
+    console.warn('Aviso Firebase Storage Atlas (fallback em dataUrl otimizada):', storageErr);
     // Fallback seguro em dataUrl direto
     return { url: dataUrl, path };
   }

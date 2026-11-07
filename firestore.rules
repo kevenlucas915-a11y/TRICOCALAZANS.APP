@@ -38,13 +38,14 @@ service cloud.firestore {
     }
 
     function isValidCasoImagem(data) {
-      return data.keys().hasAll(['casoId', 'nomeArquivo', 'tamanhoBytes', 'dataUrl']) &&
-             data.keys().hasOnly(['casoId', 'nomeArquivo', 'tamanhoBytes', 'dataUrl', 'storagePath', 'updatedAt']) &&
+      return data.keys().hasAll(['casoId', 'dataUrl']) &&
              data.casoId is string && data.casoId.size() <= 128 &&
-             data.nomeArquivo is string && data.nomeArquivo.size() <= 255 &&
-             data.tamanhoBytes is number && data.tamanhoBytes >= 0 && data.tamanhoBytes <= 10000000 &&
              data.dataUrl is string && data.dataUrl.size() <= 900000 &&
-             (!('storagePath' in data) || (data.storagePath is string && data.storagePath.size() <= 300 && data.storagePath.matches('^atlas/[a-zA-Z0-9_\\-]+/[a-zA-Z0-9_\\-\\.]+\\.jpg$'))) &&
+             (!('nomeArquivo' in data) || (data.nomeArquivo is string && data.nomeArquivo.size() <= 255)) &&
+             (!('tamanhoBytes' in data) || (data.tamanhoBytes is number && data.tamanhoBytes >= 0 && data.tamanhoBytes <= 10000000)) &&
+             (!('storagePath' in data) || (data.storagePath is string && data.storagePath.size() <= 300)) &&
+             (!('imagensJson' in data) || (data.imagensJson is string && data.imagensJson.size() <= 900000)) &&
+             (!('imagens' in data) || (data.imagens is list && data.imagens.size() <= 50)) &&
              (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
     }
 

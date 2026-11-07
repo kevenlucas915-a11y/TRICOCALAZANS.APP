@@ -183,9 +183,11 @@ export function useCaseImage(casoId?: string, defaultUrl?: string) {
       await salvarImagemCaso(casoId, dataUrl, file.name, file.size);
       const lista = await obterImagensDoCaso(casoId);
       setImagens(lista);
-      setImageUrl(dataUrl);
-    } catch (err) {
-      console.warn('Aviso ao salvar imagem do caso:', err);
+      setImageUrl(lista[0]?.dataUrl || dataUrl);
+    } catch (err: any) {
+      console.error('Erro ao salvar imagem do caso:', err);
+      alert(`Erro ao salvar foto no Atlas: ${err?.message || 'Falha de gravação'}`);
+      throw err;
     }
   }, [casoId]);
 
@@ -197,9 +199,11 @@ export function useCaseImage(casoId?: string, defaultUrl?: string) {
       const novaLista = await adicionarImagemCaso(casoId, dataUrl, file.name, file.size);
       setImagens(novaLista);
       setIndiceAtivo(novaLista.length - 1); // foca na foto recém-adicionada
-      setImageUrl(dataUrl);
-    } catch (err) {
-      console.warn('Aviso ao adicionar imagem ao caso:', err);
+      setImageUrl(novaLista[novaLista.length - 1]?.dataUrl || dataUrl);
+    } catch (err: any) {
+      console.error('Erro ao adicionar imagem ao caso:', err);
+      alert(`Erro ao adicionar foto: ${err?.message || 'Falha de gravação'}`);
+      throw err;
     }
   }, [casoId]);
 
@@ -218,8 +222,10 @@ export function useCaseImage(casoId?: string, defaultUrl?: string) {
       if (ultimaLista.length > 0) {
         setImageUrl(ultimaLista[ultimaLista.length - 1].dataUrl);
       }
-    } catch (err) {
-      console.warn('Aviso ao adicionar múltiplos arquivos:', err);
+    } catch (err: any) {
+      console.error('Erro ao adicionar múltiplos arquivos:', err);
+      alert(`Erro ao adicionar fotos: ${err?.message || 'Falha de gravação'}`);
+      throw err;
     }
   }, [casoId, imagens]);
 
@@ -234,8 +240,10 @@ export function useCaseImage(casoId?: string, defaultUrl?: string) {
       const novoIndice = Math.max(0, Math.min(indiceAtivo, restante.length - 1));
       setIndiceAtivo(novoIndice);
       setImageUrl(restante[novoIndice]?.dataUrl || null);
-    } catch (err) {
-      console.warn('Aviso ao remover foto atual:', err);
+    } catch (err: any) {
+      console.error('Erro ao remover foto atual:', err);
+      alert(`Erro ao remover foto: ${err?.message || 'Falha na exclusão'}`);
+      throw err;
     }
   }, [casoId, imagens, indiceAtivo]);
 
@@ -248,8 +256,10 @@ export function useCaseImage(casoId?: string, defaultUrl?: string) {
       const novoIndice = Math.max(0, Math.min(indiceAtivo, restante.length - 1));
       setIndiceAtivo(novoIndice);
       setImageUrl(restante[novoIndice]?.dataUrl || null);
-    } catch (err) {
-      console.warn('Aviso ao remover foto específica:', err);
+    } catch (err: any) {
+      console.error('Erro ao remover foto específica:', err);
+      alert(`Erro ao remover foto: ${err?.message || 'Falha na exclusão'}`);
+      throw err;
     }
   }, [casoId, indiceAtivo]);
 
@@ -261,8 +271,10 @@ export function useCaseImage(casoId?: string, defaultUrl?: string) {
       setImageUrl(null);
       setImagens([]);
       setIndiceAtivo(0);
-    } catch (err) {
-      console.warn('Aviso ao remover imagens do caso:', err);
+    } catch (err: any) {
+      console.error('Erro ao remover imagens do caso:', err);
+      alert(`Erro ao remover fotos do caso: ${err?.message || 'Falha na exclusão'}`);
+      throw err;
     }
   }, [casoId]);
 
