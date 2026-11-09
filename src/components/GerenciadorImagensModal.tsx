@@ -54,6 +54,7 @@ export const GerenciadorImagensModal: React.FC<GerenciadorImagensModalProps> = (
 
   const recarregarImagens = async () => {
     try {
+      await sincronizarComFirebase().catch(() => {});
       await recuperarImagensLegadas().catch(() => {});
       const mapa = await obterTodasImagensGaleria();
       setGalerias(mapa);

@@ -18,7 +18,7 @@ import {
   Lock,
   ChevronRight
 } from 'lucide-react';
-import { recuperarImagensLegadas, obterTodasImagens } from '../utils/imageStore';
+import { recuperarImagensLegadas, obterTodasImagens, sincronizarComFirebase } from '../utils/imageStore';
 import { useAuth } from '../context/AuthContext';
 import { temAcessoAtlas } from '../types/assinatura';
 
@@ -62,7 +62,19 @@ export const AtlasGridView: React.FC<AtlasGridViewProps> = ({
   };
 
   useEffect(() => {
+    // 1. Checa fotos do banco local imediatamente
     checarFotos();
+
+    // 2. Sincroniza em segundo plano com a nuvem Firebase (Storage + Firestore)
+    // Garantindo que fotos enviadas de outro dispositivo (Desktop/Mobile) apareçam sem demora
+    sincronizarComFirebase()
+      .then((sincCount) => {
+        if (sincCount > 0) {
+          checarFotos();
+        }
+      })
+      .catch(() => {});
+
     const handleUpdate = () => checarFotos();
     window.addEventListener('atlas-image-updated', handleUpdate);
     return () => window.removeEventListener('atlas-image-updated', handleUpdate);
@@ -70,16 +82,21 @@ export const AtlasGridView: React.FC<AtlasGridViewProps> = ({
 
   const handleSincronizarManual = async () => {
     setSincronizando(true);
-    setMensagemSincronizacao('Buscando e restaurando fotos do navegador...');
+    setMensagemSincronizacao('Sincronizando fotos com o Firebase...');
     try {
-      const total = await recuperarImagensLegadas();
+      const sincNuvem = await sincronizarComFirebase();
+      await recuperarImagensLegadas();
       const mapa = await obterTodasImagens();
       const count = Object.keys(mapa).length;
       setTotalFotosAtivas(count);
-      setMensagemSincronizacao(`Varredura concluída! ${count} foto(s) ativa(s) no seu acervo.`);
+      setMensagemSincronizacao(
+        count > 0
+          ? `Sincronização concluída! ${count} condição(ões) com foto(s) ativas.`
+          : 'Sincronização concluída. Nenhuma foto encontrada na nuvem.'
+      );
       setTimeout(() => setMensagemSincronizacao(null), 4000);
     } catch {
-      setMensagemSincronizacao('Não foi possível concluir a varredura.');
+      setMensagemSincronizacao('Não foi possível sincronizar com o Firebase.');
       setTimeout(() => setMensagemSincronizacao(null), 4000);
     } finally {
       setSincronizando(false);
@@ -252,10 +269,10 @@ export const AtlasGridView: React.FC<AtlasGridViewProps> = ({
               onClick={handleSincronizarManual}
               disabled={sincronizando}
               className="px-3 py-2 rounded-xl glass-button flex items-center gap-1.5 text-xs font-medium shrink-0"
-              title="Varre e restaura todas as fotos salvas anteriormente no navegador"
+              title="Sincroniza todas as fotos com o Firebase na nuvem em tempo real"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-teal-700 dark:text-teal-400 ${sincronizando ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{sincronizando ? 'Restaurando...' : 'Restaurar'}</span>
+              <span className="hidden sm:inline">{sincronizando ? 'Sincronizando...' : 'Sincronizar Nuvem'}</span>
             </button>
 
             {onAbrirGerenciadorImagens && (

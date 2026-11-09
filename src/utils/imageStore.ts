@@ -14,7 +14,8 @@
  */
 
 import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import { usuarioEhAdmin, enviarImagemAtlas, removerArquivo } from './fotosNuvem';
 import { 
   comprimirImagem, 
@@ -801,6 +802,23 @@ async function processarFilaNuvem(): Promise<void> {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', (e) => {
+    if (filaSincronizacao.length > 0 || processandoFilaSincronizacao) {
+      e.preventDefault();
+      e.returnValue = 'O envio das fotos para a nuvem ainda está em processamento.';
+      return e.returnValue;
+    }
+  });
+}
+
+export function obterStatusFilaUpload(): { pendentes: number; processando: boolean } {
+  return {
+    pendentes: filaSincronizacao.length,
+    processando: processandoFilaSincronizacao
+  };
+}
+
 function enfileirarUploadNuvem(tarefa: TarefaSincronizacaoNuvem) {
   filaSincronizacao.push(tarefa);
   processarFilaNuvem().catch(() => {});
@@ -907,11 +925,12 @@ export async function obterImagensDoCaso(casoId: string): Promise<ImagemArmazena
           } catch {}
         }
         if (!imagens || imagens.length === 0) {
-          if (data.dataUrl) {
+          const urlBase = data.dataUrl || data.url || '';
+          if (urlBase || data.storagePath) {
             imagens = [{
               id: oficial,
               casoId: oficial,
-              dataUrl: data.dataUrl,
+              dataUrl: urlBase,
               storagePath: data.storagePath,
               nomeArquivo: data.nomeArquivo,
               tamanhoBytes: data.tamanhoBytes,
@@ -919,6 +938,20 @@ export async function obterImagensDoCaso(casoId: string): Promise<ImagemArmazena
             }];
           }
         }
+
+        // Se fotos vieram sem URL HTTP mas têm storagePath no Storage, resolve a URL
+        for (const img of imagens) {
+          if ((!img.dataUrl || !img.dataUrl.startsWith('http')) && img.storagePath) {
+            try {
+              const storageRef = ref(storage, img.storagePath);
+              const downloadUrl = await getDownloadURL(storageRef);
+              if (downloadUrl) img.dataUrl = downloadUrl;
+            } catch {}
+          } else if (!img.dataUrl && data.dataUrl) {
+            img.dataUrl = data.dataUrl;
+          }
+        }
+        imagens = imagens.filter(img => Boolean(img.dataUrl));
         if (imagens.length > 0) {
           for (const k of chaves) {
             memoryGalleryCache.set(k, imagens);
@@ -1278,35 +1311,49 @@ export async function obterImagemCaso(casoId: string): Promise<ImagemArmazenada 
     const snap = await getDoc(docRef);
     if (snap.exists()) {
       const data = snap.data();
-      if (data && data.dataUrl) {
+      if (data) {
         let imagens: ImagemArmazenada[] = [];
         if (data.imagensJson) {
           try { imagens = JSON.parse(data.imagensJson); } catch {}
         }
-        const item: ImagemArmazenada = {
-          id: oficial,
-          casoId: oficial,
-          dataUrl: data.dataUrl,
-          storagePath: data.storagePath,
-          nomeArquivo: data.nomeArquivo,
-          tamanhoBytes: data.tamanhoBytes,
-          dataAtualizacao: Date.now(),
-          imagens: imagens.length > 0 ? imagens : undefined
-        };
-        for (const alias of chaves) {
-          memoryCache.set(alias, item);
-          if (imagens.length > 0) {
-            memoryGalleryCache.set(alias, imagens);
-          }
+
+        let urlEncontrada = data.dataUrl || (imagens.length > 0 && imagens[0].dataUrl) || '';
+        const storagePath = data.storagePath || (imagens.length > 0 && imagens[0].storagePath) || '';
+
+        if ((!urlEncontrada || !urlEncontrada.startsWith('http')) && storagePath) {
+          try {
+            const storageRef = ref(storage, storagePath);
+            const downloadUrl = await getDownloadURL(storageRef);
+            if (downloadUrl) urlEncontrada = downloadUrl;
+          } catch {}
         }
-        await executeWithStore('readwrite', (store) => {
-          return new Promise<void>((resolve) => {
-            const req = store.put({ ...item, imagens: imagens.length > 0 ? imagens : [item] });
-            req.onsuccess = () => resolve();
-            req.onerror = () => resolve();
-          });
-        }, () => {});
-        return item;
+
+        if (urlEncontrada) {
+          const item: ImagemArmazenada = {
+            id: oficial,
+            casoId: oficial,
+            dataUrl: urlEncontrada,
+            storagePath: storagePath,
+            nomeArquivo: data.nomeArquivo || `${oficial}.jpg`,
+            tamanhoBytes: data.tamanhoBytes || 0,
+            dataAtualizacao: Date.now(),
+            imagens: imagens.length > 0 ? imagens : undefined
+          };
+          for (const alias of chaves) {
+            memoryCache.set(alias, item);
+            if (imagens.length > 0) {
+              memoryGalleryCache.set(alias, imagens);
+            }
+          }
+          await executeWithStore('readwrite', (store) => {
+            return new Promise<void>((resolve) => {
+              const req = store.put({ ...item, imagens: imagens.length > 0 ? imagens : [item] });
+              req.onsuccess = () => resolve();
+              req.onerror = () => resolve();
+            });
+          }, () => {});
+          return item;
+        }
       }
     }
   } catch (err) {
@@ -1399,38 +1446,74 @@ export async function removerImagemCaso(casoId: string): Promise<void> {
 }
 
 /**
- * Sincroniza e recupera imagens salvas no Firebase Firestore e no cache local.
+ * Sincroniza e recupera imagens salvas no Firebase Firestore e Firebase Storage para o cache local.
  * Faz merge inteligente para NUNCA apagar fotos locais caso a nuvem possua menos fotos registradas.
+ * Retorna a quantidade de condições sincronizadas.
  */
-export async function sincronizarComFirebase(): Promise<void> {
+export async function sincronizarComFirebase(): Promise<number> {
   await inicializarBanco().catch(() => {});
+  let totalSincronizadas = 0;
 
   try {
     const colRef = collection(db, 'caso_imagens');
     const snap = await getDocs(colRef);
     for (const docSnap of snap.docs) {
       const data = docSnap.data();
-      if (!data || !data.casoId || !data.dataUrl) continue;
-      const oficial = normalizarParaCasoOficial(data.casoId);
+      if (!data) continue;
+      const rawId = data.casoId || docSnap.id;
+      if (!rawId) continue;
+      const oficial = normalizarParaCasoOficial(rawId);
       if (!CASOS_ALIASES[oficial]) continue;
 
       let remoteImagens: ImagemArmazenada[] = [];
       if (data.imagensJson) {
         try {
-          remoteImagens = JSON.parse(data.imagensJson);
+          const parsed = JSON.parse(data.imagensJson);
+          if (Array.isArray(parsed)) {
+            remoteImagens = parsed;
+          }
         } catch {}
       }
+
+      const urlRaiz = data.dataUrl || data.url || data.imagemUrl || '';
+
       if (!remoteImagens || remoteImagens.length === 0) {
-        remoteImagens = [{
-          id: oficial,
-          casoId: oficial,
-          dataUrl: data.dataUrl,
-          storagePath: data.storagePath,
-          nomeArquivo: data.nomeArquivo,
-          tamanhoBytes: data.tamanhoBytes,
-          dataAtualizacao: Date.now()
-        }];
+        if (urlRaiz || data.storagePath) {
+          remoteImagens = [{
+            id: oficial,
+            casoId: oficial,
+            dataUrl: urlRaiz,
+            storagePath: data.storagePath || '',
+            nomeArquivo: data.nomeArquivo || `${oficial}.jpg`,
+            tamanhoBytes: data.tamanhoBytes || 0,
+            dataAtualizacao: data.dataAtualizacao || Date.now()
+          }];
+        }
       }
+
+      // Se qualquer item da galeria tiver storagePath mas estiver sem URL pública,
+      // busca o downloadURL diretamente do Firebase Storage
+      for (const rem of remoteImagens) {
+        if ((!rem.dataUrl || !rem.dataUrl.startsWith('http')) && rem.storagePath) {
+          try {
+            const storageRef = ref(storage, rem.storagePath);
+            const downloadUrl = await getDownloadURL(storageRef);
+            if (downloadUrl) {
+              rem.dataUrl = downloadUrl;
+            }
+          } catch {
+            if (!rem.dataUrl && urlRaiz && urlRaiz.startsWith('http')) {
+              rem.dataUrl = urlRaiz;
+            }
+          }
+        } else if (!rem.dataUrl && urlRaiz) {
+          rem.dataUrl = urlRaiz;
+        }
+      }
+
+      remoteImagens = remoteImagens.filter(img => Boolean(img.dataUrl && (img.dataUrl.startsWith('http') || img.dataUrl.startsWith('data:') || img.dataUrl.startsWith('/'))));
+
+      if (remoteImagens.length === 0) continue;
 
       // Merge inteligente com as fotos locais existentes
       const galeriaLocal = memoryGalleryCache.get(oficial) || [];
@@ -1441,15 +1524,16 @@ export async function sincronizarComFirebase(): Promise<void> {
       } else {
         const mapPorId = new Map<string, ImagemArmazenada>();
         for (const loc of galeriaLocal) {
-          mapPorId.set(loc.id || loc.dataUrl, loc);
+          const chave = loc.id || loc.dataUrl || loc.storagePath || oficial;
+          mapPorId.set(chave, loc);
         }
         for (const rem of remoteImagens) {
-          const chave = rem.id || rem.dataUrl;
+          const chave = rem.id || rem.dataUrl || rem.storagePath || oficial;
           if (mapPorId.has(chave)) {
             const existente = mapPorId.get(chave)!;
             mapPorId.set(chave, {
               ...existente,
-              dataUrl: rem.dataUrl && rem.dataUrl.startsWith('http') ? rem.dataUrl : existente.dataUrl,
+              dataUrl: (rem.dataUrl && (rem.dataUrl.startsWith('http') || rem.dataUrl.startsWith('/'))) ? rem.dataUrl : existente.dataUrl,
               storagePath: rem.storagePath || existente.storagePath
             });
           } else {
@@ -1459,7 +1543,9 @@ export async function sincronizarComFirebase(): Promise<void> {
         galeriaFinal = Array.from(mapPorId.values());
       }
 
-      if (galeriaFinal.length > 0) {
+      if (galeriaFinal.length > 0 && galeriaFinal[0].dataUrl) {
+        totalSincronizadas++;
+
         // Atualizar IndexedDB local com a lista final mesclada
         await executeWithStore('readwrite', (store) => {
           return new Promise<void>((resolve) => {
@@ -1489,6 +1575,8 @@ export async function sincronizarComFirebase(): Promise<void> {
   } catch (err) {
     console.warn('Aviso ao sincronizar coleção caso_imagens do Firestore:', err);
   }
+
+  return totalSincronizadas;
 }
 
 // Inicia sincronização com Firestore em background 2s após o carregamento
@@ -1577,11 +1665,16 @@ export async function obterTodasImagens(): Promise<Record<string, ImagemArmazena
           const map: Record<string, ImagemArmazenada> = {};
 
           for (const item of results) {
-            if (item && item.casoId && item.dataUrl) {
-              const oficial = normalizarParaCasoOficial(item.casoId);
-              map[oficial] = item;
-              for (const k of normalizarChaves(oficial)) {
-                memoryCache.set(k, item);
+            if (item) {
+              const rawId = item.casoId || item.id;
+              const dataUrl = item.dataUrl || (item.imagens && item.imagens[0]?.dataUrl);
+              if (rawId && dataUrl) {
+                const oficial = normalizarParaCasoOficial(rawId);
+                const itemComUrl = { ...item, casoId: oficial, dataUrl };
+                map[oficial] = itemComUrl;
+                for (const k of normalizarChaves(oficial)) {
+                  memoryCache.set(k, itemComUrl);
+                }
               }
             }
           }
@@ -1589,8 +1682,11 @@ export async function obterTodasImagens(): Promise<Record<string, ImagemArmazena
           // Mesclar com memoryCache
           for (const [k, v] of memoryCache.entries()) {
             const oficial = normalizarParaCasoOficial(k);
-            if (!map[oficial]) {
-              map[oficial] = v;
+            if (!map[oficial] && v) {
+              const dataUrl = v.dataUrl || (v.imagens && v.imagens[0]?.dataUrl);
+              if (dataUrl) {
+                map[oficial] = { ...v, casoId: oficial, dataUrl };
+              }
             }
           }
 
