@@ -45,6 +45,7 @@ service cloud.firestore {
              (!('tamanhoBytes' in data) || (data.tamanhoBytes is number && data.tamanhoBytes >= 0 && data.tamanhoBytes <= 10000000)) &&
              (!('storagePath' in data) || (data.storagePath is string && data.storagePath.size() <= 300)) &&
              (!('imagensJson' in data) || (data.imagensJson is string && data.imagensJson.size() <= 900000)) &&
+             (!('casoJson' in data) || (data.casoJson is string && data.casoJson.size() <= 900000)) &&
              (!('imagens' in data) || (data.imagens is list && data.imagens.size() <= 50)) &&
              (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
     }
@@ -305,6 +306,13 @@ service cloud.firestore {
     match /caso_imagens/{casoId} {
       allow read: if true;
       allow create, update: if isAdmin() && isValidId(casoId) && isValidCasoImagem(incoming());
+      allow delete: if isAdmin() && isValidId(casoId);
+    }
+
+    // Condições clínicas cadastradas e editadas do Atlas de Tricoscopia
+    match /atlas_casos/{casoId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidId(casoId);
       allow delete: if isAdmin() && isValidId(casoId);
     }
 

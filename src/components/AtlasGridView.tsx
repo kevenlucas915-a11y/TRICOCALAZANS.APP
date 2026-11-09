@@ -19,6 +19,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { recuperarImagensLegadas, obterTodasImagens, sincronizarComFirebase } from '../utils/imageStore';
+import { obterCasosAtlas, sincronizarCasosComFirestore } from '../services/casosAtlasService';
 import { useAuth } from '../context/AuthContext';
 import { temAcessoAtlas } from '../types/assinatura';
 
@@ -44,6 +45,7 @@ export const AtlasGridView: React.FC<AtlasGridViewProps> = ({
   const { usuarioAtual } = useAuth();
   const temAcesso = temAcessoAtlas(usuarioAtual);
 
+  const [casosAtivos, setCasosAtivos] = useState<CasoAtlas[]>(() => obterCasosAtlas());
   const [categoriaAtiva, setCategoriaAtiva] = useState<string>('Todas');
   const [filtroTexto, setFiltroTexto] = useState<string>(termoBuscaGlobal);
   const [totalFotosAtivas, setTotalFotosAtivas] = useState<number>(0);
@@ -75,9 +77,23 @@ export const AtlasGridView: React.FC<AtlasGridViewProps> = ({
       })
       .catch(() => {});
 
+    // 3. Sincroniza casos com o Firestore
+    sincronizarCasosComFirestore()
+      .then(() => setCasosAtivos([...obterCasosAtlas()]))
+      .catch(() => {});
+
     const handleUpdate = () => checarFotos();
+    const handleCasesUpdate = () => {
+      setCasosAtivos([...obterCasosAtlas()]);
+      checarFotos();
+    };
+
     window.addEventListener('atlas-image-updated', handleUpdate);
-    return () => window.removeEventListener('atlas-image-updated', handleUpdate);
+    window.addEventListener('atlas-cases-updated', handleCasesUpdate);
+    return () => {
+      window.removeEventListener('atlas-image-updated', handleUpdate);
+      window.removeEventListener('atlas-cases-updated', handleCasesUpdate);
+    };
   }, []);
 
   const handleSincronizarManual = async () => {
@@ -117,16 +133,16 @@ export const AtlasGridView: React.FC<AtlasGridViewProps> = ({
       label: cat,
       count:
         cat === 'Todas'
-          ? CASOS_ATLAS.length
-          : CASOS_ATLAS.filter(c => c.categoria === cat).length
+          ? casosAtivos.length
+          : casosAtivos.filter(c => c.categoria === cat).length
     }));
-  }, []);
+  }, [casosAtivos]);
 
   // Busca abrangente pelo conteúdo real: nome da condição, achados, características, termos do PDF
   const casosFiltrados = useMemo(() => {
     const query = (filtroTexto || termoBuscaGlobal).toLowerCase().trim();
 
-    return CASOS_ATLAS.filter(caso => {
+    return casosAtivos.filter(caso => {
       if (categoriaAtiva !== 'Todas' && caso.categoria !== categoriaAtiva) {
         return false;
       }

@@ -168,6 +168,34 @@ export const CASOS_ALIASES: Record<string, string[]> = {
   ]
 };
 
+// Conjunto dinâmico de IDs de casos customizados cadastrados
+const customCasosIds = new Set<string>();
+
+/**
+ * Registra um caso criado dinamicamente para ser aceito e normalizado em todo o pipeline de imagens
+ */
+export function registrarCasoCustomizadoId(casoId: string): void {
+  if (!casoId) return;
+  const clean = casoId.toLowerCase().trim().replace(/['"]/g, '');
+  customCasosIds.add(clean);
+  const semPrefixo = clean.replace(/^cond-/, '').replace(/^caso-/, '');
+  customCasosIds.add(`cond-${semPrefixo}`);
+  customCasosIds.add(semPrefixo);
+}
+
+/**
+ * Verifica se um identificador é um caso válido do acervo (oficial ou customizado)
+ */
+export function isCasoValido(casoId: string): boolean {
+  if (!casoId) return false;
+  const clean = casoId.toLowerCase().trim().replace(/['"]/g, '');
+  if (CASOS_ALIASES[clean]) return true;
+  if (customCasosIds.has(clean)) return true;
+  // Permite qualquer caso cadastrado com prefixo padrão cond- ou caso-
+  if (clean.startsWith('cond-') || clean.startsWith('caso-')) return true;
+  return false;
+}
+
 /**
  * Normaliza qualquer chave / identificador para o caso oficial correspondente
  */
@@ -291,7 +319,7 @@ function carregarLocalStorage(): number {
 
       if (dataUrl) {
         const oficial = normalizarParaCasoOficial(targetId);
-        if (!CASOS_ALIASES[oficial]) continue;
+        if (!isCasoValido(oficial)) continue;
 
         const galeria = imagensLista && imagensLista.length > 0 ? imagensLista : [{
           casoId: oficial,
@@ -506,7 +534,7 @@ async function migrarBancoLegadoAntigo(): Promise<number> {
 
           if (dataUrl && candidateId) {
             const oficial = normalizarParaCasoOficial(candidateId);
-            if (!CASOS_ALIASES[oficial]) continue;
+            if (!isCasoValido(oficial)) continue;
 
             let listaGaleria: ImagemArmazenada[] = [];
             if (raw && Array.isArray(raw.imagens)) {
@@ -589,7 +617,7 @@ export async function inicializarBanco(): Promise<number> {
         if (!raw) continue;
         const rawId = raw.casoId || raw.id || raw.key;
         const oficial = normalizarParaCasoOficial(rawId);
-        if (!oficial || !CASOS_ALIASES[oficial]) continue;
+        if (!oficial || !isCasoValido(oficial)) continue;
 
         let galeria: ImagemArmazenada[] = [];
         if (Array.isArray(raw.imagens) && raw.imagens.length > 0) {
@@ -1463,7 +1491,7 @@ export async function sincronizarComFirebase(): Promise<number> {
       const rawId = data.casoId || docSnap.id;
       if (!rawId) continue;
       const oficial = normalizarParaCasoOficial(rawId);
-      if (!CASOS_ALIASES[oficial]) continue;
+      if (!isCasoValido(oficial)) continue;
 
       let remoteImagens: ImagemArmazenada[] = [];
       if (data.imagensJson) {
@@ -1612,7 +1640,7 @@ export async function obterTodasImagensGaleria(): Promise<Record<string, ImagemA
       if (!raw) continue;
       const rawId = raw.casoId || raw.id || raw.key;
       const oficial = normalizarParaCasoOficial(rawId);
-      if (!oficial || !CASOS_ALIASES[oficial]) continue;
+      if (!oficial || !isCasoValido(oficial)) continue;
 
       let galeria: ImagemArmazenada[] = [];
       if (Array.isArray(raw.imagens) && raw.imagens.length > 0) {

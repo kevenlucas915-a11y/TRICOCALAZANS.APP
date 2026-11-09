@@ -15,6 +15,7 @@ import { LembreteConsultaModal } from './components/LembreteConsultaModal';
 import { LoginView } from './components/LoginView';
 import { useAuth } from './context/AuthContext';
 import { GerenciadorImagensModal } from './components/GerenciadorImagensModal';
+import { inicializarCasosAtlas } from './services/casosAtlasService';
 import { recuperarImagensLegadas } from './utils/imageStore';
 import { getConsultasMarcadasHoje, updateStatusAgendamento } from './services/agendamentoService';
 import { Agendamento, StatusAgendamento } from './types/agendamento';
@@ -186,6 +187,11 @@ export default function App() {
         window.history.replaceState({ tela: telaAtiva, tricoRoot: true }, '', `${pathAtual}${search}`);
       }
     }
+  }, []);
+
+  // Inicializar e hidratar casos dinâmicos do Atlas (oficiais + customizados + editados)
+  useEffect(() => {
+    inicializarCasosAtlas().catch(() => {});
   }, []);
 
   // Função centralizada para navegar entre telas e sincronizar o histórico do navegador
