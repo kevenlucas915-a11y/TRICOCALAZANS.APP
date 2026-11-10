@@ -14,6 +14,14 @@ import { ehAdminEmail } from './src/config/admins';
 import { salvarSessaoSql, listarSessoesSql, obterSessaoSql, deletarSessaoSql } from './src/db/sessoes.ts';
 import { salvarPacienteSql, listarPacientesSql, deletarPacienteSql } from './src/db/pacientes.ts';
 import { getOrCreateUser, getUserByUid } from './src/db/users.ts';
+import { 
+  obterConfigAtlasServer, 
+  salvarConfigAtlasServer, 
+  obterFotosAtlasServer, 
+  salvarFotosCasoServer, 
+  salvarLoteFotosServer, 
+  removerFotosCasoServer 
+} from './src/db/atlasServerStore.ts';
 
 dotenv.config();
 
@@ -903,6 +911,95 @@ app.get('/api/users/:uid', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error(`Erro na rota GET /api/users/${req.params.uid}:`, error);
     return res.status(500).json({ sucesso: false, erro: error.message || 'Falha ao buscar usuário.' });
+  }
+});
+
+/**
+ * ============================================================================
+ * ROTAS DE SINCRONIZAÇÃO UNIVERSAL DO ATLAS CLÍNICO (/api/atlas/*)
+ * ============================================================================
+ * Centraliza os 15 casos clínicos e suas respectivas fotos com persistência
+ * tripla (Memória, Disco e Banco Relacional / Firebase Admin), garantindo
+ * sincronização instantânea e universal entre Desktop, Mobile e todos os perfis.
+ */
+
+// GET /api/atlas/config — Retorna casos removidos e customizados ativos
+app.get('/api/atlas/config', (_req: Request, res: Response) => {
+  try {
+    const config = obterConfigAtlasServer();
+    return res.json({ sucesso: true, ...config });
+  } catch (error: any) {
+    console.error('Erro na rota GET /api/atlas/config:', error);
+    return res.status(500).json({ sucesso: false, erro: error.message || 'Falha ao buscar configuração do Atlas.' });
+  }
+});
+
+// POST /api/atlas/config — Atualiza lista de removidos e customizados (Admin)
+app.post('/api/atlas/config', async (req: Request, res: Response) => {
+  try {
+    const { removidos, customizados } = req.body || {};
+    const atualizado = await salvarConfigAtlasServer(removidos, customizados);
+    return res.json({ sucesso: true, config: atualizado });
+  } catch (error: any) {
+    console.error('Erro na rota POST /api/atlas/config:', error);
+    return res.status(500).json({ sucesso: false, erro: error.message || 'Falha ao salvar configuração do Atlas.' });
+  }
+});
+
+// GET /api/atlas/fotos — Retorna todas as fotos do acervo do Atlas
+app.get('/api/atlas/fotos', (_req: Request, res: Response) => {
+  try {
+    const fotos = obterFotosAtlasServer();
+    return res.json({ sucesso: true, fotos });
+  } catch (error: any) {
+    console.error('Erro na rota GET /api/atlas/fotos:', error);
+    return res.status(500).json({ sucesso: false, erro: error.message || 'Falha ao buscar fotos do Atlas.' });
+  }
+});
+
+// GET /api/atlas/fotos/:casoId — Retorna fotos de um caso clínico específico
+app.get('/api/atlas/fotos/:casoId', (req: Request, res: Response) => {
+  try {
+    const { casoId } = req.params;
+    const fotos = obterFotosAtlasServer(casoId);
+    return res.json({ sucesso: true, casoId, fotos });
+  } catch (error: any) {
+    console.error(`Erro na rota GET /api/atlas/fotos/${req.params.casoId}:`, error);
+    return res.status(500).json({ sucesso: false, erro: error.message || 'Falha ao buscar fotos do caso.' });
+  }
+});
+
+// POST /api/atlas/fotos — Salva fotos de um caso ou lote de fotos (Admin)
+app.post('/api/atlas/fotos', async (req: Request, res: Response) => {
+  try {
+    const { casoId, fotos, lote } = req.body || {};
+
+    if (lote && typeof lote === 'object') {
+      const qtd = await salvarLoteFotosServer(lote);
+      return res.json({ sucesso: true, casosAtualizados: qtd });
+    }
+
+    if (!casoId || !Array.isArray(fotos)) {
+      return res.status(400).json({ sucesso: false, erro: 'casoId e array de fotos são obrigatórios.' });
+    }
+
+    const salvas = await salvarFotosCasoServer(casoId, fotos);
+    return res.json({ sucesso: true, casoId, fotos: salvas });
+  } catch (error: any) {
+    console.error('Erro na rota POST /api/atlas/fotos:', error);
+    return res.status(500).json({ sucesso: false, erro: error.message || 'Falha ao salvar fotos do Atlas.' });
+  }
+});
+
+// DELETE /api/atlas/fotos/:casoId — Remove fotos de um caso clínico
+app.delete('/api/atlas/fotos/:casoId', async (req: Request, res: Response) => {
+  try {
+    const { casoId } = req.params;
+    await removerFotosCasoServer(casoId);
+    return res.json({ sucesso: true, casoId });
+  } catch (error: any) {
+    console.error(`Erro na rota DELETE /api/atlas/fotos/${req.params.casoId}:`, error);
+    return res.status(500).json({ sucesso: false, erro: error.message || 'Falha ao remover fotos do caso.' });
   }
 });
 

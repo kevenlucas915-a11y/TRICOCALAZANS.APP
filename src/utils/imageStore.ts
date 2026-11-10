@@ -782,17 +782,17 @@ async function processarFilaNuvem(): Promise<void> {
           );
         }
 
-        // 4. Salvar no Firestore de forma ultra-leve (apenas URLs HTTP, tamanho < 5KB)
+        // 4. Salvar no Firestore e no Servidor Render com suporte total a dataUrl e HTTP
         const docRef = doc(db, 'caso_imagens', oficial);
         const urlPrincipal = galeriaAtualizada[0]?.dataUrl && galeriaAtualizada[0].dataUrl.startsWith('http')
           ? galeriaAtualizada[0].dataUrl
-          : (uploadSucessoStorage ? downloadUrl : (galeriaAtualizada[0]?.dataUrl?.length <= 800000 ? galeriaAtualizada[0].dataUrl : ''));
+          : (uploadSucessoStorage ? downloadUrl : (galeriaAtualizada[0]?.dataUrl && galeriaAtualizada[0].dataUrl.length <= 800000 ? galeriaAtualizada[0].dataUrl : ''));
 
         const imagensCompactas = galeriaAtualizada.map(img => ({
           id: img.id,
           casoId: img.casoId,
-          dataUrl: img.dataUrl.startsWith('http') ? img.dataUrl : '', // Não enche o Firestore de Base64
-          storagePath: img.storagePath || '',
+          dataUrl: img.dataUrl.startsWith('http') ? img.dataUrl : (img.dataUrl && img.dataUrl.length <= 800000 ? img.dataUrl : ''),
+          storagePath: uploadSucessoStorage ? (img.storagePath || storagePath || '') : '',
           nomeArquivo: img.nomeArquivo || `${oficial}.jpg`,
           dataAtualizacao: img.dataAtualizacao
         }));
@@ -802,12 +802,23 @@ async function processarFilaNuvem(): Promise<void> {
           nomeArquivo: galeriaAtualizada[0]?.nomeArquivo || `${oficial}.jpg`,
           tamanhoBytes: galeriaAtualizada[0]?.tamanhoBytes || 0,
           dataUrl: urlPrincipal,
-          storagePath: galeriaAtualizada[0]?.storagePath || storagePath || '',
+          storagePath: uploadSucessoStorage ? (galeriaAtualizada[0]?.storagePath || storagePath || '') : '',
           imagensJson: JSON.stringify(imagensCompactas),
           updatedAt: new Date().toISOString()
         }, { merge: true });
 
-        console.info(`✅ [Atlas Nuvem] Caso ${oficial} sincronizado permanentemente com o Firebase!`);
+        // Enviar também para a API do Servidor no Render (/api/atlas/fotos)
+        try {
+          await fetch('/api/atlas/fotos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ casoId: oficial, fotos: galeriaAtualizada })
+          });
+        } catch (srvErr) {
+          console.debug('Aviso sync servidor /api/atlas/fotos:', srvErr);
+        }
+
+        console.info(`✅ [Atlas Nuvem] Caso ${oficial} sincronizado permanentemente com o Firebase e Servidor!`);
 
         // 5. Notificar interface com as novas URLs remotas
         if (typeof window !== 'undefined') {
@@ -969,14 +980,19 @@ export async function obterImagensDoCaso(casoId: string): Promise<ImagemArmazena
 
         // Se fotos vieram sem URL HTTP mas têm storagePath no Storage, resolve a URL
         for (const img of imagens) {
-          if ((!img.dataUrl || !img.dataUrl.startsWith('http')) && img.storagePath) {
-            try {
-              const storageRef = ref(storage, img.storagePath);
-              const downloadUrl = await getDownloadURL(storageRef);
-              if (downloadUrl) img.dataUrl = downloadUrl;
-            } catch {}
-          } else if (!img.dataUrl && data.dataUrl) {
-            img.dataUrl = data.dataUrl;
+          if (!img.dataUrl || !img.dataUrl.startsWith('http')) {
+            let downloadUrl = '';
+            if (img.storagePath) {
+              try {
+                const storageRef = ref(storage, img.storagePath);
+                downloadUrl = await getDownloadURL(storageRef);
+              } catch {}
+            }
+            if (downloadUrl) {
+              img.dataUrl = downloadUrl;
+            } else if (data.dataUrl) {
+              img.dataUrl = data.dataUrl;
+            }
           }
         }
         imagens = imagens.filter(img => Boolean(img.dataUrl));
@@ -1172,13 +1188,13 @@ export async function removerImagemEspecifica(
 
     try {
       const docRef = doc(db, 'caso_imagens', oficial);
-      const firestoreDataUrl = novaLista[0].dataUrl.startsWith('http') 
+      const firestoreDataUrl = novaLista[0]?.dataUrl?.startsWith('http') 
         ? novaLista[0].dataUrl 
-        : '';
+        : (novaLista[0]?.dataUrl && novaLista[0].dataUrl.length <= 800000 ? novaLista[0].dataUrl : '');
       const imagensCompactas = novaLista.map(img => ({
         id: img.id,
         casoId: img.casoId,
-        dataUrl: img.dataUrl.startsWith('http') ? img.dataUrl : '',
+        dataUrl: img.dataUrl.startsWith('http') ? img.dataUrl : (img.dataUrl && img.dataUrl.length <= 800000 ? img.dataUrl : ''),
         storagePath: img.storagePath,
         nomeArquivo: img.nomeArquivo,
         dataAtualizacao: img.dataAtualizacao
@@ -1186,10 +1202,19 @@ export async function removerImagemEspecifica(
       await setDoc(docRef, {
         casoId: oficial,
         dataUrl: firestoreDataUrl,
-        storagePath: novaLista[0].storagePath || '',
+        storagePath: novaLista[0]?.storagePath || '',
         imagensJson: JSON.stringify(imagensCompactas),
         updatedAt: new Date().toISOString()
       }, { merge: true });
+
+      // Atualiza também o servidor Render
+      try {
+        await fetch('/api/atlas/fotos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ casoId: oficial, fotos: novaLista })
+        });
+      } catch {}
     } catch (err) {
       console.warn('Erro ao atualizar exclusão no Firestore:', err);
     }
@@ -1470,7 +1495,93 @@ export async function removerImagemCaso(casoId: string): Promise<void> {
     } catch (err) {
       console.warn('Erro ao remover do Firestore caso_imagens:', err);
     }
+
+    try {
+      await fetch(`/api/atlas/fotos/${oficial}`, { method: 'DELETE' });
+    } catch {}
   })();
+}
+
+/**
+ * Sincroniza fotos com a API do servidor no Render (/api/atlas/fotos)
+ * Carrega instantaneamente em qualquer dispositivo móvel ou desktop sem barreiras de autenticação
+ */
+export async function sincronizarFotosComServidor(): Promise<number> {
+  let carregadas = 0;
+  try {
+    const res = await fetch('/api/atlas/fotos');
+    if (!res.ok) return 0;
+    const data = await res.json();
+    if (!data || !data.sucesso || !data.fotos) return 0;
+
+    const mapaFotos = data.fotos as Record<string, ImagemArmazenada[]>;
+    for (const [casoId, fotos] of Object.entries(mapaFotos)) {
+      if (!casoId || !Array.isArray(fotos) || fotos.length === 0) continue;
+      const oficial = normalizarParaCasoOficial(casoId);
+      const chaves = normalizarChaves(oficial);
+
+      // Atualiza memória
+      for (const k of chaves) {
+        memoryGalleryCache.set(k, fotos);
+        if (fotos[0]) memoryCache.set(k, fotos[0]);
+      }
+
+      // Atualiza IndexedDB
+      await executeWithStore('readwrite', (store) => {
+        return new Promise<void>((resolve) => {
+          const req = store.put({ ...fotos[0], imagens: fotos });
+          req.onsuccess = () => resolve();
+          req.onerror = () => resolve();
+        });
+      }, () => {});
+
+      carregadas++;
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('atlas-image-updated', {
+            detail: { casoId: oficial, dataUrl: fotos[0]?.dataUrl, imagens: fotos }
+          })
+        );
+      }
+    }
+  } catch (err) {
+    console.debug('Aviso sincronizarFotosComServidor:', err);
+  }
+  return carregadas;
+}
+
+/**
+ * Envia todas as fotos salvas no IndexedDB local para o servidor Render e Firestore.
+ * Executado quando o administrador abre o modal de fotos ou na inicialização do desktop,
+ * garantindo que todas as 15 fotos salvas no desktop sejam compartilhadas com o celular e outros usuários.
+ */
+export async function sincronizarTodasFotosParaServidorENuvem(): Promise<number> {
+  const todas = await obterTodasImagensGaleria();
+  const entradas = Object.entries(todas);
+  if (entradas.length === 0) return 0;
+
+  let enviadas = 0;
+  const lote: Record<string, ImagemArmazenada[]> = {};
+
+  for (const [casoId, galeria] of entradas) {
+    if (galeria && galeria.length > 0 && galeria[0].dataUrl) {
+      lote[casoId] = galeria;
+      enviadas++;
+    }
+  }
+
+  if (enviadas > 0) {
+    try {
+      await fetch('/api/atlas/fotos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lote })
+      });
+    } catch {}
+  }
+
+  return enviadas;
 }
 
 /**
@@ -1481,6 +1592,17 @@ export async function removerImagemCaso(casoId: string): Promise<void> {
 export async function sincronizarComFirebase(): Promise<number> {
   await inicializarBanco().catch(() => {});
   let totalSincronizadas = 0;
+
+  // 1. Sincroniza prioritariamente com o servidor Render (zero barreiras de permissão)
+  try {
+    const srvCount = await sincronizarFotosComServidor();
+    if (srvCount > 0) {
+      totalSincronizadas += srvCount;
+    }
+  } catch {}
+
+  // 2. Se o cliente possui fotos locais (ex: Desktop do usuário), propaga para o servidor em segundo plano
+  sincronizarTodasFotosParaServidorENuvem().catch(() => {});
 
   try {
     const colRef = collection(db, 'caso_imagens');
@@ -1520,22 +1642,21 @@ export async function sincronizarComFirebase(): Promise<number> {
       }
 
       // Se qualquer item da galeria tiver storagePath mas estiver sem URL pública,
-      // busca o downloadURL diretamente do Firebase Storage
+      // busca o downloadURL diretamente do Firebase Storage com fallback universal
       for (const rem of remoteImagens) {
-        if ((!rem.dataUrl || !rem.dataUrl.startsWith('http')) && rem.storagePath) {
-          try {
-            const storageRef = ref(storage, rem.storagePath);
-            const downloadUrl = await getDownloadURL(storageRef);
-            if (downloadUrl) {
-              rem.dataUrl = downloadUrl;
-            }
-          } catch {
-            if (!rem.dataUrl && urlRaiz && urlRaiz.startsWith('http')) {
-              rem.dataUrl = urlRaiz;
-            }
+        if (!rem.dataUrl || !rem.dataUrl.startsWith('http')) {
+          let downloadUrl = '';
+          if (rem.storagePath) {
+            try {
+              const storageRef = ref(storage, rem.storagePath);
+              downloadUrl = await getDownloadURL(storageRef);
+            } catch {}
           }
-        } else if (!rem.dataUrl && urlRaiz) {
-          rem.dataUrl = urlRaiz;
+          if (downloadUrl) {
+            rem.dataUrl = downloadUrl;
+          } else if (urlRaiz) {
+            rem.dataUrl = urlRaiz;
+          }
         }
       }
 

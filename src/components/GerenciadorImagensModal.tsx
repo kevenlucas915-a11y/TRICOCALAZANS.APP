@@ -17,6 +17,7 @@ import {
   arquivoParaDataURL,
   recuperarImagensLegadas,
   sincronizarComFirebase,
+  sincronizarTodasFotosParaServidorENuvem,
   normalizarParaCasoOficial,
   ImagemArmazenada 
 } from '../utils/imageStore';
@@ -72,6 +73,7 @@ export const GerenciadorImagensModal: React.FC<GerenciadorImagensModalProps> = (
     try {
       await sincronizarComFirebase().catch(() => {});
       await sincronizarCasosComFirestore().catch(() => {});
+      await sincronizarTodasFotosParaServidorENuvem().catch(() => {});
       await recuperarImagensLegadas().catch(() => {});
       const mapa = await obterTodasImagensGaleria();
       setGalerias(mapa);
@@ -86,6 +88,7 @@ export const GerenciadorImagensModal: React.FC<GerenciadorImagensModalProps> = (
   const handleSincronizar = async () => {
     setCarregando(true);
     try {
+      await sincronizarTodasFotosParaServidorENuvem().catch(() => {});
       const fotosSinc = await sincronizarComFirebase();
       const casosSinc = await sincronizarCasosComFirestore();
       await recuperarImagensLegadas();
@@ -99,11 +102,11 @@ export const GerenciadorImagensModal: React.FC<GerenciadorImagensModalProps> = (
 
       setStatusMsg({
         tipo: 'sucesso',
-        texto: `Sincronização completa! ${totalFotos} foto(s) ativas e ${casosAtualizados.length} condições clínicas sincronizadas com o Firebase.`
+        texto: `Sincronização universal concluída! ${totalFotos} foto(s) ativas e ${casosAtualizados.length} casos clínicos refletidos para todos os dispositivos e perfis.`
       });
-      setTimeout(() => setStatusMsg(null), 4000);
+      setTimeout(() => setStatusMsg(null), 5000);
     } catch {
-      setStatusMsg({ tipo: 'erro', texto: 'Erro ao sincronizar dados com o Firebase.' });
+      setStatusMsg({ tipo: 'erro', texto: 'Erro ao sincronizar dados com a nuvem e servidor.' });
     } finally {
       setCarregando(false);
     }

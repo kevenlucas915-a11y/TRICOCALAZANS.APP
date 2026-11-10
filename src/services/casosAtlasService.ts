@@ -10,7 +10,7 @@ import { CasoAtlas, CategoriaClinica } from '../types/tricoscopia';
 import { CASOS_17_OFICIAIS } from '../data/casos17Data';
 import { CASOS_ATLAS } from '../data/tricoscopiaData';
 import { db } from '../firebase';
-import { doc, getDocs, collection, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, setDoc, deleteDoc } from 'firebase/firestore';
 import { removerImagemCaso, registrarCasoCustomizadoId } from '../utils/imageStore';
 
 const LS_CASOS_CUSTOM_KEY = 'atlas_casos_customizados_v2';
@@ -183,53 +183,194 @@ export async function inicializarCasosAtlas(): Promise<CasoAtlas[]> {
 }
 
 /**
- * Sincroniza a coleção `atlas_casos` do Firestore com o cache local
+ * Envia a configuração do Atlas (casos removidos e customizados) para o servidor Render
+ * e para o Firestore com persistência centralizada, garantindo que qualquer alteração
+ * feita no desktop reflita instantaneamente no celular e em todos os dispositivos.
+ */
+export async function enviarConfigCentralizada(
+  removidos: Set<string>,
+  customizados: CasoAtlas[]
+): Promise<void> {
+  const arrRemovidos = Array.from(removidos);
+  const total = Math.max(0, 17 - arrRemovidos.length + customizados.length);
+  const payload = {
+    removidos: arrRemovidos,
+    customizados,
+    totalCasos: total,
+    updatedAt: new Date().toISOString()
+  };
+
+  // 1. Enviar para a API do Servidor no Render
+  try {
+    await fetch('/api/atlas/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ removidos: arrRemovidos, customizados })
+    });
+  } catch (err) {
+    console.debug('Aviso sync servidor /api/atlas/config:', err);
+  }
+
+  // 2. Enviar para Firestore caso_imagens/--atlas-casos-config-- (com permissão pública de leitura)
+  try {
+    const docImgRef = doc(db, 'caso_imagens', '--atlas-casos-config--');
+    await setDoc(docImgRef, {
+      casoId: '--atlas-casos-config--',
+      dataUrl: 'config-atlas',
+      casoJson: JSON.stringify(payload),
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (err) {
+    console.debug('Aviso sync Firestore caso_imagens config:', err);
+  }
+
+  // 3. Enviar para Firestore atlas_casos/--config-geral--
+  try {
+    const docConfigRef = doc(db, 'atlas_casos', '--config-geral--');
+    await setDoc(docConfigRef, {
+      id: '--config-geral--',
+      removidos: arrRemovidos,
+      customizados,
+      totalCasos: total,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (err) {
+    console.debug('Aviso sync Firestore atlas_casos config:', err);
+  }
+}
+
+/**
+ * Sincroniza a coleção `atlas_casos` e a configuração centralizada com o cache local
  */
 export async function sincronizarCasosComFirestore(): Promise<number> {
+  let alterados = 0;
+  const customAtuais = carregarCasosCustomizados();
+  const mapCustom = new Map<string, CasoAtlas>();
+  for (const c of customAtuais) {
+    if (c && c.id) mapCustom.set(c.id, c);
+  }
+  const removidos = carregarIdsRemovidos();
+  const qtdRemovidosLocalAntes = removidos.size;
+
+  // 1. Sincronização prioritária via API do Servidor no Render (/api/atlas/config)
+  try {
+    const resp = await fetch('/api/atlas/config');
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.sucesso) {
+        if (Array.isArray(data.removidos) && data.removidos.length > 0) {
+          for (const id of data.removidos) {
+            if (id && typeof id === 'string') {
+              removidos.add(id);
+              mapCustom.delete(id);
+              alterados++;
+            }
+          }
+        }
+        if (Array.isArray(data.customizados) && data.customizados.length > 0) {
+          for (const c of data.customizados) {
+            if (c && c.id) {
+              mapCustom.set(c.id, c);
+              alterados++;
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.debug('Aviso sync fetch /api/atlas/config:', err);
+  }
+
+  // 2. Sincronização via Firestore doc aberto `caso_imagens/--atlas-casos-config--`
+  try {
+    const snapConfig = await getDoc(doc(db, 'caso_imagens', '--atlas-casos-config--'));
+    if (snapConfig.exists()) {
+      const d = snapConfig.data();
+      if (d && d.casoJson) {
+        try {
+          const parsed = JSON.parse(d.casoJson);
+          if (Array.isArray(parsed.removidos)) {
+            for (const id of parsed.removidos) {
+              removidos.add(id);
+              mapCustom.delete(id);
+              alterados++;
+            }
+          }
+          if (Array.isArray(parsed.customizados)) {
+            for (const c of parsed.customizados) {
+              if (c && c.id) {
+                mapCustom.set(c.id, c);
+                alterados++;
+              }
+            }
+          }
+        } catch {}
+      }
+    }
+  } catch (err) {
+    console.debug('Aviso sync Firestore caso_imagens config:', err);
+  }
+
+  // 3. Sincronização via Firestore coleção `atlas_casos`
   try {
     const colRef = collection(db, 'atlas_casos');
     const snap = await getDocs(colRef);
+    if (!snap.empty) {
+      for (const docSnap of snap.docs) {
+        const data = docSnap.data() as any;
+        if (!data || !data.id) continue;
 
-    if (snap.empty) {
-      return 0;
-    }
+        if (data.id === '--config-geral--') {
+          if (Array.isArray(data.removidos)) {
+            for (const id of data.removidos) {
+              removidos.add(id);
+              mapCustom.delete(id);
+              alterados++;
+            }
+          }
+          if (Array.isArray(data.customizados)) {
+            for (const c of data.customizados) {
+              if (c && c.id) {
+                mapCustom.set(c.id, c);
+                alterados++;
+              }
+            }
+          }
+          continue;
+        }
 
-    const customAtuais = carregarCasosCustomizados();
-    const mapCustom = new Map<string, CasoAtlas>();
-    for (const c of customAtuais) {
-      if (c && c.id) mapCustom.set(c.id, c);
-    }
+        if (data.removido === true) {
+          removidos.add(data.id);
+          mapCustom.delete(data.id);
+          alterados++;
+          continue;
+        }
 
-    const removidos = carregarIdsRemovidos();
-    let alterados = 0;
-
-    for (const docSnap of snap.docs) {
-      const data = docSnap.data() as any;
-      if (!data || !data.id || !data.nome) continue;
-
-      if (data.removido === true) {
-        removidos.add(data.id);
-        mapCustom.delete(data.id);
-        alterados++;
-        continue;
+        if (data.nome) {
+          removidos.delete(data.id);
+          mapCustom.set(data.id, data as CasoAtlas);
+          alterados++;
+        }
       }
-
-      removidos.delete(data.id);
-      mapCustom.set(data.id, data as CasoAtlas);
-      alterados++;
     }
-
-    salvarIdsRemovidos(removidos);
-    salvarCasosCustomizados(Array.from(mapCustom.values()));
-
-    const consolidada = consolidarCasos();
-    sincronizarComCasosAtlasGlobal(consolidada);
-
-    return alterados;
   } catch (err) {
-    console.warn('Aviso sincronizarCasosComFirestore:', err);
-    return 0;
+    console.debug('Aviso sync Firestore atlas_casos docs:', err);
   }
+
+  // 4. AUTO-PROPAGAÇÃO LOCAL -> NUVEM:
+  // Se o cliente local (ex: Desktop do usuário) possui casos removidos
+  // que o servidor ou nuvem ainda não conheciam, envia agora para propagar a todos os dispositivos!
+  if (qtdRemovidosLocalAntes > 0 && removidos.size >= qtdRemovidosLocalAntes) {
+    enviarConfigCentralizada(removidos, Array.from(mapCustom.values())).catch(() => {});
+  }
+
+  salvarIdsRemovidos(removidos);
+  salvarCasosCustomizados(Array.from(mapCustom.values()));
+
+  const consolidada = consolidarCasos();
+  sincronizarComCasosAtlasGlobal(consolidada);
+
+  return alterados;
 }
 
 /**
@@ -347,11 +488,15 @@ export async function salvarCasoAtlas(dados: DadosCasoAtlasFormulario): Promise<
     console.warn('Aviso ao salvar caso no Firestore atlas_casos:', err);
   }
 
+  // 5. Propaga configuração centralizada para o servidor Render e Firestore
+  enviarConfigCentralizada(removidos, customizados).catch(() => {});
+
   return casoCompleto;
 }
 
 /**
  * Remove um caso do Atlas (exclui dos registros e limpa suas fotos no banco)
+ * Sincroniza a remoção para todos os perfis e dispositivos via servidor Render e Firestore.
  */
 export async function removerCasoAtlas(casoId: string): Promise<void> {
   if (!casoId) return;
@@ -376,13 +521,20 @@ export async function removerCasoAtlas(casoId: string): Promise<void> {
   const consolidada = consolidarCasos();
   sincronizarComCasosAtlasGlobal(consolidada);
 
-  // 5. Atualiza Firestore (marca como removido e remove doc)
+  // 5. Atualiza Firestore marcando explicitamente o caso como removido
   try {
     const docRef = doc(db, 'atlas_casos', casoId);
-    await deleteDoc(docRef);
+    await setDoc(docRef, {
+      id: casoId,
+      removido: true,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
   } catch (err) {
-    console.warn('Aviso ao remover do Firestore atlas_casos:', err);
+    console.warn('Aviso ao marcar caso como removido no Firestore atlas_casos:', err);
   }
+
+  // 6. Propaga configuração centralizada para o servidor Render e Firestore
+  enviarConfigCentralizada(removidos, customizados).catch(() => {});
 }
 
 /**
@@ -399,3 +551,4 @@ export async function restaurarCasosOriginais(): Promise<CasoAtlas[]> {
 
   return originais;
 }
+

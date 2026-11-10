@@ -190,8 +190,22 @@ export default function App() {
   }, []);
 
   // Inicializar e hidratar casos dinâmicos do Atlas (oficiais + customizados + editados)
+  const [totalCasosMenu, setTotalCasosMenu] = useState<number>(() => CASOS_ATLAS.length);
+
   useEffect(() => {
-    inicializarCasosAtlas().catch(() => {});
+    inicializarCasosAtlas().then(casos => {
+      setTotalCasosMenu(casos.length);
+    }).catch(() => {});
+
+    const handleCasesUpdate = (e: any) => {
+      const total = e?.detail?.total ?? CASOS_ATLAS.length;
+      setTotalCasosMenu(total);
+    };
+
+    window.addEventListener('atlas-cases-updated', handleCasesUpdate);
+    return () => {
+      window.removeEventListener('atlas-cases-updated', handleCasesUpdate);
+    };
   }, []);
 
   // Função centralizada para navegar entre telas e sincronizar o histórico do navegador
@@ -873,7 +887,7 @@ export default function App() {
                     ? 'bg-white/20 text-white' 
                     : 'bg-teal-500/15 text-teal-800 dark:text-teal-300'
                 }`}>
-                  {CASOS_ATLAS.length} casos
+                  {totalCasosMenu} casos
                 </span>
               ) : (
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-400/20 text-amber-700 dark:text-amber-300 flex items-center gap-1 border border-amber-400/30">

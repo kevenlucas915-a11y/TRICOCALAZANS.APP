@@ -469,3 +469,4 @@ export const ModalFormularioCasoAtlas: React.FC<ModalFormularioCasoAtlasProps> =
     </div>
   );
 };
+

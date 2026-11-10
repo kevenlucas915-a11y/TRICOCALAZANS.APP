@@ -42,6 +42,8 @@ import { listSessions, Session } from '../services/annotations';
 import { listTodasRespostas } from '../services/anamneseService';
 import { CASOS_ATLAS } from '../data/tricoscopiaData';
 import { CasoAtlas } from '../types/tricoscopia';
+import { obterCasosAtlas, sincronizarCasosComFirestore } from '../services/casosAtlasService';
+import { sincronizarComFirebase } from '../utils/imageStore';
 import { TricoscopyViewer } from './TricoscopyViewer';
 
 interface PainelUsuarioViewProps {
@@ -190,20 +192,41 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
     }
   };
 
+  // Casos ativos do Atlas com sincronização em tempo real (Firestore + Render Server)
+  const [casosAtivos, setCasosAtivos] = useState<CasoAtlas[]>(() => obterCasosAtlas());
+
+  useEffect(() => {
+    // Sincroniza casos com Firestore e backend ao montar o painel
+    sincronizarCasosComFirestore().then(() => {
+      setCasosAtivos([...obterCasosAtlas()]);
+    }).catch(() => {});
+
+    // Sincroniza fotos com nuvem e servidor
+    sincronizarComFirebase().catch(() => {});
+
+    const handleCasesUpdate = () => {
+      setCasosAtivos([...obterCasosAtlas()]);
+    };
+    window.addEventListener('atlas-cases-updated', handleCasesUpdate);
+    return () => {
+      window.removeEventListener('atlas-cases-updated', handleCasesUpdate);
+    };
+  }, []);
+
   // Filtragem dinâmica dos casos do Atlas dentro da função do Dashboard
   const casosAtlasFiltrados = useMemo(() => {
     const q = termoBuscaAtlas.toLowerCase().trim();
-    return CASOS_ATLAS.filter(caso => {
+    return casosAtivos.filter(caso => {
       const matchCat = categoriaAtlasAtiva === 'Todas' || caso.categoria === categoriaAtlasAtiva;
       if (!matchCat) return false;
       if (!q) return true;
       return (
         caso.nome.toLowerCase().includes(q) ||
-        caso.padrao.toLowerCase().includes(q) ||
-        caso.achadosTricoscopicos.some(a => a.toLowerCase().includes(q))
+        (caso.padrao && caso.padrao.toLowerCase().includes(q)) ||
+        (caso.achadosTricoscopicos && caso.achadosTricoscopicos.some(a => a.toLowerCase().includes(q)))
       );
     });
-  }, [termoBuscaAtlas, categoriaAtlasAtiva]);
+  }, [casosAtivos, termoBuscaAtlas, categoriaAtlasAtiva]);
 
   // Distribuição mensal real das sessões de fototricoscopia do usuário
   const sessoesPorMes = useMemo(() => {
@@ -233,7 +256,7 @@ export const PainelUsuarioView: React.FC<PainelUsuarioViewProps> = ({
   const totalSessoesRealizadas = totalSessoesCount;
   const totalAnamnesesFeitas = totalAnamnesesCount;
   const totalNumeroClientes = pacientesDoUsuario.length;
-  const totalCasosAtlas = CASOS_ATLAS.length;
+  const totalCasosAtlas = casosAtivos.length;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-3 sm:px-6 pt-5 pb-16 animate-fadeIn w-full max-w-full min-w-0">

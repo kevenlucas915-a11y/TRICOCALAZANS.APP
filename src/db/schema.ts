@@ -113,3 +113,13 @@ export const casoImagens = pgTable('caso_imagens', {
   storagePath: text('storage_path'),
   updatedAt: text('updated_at')
 });
+
+// 8. Tabela de Configuração Geral do Atlas de Casos (atlas_config)
+export const atlasConfigTable = pgTable('atlas_config', {
+  id: text('id').primaryKey().default('config_geral'),
+  removidosJson: text('removidos_json').notNull().default('[]'),
+  customizadosJson: text('customizados_json').notNull().default('[]'),
+  totalCasos: integer('total_casos').default(17),
+  updatedAt: text('updated_at')
+});
+
