@@ -18,7 +18,8 @@ import {
   Send,
   Award,
   Crown,
-  ChevronRight
+  ChevronRight,
+  Gift
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { obterRotuloPlano, obterNomeCompletoPlano } from '../types/assinatura';
@@ -26,9 +27,14 @@ import { obterRotuloPlano, obterNomeCompletoPlano } from '../types/assinatura';
 interface MeuPerfilViewProps {
   onVoltarParaPainel?: () => void;
   onNavegarParaPlanos?: () => void;
+  onAbrirIndiqueGanhe?: () => void;
 }
 
-export const MeuPerfilView: React.FC<MeuPerfilViewProps> = ({ onVoltarParaPainel, onNavegarParaPlanos }) => {
+export const MeuPerfilView: React.FC<MeuPerfilViewProps> = ({ 
+  onVoltarParaPainel, 
+  onNavegarParaPlanos,
+  onAbrirIndiqueGanhe
+}) => {
   const { usuarioAtual, atualizarPerfil, alterarSenha, enviarEmailRedefinicao } = useAuth();
 
   // Estados dos campos do formulário
@@ -475,6 +481,17 @@ export const MeuPerfilView: React.FC<MeuPerfilViewProps> = ({ onVoltarParaPainel
                 <Crown className="w-3.5 h-3.5 text-amber-300" />
                 <span>Gerenciar ou Alterar Plano</span>
                 <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {onAbrirIndiqueGanhe && (
+              <button
+                type="button"
+                onClick={onAbrirIndiqueGanhe}
+                className="w-full py-2.5 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-bold text-xs flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+              >
+                <Gift className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Indique Colegas & Ganhe +30 Dias</span>
               </button>
             )}
           </div>

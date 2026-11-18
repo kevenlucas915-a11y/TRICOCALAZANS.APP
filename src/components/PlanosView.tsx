@@ -14,14 +14,19 @@ import {
   Smartphone,
   Calendar,
   ExternalLink,
-  Zap
+  Zap,
+  Gift
 } from 'lucide-react';
 import { PLANOS_DISPONIVEIS, PlanoConfig, PlanoId, LINKS_KIWIFY } from '../types/assinatura';
 import { useAuth } from '../context/AuthContext';
 import { ehAdminEmail } from '../config/admins';
 import { usuarioEhAdmin } from '../utils/fotosNuvem';
 
-export const PlanosView: React.FC = () => {
+interface PlanosViewProps {
+  onAbrirIndiqueGanhe?: () => void;
+}
+
+export const PlanosView: React.FC<PlanosViewProps> = ({ onAbrirIndiqueGanhe }) => {
   const { usuarioAtual } = useAuth();
   const ehAdmin = usuarioEhAdmin() || ehAdminEmail(usuarioAtual?.email);
   const [faqAberta, setFaqAberta] = useState<number | null>(0);
@@ -586,6 +591,35 @@ export const PlanosView: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* 5.5 BANNER INDIQUE E GANHE NA TELA DE PLANOS */}
+      <div className="p-6 rounded-3xl bg-gradient-to-r from-teal-500/10 via-emerald-500/15 to-transparent border border-teal-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 shadow-sm">
+        <div className="flex items-center gap-4 text-left">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-600/20">
+            <Gift className="w-6 h-6" />
+          </div>
+          <div>
+            <h4 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              Indique Colegas e Ganhe +30 Dias de Acesso
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300">
+                10% OFF no Link
+              </span>
+            </h4>
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              Compartilhe seu link exclusivo com desconto. A cada colega que assinar qualquer plano na Kiwify, você ganha 30 dias de assinatura estendida!
+            </p>
+          </div>
+        </div>
+        {onAbrirIndiqueGanhe && (
+          <button
+            onClick={onAbrirIndiqueGanhe}
+            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all shrink-0 hover:scale-105 cursor-pointer flex items-center gap-1.5"
+          >
+            <Gift className="w-4 h-4" />
+            Convidar Colegas
+          </button>
+        )}
       </div>
 
       {/* 6. PERGUNTAS FREQUENTES (FAQ) */}

@@ -53,9 +53,13 @@ import {
   Crown,
   Heart,
   CreditCard,
-  Settings
+  Settings,
+  Gift,
+  Percent
 } from 'lucide-react';
 import { ModalConfigurarStripe } from './components/ModalConfigurarStripe';
+import { ModalConfigurarIndicacoes } from './components/ModalConfigurarIndicacoes';
+import { ModalIndiqueGanhe } from './components/ModalIndiqueGanhe';
 import { 
   useBackHandler, 
   sincronizarRota, 
@@ -147,6 +151,8 @@ export default function App() {
   }, []);
 
   const [gerenciadorImagensAberto, setGerenciadorImagensAberto] = useState<boolean>(false);
+  const [modalConfigIndicacoesAberto, setModalConfigIndicacoesAberto] = useState<boolean>(false);
+  const [modalIndiqueGanheAberto, setModalIndiqueGanheAberto] = useState<boolean>(false);
 
   // Monitoramento em tempo real do status de administrador (sem recarregar a página)
   const [ehAdmin, setEhAdmin] = useState<boolean>(() => usuarioEhAdmin());
@@ -572,7 +578,7 @@ export default function App() {
 
         {/* Conteúdo da Página de Vendas */}
         <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-16 w-full">
-          <PlanosView />
+          <PlanosView onAbrirIndiqueGanhe={() => setModalIndiqueGanheAberto(true)} />
         </main>
       </div>
     );
@@ -971,6 +977,23 @@ export default function App() {
                 Área do Cliente
               </span>
             </button>
+
+            {/* Item 5: Indique & Ganhe (Ganha 1 Mês Grátis por indicação) */}
+            <button
+              onClick={() => { 
+                setModalIndiqueGanheAberto(true);
+                setMenuMobileAberto(false); 
+              }}
+              className="w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-teal-950 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/[0.08] transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <Gift className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                <span>Indique & Ganhe</span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300">
+                1 Mês Grátis
+              </span>
+            </button>
           </div>
 
           {/* SEÇÃO 4: ADMINISTRAÇÃO (visível SOMENTE para administradores) */}
@@ -998,20 +1021,20 @@ export default function App() {
                 </div>
               </button>
 
-              {/* Item 2: Configurar Stripe (Exclusivo Administrador) */}
+              {/* Item 2: Indicações, Cupons & Influenciadores (Exclusivo Administrador) */}
               <button
                 onClick={() => { 
-                  setModalStripeAbertoGlobal(true);
+                  setModalConfigIndicacoesAberto(true);
                   setMenuMobileAberto(false); 
                 }}
                 className="w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-teal-950 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/[0.08] transition-all group"
               >
                 <div className="flex items-center gap-3">
-                  <CreditCard className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400 group-hover:scale-105 transition-transform" />
-                  <span>Configurar Stripe</span>
+                  <Percent className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400 group-hover:scale-105 transition-transform" />
+                  <span>Indicações & Cupons</span>
                 </div>
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-teal-500/10 text-teal-800 dark:text-teal-300">
-                  Gateway
+                  Kiwify
                 </span>
               </button>
             </div>
@@ -1384,12 +1407,15 @@ export default function App() {
               onNavegarParaPlanos={() => {
                 mudarTela('planos');
               }}
+              onAbrirIndiqueGanhe={() => {
+                setModalIndiqueGanheAberto(true);
+              }}
             />
           )}
 
           {telaAtiva === 'planos' && (
             <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
-              <PlanosView />
+              <PlanosView onAbrirIndiqueGanhe={() => setModalIndiqueGanheAberto(true)} />
             </div>
           )}
 
@@ -1552,6 +1578,20 @@ export default function App() {
         isOpen={modalStripeAbertoGlobal}
         onClose={() => setModalStripeAbertoGlobal(false)}
         onAbrirCheckoutTeste={() => setTelaAtiva('planos')}
+      />
+
+      {/* Modal Global de Configuração de Indicações e Influenciadores (Apenas Administrador) */}
+      {ehAdmin && (
+        <ModalConfigurarIndicacoes
+          isOpen={modalConfigIndicacoesAberto}
+          onClose={() => setModalConfigIndicacoesAberto(false)}
+        />
+      )}
+
+      {/* Modal Global do Programa Indique & Ganhe (Todos os Usuários) */}
+      <ModalIndiqueGanhe
+        isOpen={modalIndiqueGanheAberto}
+        onClose={() => setModalIndiqueGanheAberto(false)}
       />
 
       {/* Modal Global de Fechamento de Consulta em 1 Clique (Resumo Integrado) */}

@@ -22,6 +22,13 @@ import {
   salvarLoteFotosServer, 
   removerFotosCasoServer 
 } from './src/db/atlasServerStore.ts';
+import {
+  obterConfigIndicacoesServer,
+  salvarConfigIndicacoesServer,
+  obterRegraParaUsuarioServer,
+  registrarConversaoIndicacaoServer,
+  listarHistoricoIndicacoesServer
+} from './src/db/indicacoesStore.ts';
 
 dotenv.config();
 
@@ -220,7 +227,20 @@ app.post('/api/kiwify/webhook', async (req: Request, res: Response) => {
       0
     );
 
-    console.log(`📦 Webhook Kiwify recebido: [${eventType || orderStatus}] para ${email || 'sem email'} (Order: ${orderId})`);
+    // Identificar rastreamento de indicação (parâmetro ?src= do link de indicação)
+    const trackingSrc = (
+      payload.Tracking?.src ||
+      payload.tracking?.src ||
+      payload.src ||
+      payload.sck ||
+      payload.utm_source ||
+      payload.Tracking?.utm_source ||
+      payload.subscription?.tracking?.src ||
+      payload.Subscription?.tracking?.src ||
+      ''
+    ).toString().trim().toLowerCase();
+
+    console.log(`📦 Webhook Kiwify recebido: [${eventType || orderStatus}] para ${email || 'sem email'} (Order: ${orderId}, Ref/SRC: ${trackingSrc || 'nenhum'})`);
 
     if (!email) {
       console.warn('⚠️ Webhook Kiwify recebido sem e-mail do cliente.');
@@ -302,6 +322,56 @@ app.post('/api/kiwify/webhook', async (req: Request, res: Response) => {
             createdAt: new Date().toISOString()
           }, { merge: true });
           console.log(`📋 Assinatura pendente criada para ${email} (${planoId}). Será vinculada no primeiro login.`);
+        }
+
+        // 2. PROCESSAR BÔNUS DO PROGRAMA INDIQUE & GANHE
+        if (isAprovado && trackingSrc && trackingSrc !== email) {
+          try {
+            const regraIndicador = obterRegraParaUsuarioServer(trackingSrc);
+            const diasBonus = regraIndicador.diasBonusIndicador || 30;
+
+            let indicadorSnapshot = await dbAdmin.collection('usuarios_profissionais').where('email', '==', trackingSrc).get();
+            if (indicadorSnapshot.empty) {
+              const docPorId = await dbAdmin.collection('usuarios_profissionais').doc(trackingSrc).get();
+              if (docPorId.exists) {
+                indicadorSnapshot = { empty: false, docs: [docPorId] } as any;
+              }
+            }
+
+            if (!indicadorSnapshot.empty) {
+              for (const indDoc of indicadorSnapshot.docs) {
+                const dadosInd = indDoc.data() || {};
+                const validadeAtual = dadosInd.planoValidade ? new Date(dadosInd.planoValidade).getTime() : 0;
+                const baseTempo = (validadeAtual > Date.now()) ? validadeAtual : Date.now();
+                const novaValidadeIndicador = new Date(baseTempo + diasBonus * 24 * 60 * 60 * 1000).toISOString();
+
+                await indDoc.ref.set({
+                  planoValidade: novaValidadeIndicador,
+                  planoStatus: 'ativo',
+                  totalIndicacoesGanhas: (dadosInd.totalIndicacoesGanhas || 0) + 1,
+                  diasBonusAcumulados: (dadosInd.diasBonusAcumulados || 0) + diasBonus,
+                  updatedAt: new Date().toISOString()
+                }, { merge: true });
+
+                console.log(`🎁 Indicação Premiada! ${dadosInd.email || trackingSrc} recebeu +${diasBonus} dias de bônus (nova validade: ${novaValidadeIndicador})`);
+
+                await registrarConversaoIndicacaoServer({
+                  indicadorEmail: dadosInd.email || trackingSrc,
+                  indicadorNome: dadosInd.nomeCompleto || dadosInd.nome || '',
+                  indicadoEmail: email,
+                  indicadoNome: nome,
+                  planoId,
+                  valorCentavos,
+                  diasConcedidos: diasBonus,
+                  cupomUtilizado: regraIndicador.codigoCupom
+                });
+              }
+            } else {
+              console.log(`ℹ️ Indicador com código/e-mail ${trackingSrc} não encontrado para crédito de bônus imediato.`);
+            }
+          } catch (indErr) {
+            console.error('Erro ao processar bônus do programa de indicação:', indErr);
+          }
         }
       } catch (fsErr) {
         console.error('Erro ao salvar usuário no Firestore via Kiwify:', fsErr);
@@ -1000,6 +1070,81 @@ app.delete('/api/atlas/fotos/:casoId', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error(`Erro na rota DELETE /api/atlas/fotos/${req.params.casoId}:`, error);
     return res.status(500).json({ sucesso: false, erro: error.message || 'Falha ao remover fotos do caso.' });
+  }
+});
+
+// ============================================================================
+// ROTAS DO PROGRAMA INDIQUE & GANHE E INFLUENCIADORES (/api/indicacoes/*)
+// ============================================================================
+
+// GET /api/indicacoes/config — Retorna configuração de indicações e influenciadores
+app.get('/api/indicacoes/config', async (_req: Request, res: Response) => {
+  try {
+    const config = await obterConfigIndicacoesServer();
+    return res.json({ sucesso: true, config });
+  } catch (error: any) {
+    console.error('Erro na rota GET /api/indicacoes/config:', error);
+    return res.status(500).json({ sucesso: false, erro: error.message || 'Falha ao buscar configuração.' });
+  }
+});
+
+// POST /api/indicacoes/config — Atualiza configuração de porcentagens e regras de influenciadores (Admin)
+app.post('/api/indicacoes/config', async (req: Request, res: Response) => {
+  try {
+    const { porcentagemPadrao, cupomPadrao, diasBonusPadrao, influenciadores } = req.body || {};
+    const atualizado = await salvarConfigIndicacoesServer({
+      porcentagemPadrao: Number(porcentagemPadrao) || 10,
+      cupomPadrao: (cupomPadrao || 'TRICO10').toUpperCase().trim(),
+      diasBonusPadrao: Number(diasBonusPadrao) || 30,
+      influenciadores: Array.isArray(influenciadores) ? influenciadores : []
+    });
+    return res.json({ sucesso: true, config: atualizado });
+  } catch (error: any) {
+    console.error('Erro na rota POST /api/indicacoes/config:', error);
+    return res.status(500).json({ sucesso: false, erro: error.message || 'Falha ao salvar configuração.' });
+  }
+});
+
+// GET /api/indicacoes/minhas — Retorna métricas, cupom e histórico do usuário
+app.get('/api/indicacoes/minhas', async (req: Request, res: Response) => {
+  try {
+    const email = (req.query.email as string || '').toLowerCase().trim();
+    if (!email) {
+      return res.status(400).json({ sucesso: false, erro: 'E-mail é obrigatório.' });
+    }
+
+    const regra = obterRegraParaUsuarioServer(email);
+    const historico = await listarHistoricoIndicacoesServer(email);
+
+    const totalIndicados = historico.length;
+    const diasGanhosTotal = historico.reduce((acc, curr) => acc + (curr.diasConcedidos || 0), 0);
+
+    return res.json({
+      sucesso: true,
+      regra,
+      metricas: {
+        totalIndicados,
+        diasGanhosTotal,
+        ehInfluenciador: regra.ehInfluenciador,
+        porcentagemDesconto: regra.porcentagemDesconto,
+        codigoCupom: regra.codigoCupom,
+        historico
+      }
+    });
+  } catch (error: any) {
+    console.error('Erro na rota GET /api/indicacoes/minhas:', error);
+    return res.status(500).json({ sucesso: false, erro: error.message || 'Falha ao buscar dados do indicador.' });
+  }
+});
+
+// GET /api/indicacoes/todas — Retorna histórico completo de indicações (Admin)
+app.get('/api/indicacoes/todas', async (_req: Request, res: Response) => {
+  try {
+    const historico = await listarHistoricoIndicacoesServer();
+    return res.json({ sucesso: true, historico });
+  } catch (error: any) {
+    console.error('Erro na rota GET /api/indicacoes/todas:', error);
+    return res.status(500).json({ sucesso: false, erro: error.message || 'Falha ao buscar histórico de indicações.' });
   }
 });
 

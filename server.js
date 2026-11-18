@@ -9,11 +9,11 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import Stripe from "stripe";
-import fs2 from "fs";
-import path2 from "path";
-import { initializeApp as initAdminApp, getApps as getAdminApps2, cert as adminCert } from "firebase-admin/app";
+import fs3 from "fs";
+import path3 from "path";
+import { initializeApp as initAdminApp, getApps as getAdminApps3, cert as adminCert } from "firebase-admin/app";
 import { getAuth as getAdminAuth } from "firebase-admin/auth";
-import { getFirestore as getAdminFirestore2 } from "firebase-admin/firestore";
+import { getFirestore as getAdminFirestore3 } from "firebase-admin/firestore";
 import { GoogleGenAI } from "@google/genai";
 
 // src/config/promptsIA.ts
@@ -789,6 +789,174 @@ async function removerFotosCasoServer(casoId) {
   }
 }
 
+// src/db/indicacoesStore.ts
+import fs2 from "fs";
+import path2 from "path";
+import { getApps as getAdminApps2 } from "firebase-admin/app";
+import { getFirestore as getAdminFirestore2 } from "firebase-admin/firestore";
+var CONFIG_PADRAO = {
+  porcentagemPadrao: 10,
+  cupomPadrao: "TRICO10",
+  diasBonusPadrao: 30,
+  influenciadores: [],
+  atualizadoEm: (/* @__PURE__ */ new Date()).toISOString()
+};
+var storeEmMemoria2 = {
+  config: { ...CONFIG_PADRAO },
+  historico: []
+};
+var CAMINHO_ARQUIVO_LOCAL2 = path2.resolve(process.cwd(), ".indicacoes_store.json");
+var CAMINHO_ARQUIVO_TMP2 = path2.join("/tmp", ".tricocalazans_indicacoes_store.json");
+function salvarArquivoDisco2(dados) {
+  const json = JSON.stringify(dados, null, 2);
+  try {
+    fs2.writeFileSync(CAMINHO_ARQUIVO_LOCAL2, json, "utf8");
+  } catch (err) {
+    try {
+      fs2.writeFileSync(CAMINHO_ARQUIVO_TMP2, json, "utf8");
+    } catch {
+    }
+  }
+}
+function carregarArquivoDisco2() {
+  try {
+    if (fs2.existsSync(CAMINHO_ARQUIVO_LOCAL2)) {
+      const conteudo = fs2.readFileSync(CAMINHO_ARQUIVO_LOCAL2, "utf8");
+      if (conteudo && conteudo.trim().length > 0) {
+        return JSON.parse(conteudo);
+      }
+    }
+  } catch {
+  }
+  try {
+    if (fs2.existsSync(CAMINHO_ARQUIVO_TMP2)) {
+      const conteudo = fs2.readFileSync(CAMINHO_ARQUIVO_TMP2, "utf8");
+      if (conteudo && conteudo.trim().length > 0) {
+        return JSON.parse(conteudo);
+      }
+    }
+  } catch {
+  }
+  return null;
+}
+var dadosIniciais = carregarArquivoDisco2();
+if (dadosIniciais && dadosIniciais.config) {
+  storeEmMemoria2 = {
+    config: {
+      ...CONFIG_PADRAO,
+      ...dadosIniciais.config
+    },
+    historico: Array.isArray(dadosIniciais.historico) ? dadosIniciais.historico : []
+  };
+}
+async function obterConfigIndicacoesServer() {
+  try {
+    if (getAdminApps2().length > 0) {
+      const db3 = getAdminFirestore2();
+      const doc2 = await db3.collection("configuracoes_sistema").doc("indicacoes").get();
+      if (doc2.exists) {
+        const dados = doc2.data();
+        storeEmMemoria2.config = {
+          ...storeEmMemoria2.config,
+          ...dados
+        };
+      }
+    }
+  } catch (e) {
+    console.warn("N\xE3o foi poss\xEDvel sincronizar config de indica\xE7\xF5es com o Firestore:", e);
+  }
+  return storeEmMemoria2.config;
+}
+async function salvarConfigIndicacoesServer(novaConfig) {
+  storeEmMemoria2.config = {
+    ...storeEmMemoria2.config,
+    ...novaConfig,
+    atualizadoEm: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  salvarArquivoDisco2(storeEmMemoria2);
+  try {
+    if (getAdminApps2().length > 0) {
+      const db3 = getAdminFirestore2();
+      await db3.collection("configuracoes_sistema").doc("indicacoes").set(storeEmMemoria2.config, { merge: true });
+    }
+  } catch (e) {
+    console.error("Erro ao persistir config de indica\xE7\xF5es no Firestore:", e);
+  }
+  return storeEmMemoria2.config;
+}
+function obterRegraParaUsuarioServer(email) {
+  const config = storeEmMemoria2.config;
+  const limpo = (email || "").toLowerCase().trim();
+  if (limpo && Array.isArray(config.influenciadores)) {
+    const influenciador = config.influenciadores.find(
+      (inf) => inf.ativo && inf.email.toLowerCase().trim() === limpo
+    );
+    if (influenciador) {
+      return {
+        ehInfluenciador: true,
+        porcentagemDesconto: influenciador.porcentagemDesconto || config.porcentagemPadrao,
+        codigoCupom: influenciador.codigoCupom || config.cupomPadrao,
+        diasBonusIndicador: influenciador.diasBonusIndicador || config.diasBonusPadrao,
+        nomeInfluenciador: influenciador.nome
+      };
+    }
+  }
+  return {
+    ehInfluenciador: false,
+    porcentagemDesconto: config.porcentagemPadrao || 10,
+    codigoCupom: config.cupomPadrao || "TRICO10",
+    diasBonusIndicador: config.diasBonusPadrao || 30
+  };
+}
+async function registrarConversaoIndicacaoServer(item) {
+  const novoItem = {
+    id: `ind_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    data: (/* @__PURE__ */ new Date()).toISOString(),
+    status: "aprovado",
+    ...item
+  };
+  storeEmMemoria2.historico.unshift(novoItem);
+  salvarArquivoDisco2(storeEmMemoria2);
+  try {
+    if (getAdminApps2().length > 0) {
+      const db3 = getAdminFirestore2();
+      await db3.collection("historico_indicacoes").doc(novoItem.id).set(novoItem);
+    }
+  } catch (e) {
+    console.error("Erro ao registrar hist\xF3rico de indica\xE7\xE3o no Firestore:", e);
+  }
+  return novoItem;
+}
+async function listarHistoricoIndicacoesServer(filtroEmail) {
+  try {
+    if (getAdminApps2().length > 0) {
+      const db3 = getAdminFirestore2();
+      let query = db3.collection("historico_indicacoes").orderBy("data", "desc").limit(100);
+      if (filtroEmail) {
+        query = db3.collection("historico_indicacoes").where("indicadorEmail", "==", filtroEmail.toLowerCase().trim()).orderBy("data", "desc").limit(100);
+      }
+      const snapshot = await query.get();
+      if (!snapshot.empty) {
+        const itens = [];
+        snapshot.forEach((doc2) => itens.push(doc2.data()));
+        if (itens.length > 0) {
+          if (!filtroEmail) {
+            storeEmMemoria2.historico = itens;
+          }
+          return itens;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Aviso: busca no Firestore para hist\xF3rico de indica\xE7\xF5es utilizou cache local:", e);
+  }
+  if (filtroEmail) {
+    const limpo = filtroEmail.toLowerCase().trim();
+    return storeEmMemoria2.historico.filter((h) => h.indicadorEmail.toLowerCase().trim() === limpo);
+  }
+  return storeEmMemoria2.historico;
+}
+
 // server.ts
 dotenv.config();
 var stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
@@ -807,11 +975,11 @@ function criarInstanciaStripe(chave) {
 }
 var stripe = criarInstanciaStripe(stripeSecretKey);
 function salvarVariaveisNoEnv(vars) {
-  const envPath = path2.resolve(process.cwd(), ".env");
+  const envPath = path3.resolve(process.cwd(), ".env");
   let conteudoAtual = "";
   try {
-    if (fs2.existsSync(envPath)) {
-      conteudoAtual = fs2.readFileSync(envPath, "utf8");
+    if (fs3.existsSync(envPath)) {
+      conteudoAtual = fs3.readFileSync(envPath, "utf8");
     }
   } catch (err) {
     console.warn("N\xE3o foi poss\xEDvel ler .env existente, criando novo:", err);
@@ -831,7 +999,7 @@ function salvarVariaveisNoEnv(vars) {
     novasLinhas.push(`${chave}="${vars[chave]}"`);
   });
   try {
-    fs2.writeFileSync(envPath, novasLinhas.join("\n").trim() + "\n", "utf8");
+    fs3.writeFileSync(envPath, novasLinhas.join("\n").trim() + "\n", "utf8");
   } catch (err) {
     console.error("Erro ao escrever arquivo .env:", err);
   }
@@ -846,7 +1014,7 @@ try {
       credential: adminCert(creds)
     });
     firebaseAdminInitialized = true;
-  } else if (!getAdminApps2().length) {
+  } else if (!getAdminApps3().length) {
     initAdminApp();
     firebaseAdminInitialized = true;
   } else {
@@ -869,7 +1037,7 @@ app2.post("/api/stripe/webhook", express.raw({ type: "application/json" }), asyn
         console.log("\u2705 Pagamento confirmado via Stripe Checkout:", session.id, { uid, planoId, ciclo });
         if (uid && firebaseAdminInitialized) {
           try {
-            const dbAdmin = getAdminFirestore2();
+            const dbAdmin = getAdminFirestore3();
             await dbAdmin.collection("usuarios_profissionais").doc(uid).set({
               planoId,
               planoStatus: "ativo",
@@ -919,7 +1087,8 @@ app2.post("/api/kiwify/webhook", async (req, res) => {
     const valorCentavos = Number(
       payload.Commissions?.charge_amount || payload.commissions?.charge_amount || payload.order_amount || 0
     );
-    console.log(`\u{1F4E6} Webhook Kiwify recebido: [${eventType || orderStatus}] para ${email || "sem email"} (Order: ${orderId})`);
+    const trackingSrc = (payload.Tracking?.src || payload.tracking?.src || payload.src || payload.sck || payload.utm_source || payload.Tracking?.utm_source || payload.subscription?.tracking?.src || payload.Subscription?.tracking?.src || "").toString().trim().toLowerCase();
+    console.log(`\u{1F4E6} Webhook Kiwify recebido: [${eventType || orderStatus}] para ${email || "sem email"} (Order: ${orderId}, Ref/SRC: ${trackingSrc || "nenhum"})`);
     if (!email) {
       console.warn("\u26A0\uFE0F Webhook Kiwify recebido sem e-mail do cliente.");
       return res.status(200).json({ received: true, aviso: "E-mail do cliente n\xE3o identificado" });
@@ -955,7 +1124,7 @@ app2.post("/api/kiwify/webhook", async (req, res) => {
     };
     if (firebaseAdminInitialized) {
       try {
-        const dbAdmin = getAdminFirestore2();
+        const dbAdmin = getAdminFirestore3();
         const snapshot = await dbAdmin.collection("usuarios_profissionais").where("email", "==", email).get();
         if (!snapshot.empty) {
           for (const docSnapshot of snapshot.docs) {
@@ -970,6 +1139,49 @@ app2.post("/api/kiwify/webhook", async (req, res) => {
             createdAt: (/* @__PURE__ */ new Date()).toISOString()
           }, { merge: true });
           console.log(`\u{1F4CB} Assinatura pendente criada para ${email} (${planoId}). Ser\xE1 vinculada no primeiro login.`);
+        }
+        if (isAprovado && trackingSrc && trackingSrc !== email) {
+          try {
+            const regraIndicador = obterRegraParaUsuarioServer(trackingSrc);
+            const diasBonus = regraIndicador.diasBonusIndicador || 30;
+            let indicadorSnapshot = await dbAdmin.collection("usuarios_profissionais").where("email", "==", trackingSrc).get();
+            if (indicadorSnapshot.empty) {
+              const docPorId = await dbAdmin.collection("usuarios_profissionais").doc(trackingSrc).get();
+              if (docPorId.exists) {
+                indicadorSnapshot = { empty: false, docs: [docPorId] };
+              }
+            }
+            if (!indicadorSnapshot.empty) {
+              for (const indDoc of indicadorSnapshot.docs) {
+                const dadosInd = indDoc.data() || {};
+                const validadeAtual = dadosInd.planoValidade ? new Date(dadosInd.planoValidade).getTime() : 0;
+                const baseTempo = validadeAtual > Date.now() ? validadeAtual : Date.now();
+                const novaValidadeIndicador = new Date(baseTempo + diasBonus * 24 * 60 * 60 * 1e3).toISOString();
+                await indDoc.ref.set({
+                  planoValidade: novaValidadeIndicador,
+                  planoStatus: "ativo",
+                  totalIndicacoesGanhas: (dadosInd.totalIndicacoesGanhas || 0) + 1,
+                  diasBonusAcumulados: (dadosInd.diasBonusAcumulados || 0) + diasBonus,
+                  updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+                }, { merge: true });
+                console.log(`\u{1F381} Indica\xE7\xE3o Premiada! ${dadosInd.email || trackingSrc} recebeu +${diasBonus} dias de b\xF4nus (nova validade: ${novaValidadeIndicador})`);
+                await registrarConversaoIndicacaoServer({
+                  indicadorEmail: dadosInd.email || trackingSrc,
+                  indicadorNome: dadosInd.nomeCompleto || dadosInd.nome || "",
+                  indicadoEmail: email,
+                  indicadoNome: nome,
+                  planoId,
+                  valorCentavos,
+                  diasConcedidos: diasBonus,
+                  cupomUtilizado: regraIndicador.codigoCupom
+                });
+              }
+            } else {
+              console.log(`\u2139\uFE0F Indicador com c\xF3digo/e-mail ${trackingSrc} n\xE3o encontrado para cr\xE9dito de b\xF4nus imediato.`);
+            }
+          } catch (indErr) {
+            console.error("Erro ao processar b\xF4nus do programa de indica\xE7\xE3o:", indErr);
+          }
         }
       } catch (fsErr) {
         console.error("Erro ao salvar usu\xE1rio no Firestore via Kiwify:", fsErr);
@@ -1022,7 +1234,7 @@ async function obterUsoMensal(uid, mes) {
   const chave = `${uid}_${mes}`;
   if (firebaseAdminInitialized) {
     try {
-      const docSnap = await getAdminFirestore2().collection("uso_ia").doc(uid).collection("meses").doc(mes).get();
+      const docSnap = await getAdminFirestore3().collection("uso_ia").doc(uid).collection("meses").doc(mes).get();
       if (docSnap.exists) {
         const data = docSnap.data();
         const qtd = data?.quantidade || 0;
@@ -1041,7 +1253,7 @@ async function incrementarUsoMensal(uid, mes, limite) {
   cacheUsoIa[chave] = { usado: novoValor, ultimaData: (/* @__PURE__ */ new Date()).toISOString() };
   if (firebaseAdminInitialized) {
     try {
-      await getAdminFirestore2().collection("uso_ia").doc(uid).collection("meses").doc(mes).set({
+      await getAdminFirestore3().collection("uso_ia").doc(uid).collection("meses").doc(mes).set({
         uid,
         mes,
         quantidade: novoValor,
@@ -1276,7 +1488,7 @@ app2.post("/api/stripe/verify-session", async (req, res) => {
       const uid = usuarioUid || session.metadata?.usuarioUid || session.client_reference_id;
       if (isPago && uid && firebaseAdminInitialized) {
         try {
-          const dbAdmin = getAdminFirestore2();
+          const dbAdmin = getAdminFirestore3();
           await dbAdmin.collection("usuarios_profissionais").doc(uid).set({
             planoId,
             planoStatus: "ativo",
@@ -1506,6 +1718,66 @@ app2.delete("/api/atlas/fotos/:casoId", async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao remover fotos do caso." });
   }
 });
+app2.get("/api/indicacoes/config", async (_req, res) => {
+  try {
+    const config = await obterConfigIndicacoesServer();
+    return res.json({ sucesso: true, config });
+  } catch (error) {
+    console.error("Erro na rota GET /api/indicacoes/config:", error);
+    return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao buscar configura\xE7\xE3o." });
+  }
+});
+app2.post("/api/indicacoes/config", async (req, res) => {
+  try {
+    const { porcentagemPadrao, cupomPadrao, diasBonusPadrao, influenciadores } = req.body || {};
+    const atualizado = await salvarConfigIndicacoesServer({
+      porcentagemPadrao: Number(porcentagemPadrao) || 10,
+      cupomPadrao: (cupomPadrao || "TRICO10").toUpperCase().trim(),
+      diasBonusPadrao: Number(diasBonusPadrao) || 30,
+      influenciadores: Array.isArray(influenciadores) ? influenciadores : []
+    });
+    return res.json({ sucesso: true, config: atualizado });
+  } catch (error) {
+    console.error("Erro na rota POST /api/indicacoes/config:", error);
+    return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao salvar configura\xE7\xE3o." });
+  }
+});
+app2.get("/api/indicacoes/minhas", async (req, res) => {
+  try {
+    const email = (req.query.email || "").toLowerCase().trim();
+    if (!email) {
+      return res.status(400).json({ sucesso: false, erro: "E-mail \xE9 obrigat\xF3rio." });
+    }
+    const regra = obterRegraParaUsuarioServer(email);
+    const historico = await listarHistoricoIndicacoesServer(email);
+    const totalIndicados = historico.length;
+    const diasGanhosTotal = historico.reduce((acc, curr) => acc + (curr.diasConcedidos || 0), 0);
+    return res.json({
+      sucesso: true,
+      regra,
+      metricas: {
+        totalIndicados,
+        diasGanhosTotal,
+        ehInfluenciador: regra.ehInfluenciador,
+        porcentagemDesconto: regra.porcentagemDesconto,
+        codigoCupom: regra.codigoCupom,
+        historico
+      }
+    });
+  } catch (error) {
+    console.error("Erro na rota GET /api/indicacoes/minhas:", error);
+    return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao buscar dados do indicador." });
+  }
+});
+app2.get("/api/indicacoes/todas", async (_req, res) => {
+  try {
+    const historico = await listarHistoricoIndicacoesServer();
+    return res.json({ sucesso: true, historico });
+  } catch (error) {
+    console.error("Erro na rota GET /api/indicacoes/todas:", error);
+    return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao buscar hist\xF3rico de indica\xE7\xF5es." });
+  }
+});
 app2.get("/api/exames/uso-ia", async (req, res) => {
   try {
     const usuario = await autenticarUsuario(req);
@@ -1539,7 +1811,7 @@ app2.post("/api/exames/transcrever-laudo", async (req, res) => {
     let statusUsuario = req.body.planoStatus || "trial";
     if (firebaseAdminInitialized) {
       try {
-        const userDoc = await getAdminFirestore2().collection("usuarios_profissionais").doc(usuario.uid).get();
+        const userDoc = await getAdminFirestore3().collection("usuarios_profissionais").doc(usuario.uid).get();
         if (userDoc.exists) {
           const uData = userDoc.data();
           if (uData?.planoId) planoUsuario = uData.planoId;
