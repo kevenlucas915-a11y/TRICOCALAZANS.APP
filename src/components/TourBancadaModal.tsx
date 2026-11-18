@@ -14,7 +14,6 @@ import {
   HelpCircle,
   Camera,
   Usb,
-  Wifi,
   Video
 } from 'lucide-react';
 
@@ -63,7 +62,7 @@ export const TourBancadaModal: React.FC<TourBancadaModalProps> = ({
       dica: 'Você pode reabrir este tour a qualquer momento no botão "Guia da Bancada".'
     },
     {
-      titulo: '1. Conexão do Tricoscópio (Cabo / Wi-Fi) e Permissões',
+      titulo: '1. Conexão do Tricoscópio (Via Cabo USB) e Permissões',
       subtitulo: 'Como visualizar a câmera ao vivo e autorizar o acesso no navegador',
       conteudo: (
         <div className="space-y-3 text-xs text-stone-600 dark:text-slate-300">
@@ -71,26 +70,14 @@ export const TourBancadaModal: React.FC<TourBancadaModalProps> = ({
             Você pode capturar fotos direto do aparelho clicando no botão <strong>"📸 Conectar Câmera / Tricoscópio ao Vivo"</strong>:
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-            <div className="p-3 rounded-2xl border border-stone-200 dark:border-slate-800 bg-stone-50 dark:bg-slate-950 space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-rose-700 dark:text-rose-400">
-                <Usb className="w-4 h-4 shrink-0" />
-                <span>Por Cabo USB (UVC)</span>
-              </div>
-              <p className="text-stone-500 dark:text-slate-400 leading-relaxed">
-                Plugue o cabo no computador (ou adaptador OTG no celular). O tricoscópio é reconhecido na hora como câmera externa. Verifique se o LED do aparelho acendeu.
-              </p>
+          <div className="p-3.5 rounded-2xl border border-stone-200 dark:border-slate-800 bg-stone-50 dark:bg-slate-950 space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold text-rose-700 dark:text-rose-400 text-xs">
+              <Usb className="w-4 h-4 shrink-0" />
+              <span>Conexão Direta por Cabo USB / OTG (Padrão UVC)</span>
             </div>
-
-            <div className="p-3 rounded-2xl border border-stone-200 dark:border-slate-800 bg-stone-50 dark:bg-slate-950 space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-rose-700 dark:text-rose-400">
-                <Wifi className="w-4 h-4 shrink-0" />
-                <span>Por Wi-Fi (Sem Fio)</span>
-              </div>
-              <p className="text-stone-500 dark:text-slate-400 leading-relaxed">
-                Conecte seu computador ou tablet na rede Wi-Fi emitida pelo aparelho e insira o endereço de stream IP (ex: <code>http://192.168.1.1:8080/stream</code>).
-              </p>
-            </div>
+            <p className="text-stone-500 dark:text-slate-400 leading-relaxed text-[11px]">
+              Plugue o cabo no computador (ou adaptador OTG no celular/tablet). O tricoscópio é reconhecido na hora como câmera externa Plug & Play com máxima resolução, foco estável e sem latência. Verifique se o LED do aparelho acendeu.
+            </p>
           </div>
 
           <div className="p-3 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 space-y-2 text-[11px]">

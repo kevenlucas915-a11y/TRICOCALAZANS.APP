@@ -1374,7 +1374,7 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                       Conecte o Tricoscópio ou Carregue a Foto
                     </h3>
                     <p className="text-xs text-stone-500 dark:text-slate-400 leading-relaxed">
-                      Área ativa selecionada: <strong className="text-teal-700 dark:text-teal-400 font-bold">{areaCouro}</strong>. Conecte sua câmera USB/Wi-Fi ao vivo ou escolha um arquivo de imagem do dispositivo.
+                      Área ativa selecionada: <strong className="text-teal-700 dark:text-teal-400 font-bold">{areaCouro}</strong>. Conecte sua câmera USB via cabo ao vivo ou escolha um arquivo de imagem do dispositivo.
                     </p>
                   </div>
 
@@ -2358,7 +2358,7 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                       <button
                         onClick={() => setModalCameraAoVivo(true)}
                         className="text-xs text-rose-700 dark:text-rose-400 font-semibold hover:underline flex items-center gap-1"
-                        title="Conectar tricoscópio USB ou Wi-Fi ao vivo"
+                        title="Conectar tricoscópio via cabo USB ao vivo"
                       >
                         <Video className="w-3.5 h-3.5" />
                         <span>Câmera ao Vivo</span>
@@ -2415,7 +2415,7 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
                       Insira a captura do dermatoscópio
                     </p>
                     <p className="text-xs text-stone-500 dark:text-slate-400 max-w-sm mx-auto mt-1 leading-relaxed">
-                      Conecte a câmera do seu tricoscópio ao vivo (cabo USB ou Wi-Fi) ou carregue uma imagem já capturada.
+                      Conecte a câmera do seu tricoscópio ao vivo (via cabo USB/OTG) ou carregue uma imagem já capturada.
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
@@ -3689,7 +3689,7 @@ export const MinhaCapturaView: React.FC<MinhaCapturaViewProps> = ({
       {/* Modal de Tour Guiado da Bancada */}
       <TourBancadaModal isOpen={tourAberto} onClose={handleFecharTour} />
 
-      {/* Modal de Câmera ao Vivo do Tricoscópio (USB / Wi-Fi) */}
+      {/* Modal de Câmera ao Vivo do Tricoscópio (Via Cabo USB / OTG) */}
       <TricoscopioLiveModal
         isOpen={modalCameraAoVivo}
         onClose={() => setModalCameraAoVivo(false)}

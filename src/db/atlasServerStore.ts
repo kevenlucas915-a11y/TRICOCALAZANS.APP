@@ -383,3 +383,4 @@ export async function removerFotosCasoServer(casoId: string): Promise<void> {
     }
   } catch {}
 }
+

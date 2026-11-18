@@ -9,15 +9,101 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import Stripe from "stripe";
-import fs from "fs";
-import path from "path";
-import { initializeApp as initAdminApp, getApps as getAdminApps, cert as adminCert } from "firebase-admin/app";
+import fs2 from "fs";
+import path2 from "path";
+import { initializeApp as initAdminApp, getApps as getAdminApps2, cert as adminCert } from "firebase-admin/app";
 import { getAuth as getAdminAuth } from "firebase-admin/auth";
-import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
+import { getFirestore as getAdminFirestore2 } from "firebase-admin/firestore";
 import { GoogleGenAI } from "@google/genai";
 
 // src/config/promptsIA.ts
 var INSTRUCAO_SISTEMA_TRANSCRICAO_LAUDO = "Transcreva fielmente os resultados do laudo. Para cada exame retorne marcador, valor, unidade, faixa de refer\xEAncia do pr\xF3prio laudo (m\xEDnimo, m\xE1ximo e texto original) e um campo incerto=true quando n\xE3o tiver certeza da leitura. N\xE3o interprete, n\xE3o classifique, n\xE3o comente.";
+
+// src/config/admins.ts
+var ADMIN_EMAILS = [
+  "kevenlucas915@gmail.com",
+  "damiana30@iclou.com",
+  "damiana30@icloud.com"
+];
+function ehAdminEmail(email) {
+  if (!email || typeof email !== "string") return false;
+  const limpo = email.toLowerCase().trim();
+  return ADMIN_EMAILS.some((adm) => adm.toLowerCase().trim() === limpo);
+}
+
+// src/utils/fotosNuvem.ts
+import { ref, uploadString, getDownloadURL, deleteObject } from "firebase/storage";
+
+// src/firebase.ts
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore, doc, getDocFromServer } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+
+// firebase-applet-config.json
+var firebase_applet_config_default = {
+  projectId: "secret-watch-txfhk",
+  appId: "1:539182657871:web:762e358fcf814bb6cbd53a",
+  apiKey: "AIzaSyBbOBEFTJP0DkEQs2Vq23bUkzGLtZQNMmI",
+  authDomain: "secret-watch-txfhk.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-92b38765-5936-411f-850b-16b0a072959b",
+  storageBucket: "secret-watch-txfhk.firebasestorage.app",
+  messagingSenderId: "539182657871",
+  measurementId: "",
+  oAuthClientId: "539182657871-rjhaoja0jd32h3q751hanrug70c70t5a.apps.googleusercontent.com",
+  recaptchaSiteKey: ""
+};
+
+// src/firebase.ts
+var app = initializeApp(firebase_applet_config_default);
+var db = getFirestore(app, firebase_applet_config_default.firestoreDatabaseId);
+var auth = getAuth(app);
+var storage = getStorage(app);
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, "test", "connection"));
+    return true;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("the client is offline")) {
+      console.warn("Please check your Firebase configuration or internet connection.");
+    }
+    return false;
+  }
+}
+testConnection();
+
+// src/utils/fotosNuvem.ts
+function usuarioEhAdmin() {
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      const saved = window.localStorage.getItem("trico_auth_user_active_v1");
+      if (saved) {
+        const u = JSON.parse(saved);
+        if (u) {
+          if (u.email) {
+            const emailLimpo = u.email.toLowerCase().trim();
+            if (ADMIN_EMAILS.some((adm) => adm.toLowerCase().trim() === emailLimpo)) {
+              return true;
+            }
+          }
+          if (u.planoMetodo === "admin_vitalicio" || u.tipo === "admin" || u.role === "admin" || u.isAdmin === true) {
+            return true;
+          }
+        }
+      }
+    } catch {
+    }
+  }
+  const user = auth.currentUser;
+  if (user && user.email) {
+    const emailLimpo = user.email.toLowerCase().trim();
+    const isAdminEmail = ADMIN_EMAILS.some((adm) => adm.toLowerCase().trim() === emailLimpo);
+    if (isAdminEmail) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // src/config/planos.ts
 var PLANO_MINIMO_IA = "master";
@@ -38,14 +124,16 @@ var HIERARQUIA_PLANOS = {
   master: 2,
   anual: 2
 };
-function temPermissaoExamesIa(planoId, status) {
+function temPermissaoExamesIa(planoId, status, email) {
+  if (usuarioEhAdmin() || ehAdminEmail(email)) return true;
   if (!planoId || planoId === "gratuito" || planoId === "degustacao") return false;
   if (status === "trial") return true;
   const nivel = HIERARQUIA_PLANOS[planoId.toLowerCase()] ?? 0;
   const nivelExigido = HIERARQUIA_PLANOS[PLANO_MINIMO_IA] ?? 2;
   return nivel >= nivelExigido;
 }
-function obterLimiteMensalIa(planoId, status) {
+function obterLimiteMensalIa(planoId, status, email) {
+  if (usuarioEhAdmin() || ehAdminEmail(email)) return 9999;
   if (!planoId || planoId === "gratuito" || planoId === "degustacao") return 0;
   if (status === "trial") return 40;
   return LIMITES_MENSAIS_IA[planoId.toLowerCase()] ?? 0;
@@ -61,6 +149,7 @@ import { Pool } from "pg";
 // src/db/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
+  atlasConfigTable: () => atlasConfigTable,
   casoImagens: () => casoImagens,
   consultasPaciente: () => consultasPaciente,
   modelosAnamnese: () => modelosAnamnese,
@@ -175,6 +264,13 @@ var casoImagens = pgTable("caso_imagens", {
   storagePath: text("storage_path"),
   updatedAt: text("updated_at")
 });
+var atlasConfigTable = pgTable("atlas_config", {
+  id: text("id").primaryKey().default("config_geral"),
+  removidosJson: text("removidos_json").notNull().default("[]"),
+  customizadosJson: text("customizados_json").notNull().default("[]"),
+  totalCasos: integer("total_casos").default(17),
+  updatedAt: text("updated_at")
+});
 
 // src/db/index.ts
 var createPool = () => {
@@ -194,7 +290,7 @@ var createPool = () => {
   return global._postgresPool;
 };
 var pool = createPool();
-var db = drizzle(pool, { schema: schema_exports });
+var db2 = drizzle(pool, { schema: schema_exports });
 
 // src/db/sessoes.ts
 async function salvarSessaoSql(input) {
@@ -223,7 +319,7 @@ async function salvarSessaoSql(input) {
       createdAt: input.createdAt || agora,
       updatedAt: agora
     };
-    await db.insert(sessoesBancada).values(dados).onConflictDoUpdate({
+    await db2.insert(sessoesBancada).values(dados).onConflictDoUpdate({
       target: sessoesBancada.id,
       set: {
         clientName: dados.clientName,
@@ -248,7 +344,7 @@ async function salvarSessaoSql(input) {
     });
     if (input.pacienteId) {
       try {
-        await db.insert(consultasPaciente).values({
+        await db2.insert(consultasPaciente).values({
           id: `cons_${input.id}`,
           userId: input.userId,
           pacienteId: input.pacienteId,
@@ -291,9 +387,9 @@ async function salvarSessaoSql(input) {
 async function listarSessoesSql(userId) {
   try {
     if (userId && userId !== "especialista_consultorio") {
-      return await db.select().from(sessoesBancada).where(or(eq(sessoesBancada.userId, userId), eq(sessoesBancada.userId, "especialista_consultorio"))).orderBy(desc(sessoesBancada.createdAt));
+      return await db2.select().from(sessoesBancada).where(or(eq(sessoesBancada.userId, userId), eq(sessoesBancada.userId, "especialista_consultorio"))).orderBy(desc(sessoesBancada.createdAt));
     }
-    return await db.select().from(sessoesBancada).orderBy(desc(sessoesBancada.createdAt));
+    return await db2.select().from(sessoesBancada).orderBy(desc(sessoesBancada.createdAt));
   } catch (error) {
     console.error("Falha ao listar sess\xF5es no PostgreSQL:", error);
     throw new Error("Falha ao buscar sess\xF5es no banco de dados.", { cause: error });
@@ -301,7 +397,7 @@ async function listarSessoesSql(userId) {
 }
 async function obterSessaoSql(id) {
   try {
-    const res = await db.select().from(sessoesBancada).where(eq(sessoesBancada.id, id)).limit(1);
+    const res = await db2.select().from(sessoesBancada).where(eq(sessoesBancada.id, id)).limit(1);
     return res[0] || null;
   } catch (error) {
     console.error(`Falha ao obter sess\xE3o ${id} no PostgreSQL:`, error);
@@ -310,8 +406,8 @@ async function obterSessaoSql(id) {
 }
 async function deletarSessaoSql(id) {
   try {
-    await db.delete(consultasPaciente).where(eq(consultasPaciente.sessionId, id));
-    await db.delete(sessoesBancada).where(eq(sessoesBancada.id, id));
+    await db2.delete(consultasPaciente).where(eq(consultasPaciente.sessionId, id));
+    await db2.delete(sessoesBancada).where(eq(sessoesBancada.id, id));
     return { sucesso: true };
   } catch (error) {
     console.error(`Falha ao deletar sess\xE3o ${id} no PostgreSQL:`, error);
@@ -341,7 +437,7 @@ async function salvarPacienteSql(input) {
       createdAt: input.createdAt || agora,
       updatedAt: agora
     };
-    await db.insert(pacientes).values(dados).onConflictDoUpdate({
+    await db2.insert(pacientes).values(dados).onConflictDoUpdate({
       target: pacientes.id,
       set: {
         nome: dados.nome,
@@ -367,9 +463,9 @@ async function salvarPacienteSql(input) {
 async function listarPacientesSql(userId) {
   try {
     if (userId && userId !== "especialista_consultorio") {
-      return await db.select().from(pacientes).where(or2(eq2(pacientes.userId, userId), eq2(pacientes.userId, "especialista_consultorio"))).orderBy(desc2(pacientes.createdAt));
+      return await db2.select().from(pacientes).where(or2(eq2(pacientes.userId, userId), eq2(pacientes.userId, "especialista_consultorio"))).orderBy(desc2(pacientes.createdAt));
     }
-    return await db.select().from(pacientes).orderBy(desc2(pacientes.createdAt));
+    return await db2.select().from(pacientes).orderBy(desc2(pacientes.createdAt));
   } catch (error) {
     console.error("Falha ao listar pacientes no PostgreSQL:", error);
     throw new Error("Falha ao listar pacientes do banco de dados.", { cause: error });
@@ -377,7 +473,7 @@ async function listarPacientesSql(userId) {
 }
 async function deletarPacienteSql(id) {
   try {
-    await db.delete(pacientes).where(eq2(pacientes.id, id));
+    await db2.delete(pacientes).where(eq2(pacientes.id, id));
     return { sucesso: true };
   } catch (error) {
     console.error(`Falha ao excluir paciente ${id} no PostgreSQL:`, error);
@@ -390,7 +486,7 @@ import { eq as eq3 } from "drizzle-orm";
 async function getOrCreateUser(uid, email, nome) {
   try {
     const agora = (/* @__PURE__ */ new Date()).toISOString();
-    const result = await db.insert(users).values({
+    const result = await db2.insert(users).values({
       uid,
       email,
       nome: nome || email.split("@")[0] || "Profissional",
@@ -412,11 +508,284 @@ async function getOrCreateUser(uid, email, nome) {
 }
 async function getUserByUid(uid) {
   try {
-    const rows = await db.select().from(users).where(eq3(users.uid, uid)).limit(1);
+    const rows = await db2.select().from(users).where(eq3(users.uid, uid)).limit(1);
     return rows[0] || null;
   } catch (error) {
     console.error(`Falha ao buscar usu\xE1rio ${uid} no Cloud SQL:`, error);
     throw new Error("Falha ao consultar usu\xE1rio no banco de dados.", { cause: error });
+  }
+}
+
+// src/db/atlasServerStore.ts
+import fs from "fs";
+import path from "path";
+import { getApps as getAdminApps } from "firebase-admin/app";
+import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
+var storeEmMemoria = {
+  config: {
+    removidos: [],
+    customizados: [],
+    totalCasos: 17,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  },
+  fotos: {}
+};
+var CAMINHO_ARQUIVO_LOCAL = path.resolve(process.cwd(), ".atlas_store.json");
+var CAMINHO_ARQUIVO_TMP = path.join("/tmp", ".tricocalazans_atlas_store.json");
+function salvarArquivoDisco(dados) {
+  const json = JSON.stringify(dados, null, 2);
+  try {
+    fs.writeFileSync(CAMINHO_ARQUIVO_LOCAL, json, "utf8");
+  } catch {
+    try {
+      fs.writeFileSync(CAMINHO_ARQUIVO_TMP, json, "utf8");
+    } catch (e) {
+      console.warn("\u26A0\uFE0F [Atlas Server] Erro ao gravar persist\xEAncia em disco:", e);
+    }
+  }
+}
+function carregarArquivoDisco() {
+  for (const p of [CAMINHO_ARQUIVO_LOCAL, CAMINHO_ARQUIVO_TMP]) {
+    try {
+      if (fs.existsSync(p)) {
+        const raw = fs.readFileSync(p, "utf8");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.config) {
+            storeEmMemoria = {
+              config: {
+                removidos: Array.isArray(parsed.config.removidos) ? parsed.config.removidos : [],
+                customizados: Array.isArray(parsed.config.customizados) ? parsed.config.customizados : [],
+                totalCasos: typeof parsed.config.totalCasos === "number" ? parsed.config.totalCasos : 17,
+                updatedAt: parsed.config.updatedAt || (/* @__PURE__ */ new Date()).toISOString()
+              },
+              fotos: parsed.fotos || {}
+            };
+            return true;
+          }
+        }
+      }
+    } catch {
+    }
+  }
+  return false;
+}
+carregarArquivoDisco();
+var sqlInicializado = false;
+async function inicializarTabelasSql() {
+  if (sqlInicializado) return;
+  try {
+    const pool2 = createPool();
+    await pool2.query(`
+      CREATE TABLE IF NOT EXISTS atlas_config (
+        id TEXT PRIMARY KEY DEFAULT 'config_geral',
+        removidos_json TEXT NOT NULL DEFAULT '[]',
+        customizados_json TEXT NOT NULL DEFAULT '[]',
+        total_casos INTEGER DEFAULT 17,
+        updated_at TEXT
+      );
+      CREATE TABLE IF NOT EXISTS caso_imagens (
+        id TEXT PRIMARY KEY,
+        caso_id TEXT NOT NULL,
+        nome_arquivo TEXT,
+        tamanho_bytes INTEGER,
+        data_url TEXT NOT NULL,
+        storage_path TEXT,
+        updated_at TEXT
+      );
+    `);
+    sqlInicializado = true;
+    const resConfig = await pool2.query(`SELECT * FROM atlas_config WHERE id = 'config_geral' LIMIT 1`);
+    if (resConfig.rows.length > 0) {
+      const row = resConfig.rows[0];
+      const removidos = JSON.parse(row.removidos_json || "[]");
+      const customizados = JSON.parse(row.customizados_json || "[]");
+      if (removidos.length > 0 || customizados.length > 0) {
+        storeEmMemoria.config.removidos = removidos;
+        storeEmMemoria.config.customizados = customizados;
+        storeEmMemoria.config.totalCasos = row.total_casos || 17 - removidos.length + customizados.length;
+        storeEmMemoria.config.updatedAt = row.updated_at || storeEmMemoria.config.updatedAt;
+      }
+    }
+    const resFotos = await pool2.query(`SELECT * FROM caso_imagens`);
+    if (resFotos.rows.length > 0) {
+      for (const row of resFotos.rows) {
+        if (!storeEmMemoria.fotos[row.caso_id]) {
+          storeEmMemoria.fotos[row.caso_id] = [];
+        }
+        const existe = storeEmMemoria.fotos[row.caso_id].some((f) => f.id === row.id);
+        if (!existe) {
+          storeEmMemoria.fotos[row.caso_id].push({
+            id: row.id,
+            casoId: row.caso_id,
+            dataUrl: row.data_url,
+            nomeArquivo: row.nome_arquivo || void 0,
+            tamanhoBytes: row.tamanho_bytes || void 0,
+            storagePath: row.storage_path || void 0,
+            dataAtualizacao: Date.now()
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.debug("Aviso SQL Atlas Server:", err?.message || err);
+  }
+}
+inicializarTabelasSql().catch(() => {
+});
+async function sincronizarComFirestoreAdmin(tipo, payload) {
+  try {
+    if (!getAdminApps().length) return;
+    const adminDb = getAdminFirestore();
+    if (tipo === "config") {
+      await adminDb.collection("caso_imagens").doc("--atlas-casos-config--").set({
+        casoId: "--atlas-casos-config--",
+        dataUrl: "config-atlas",
+        casoJson: JSON.stringify(payload),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      }, { merge: true });
+      await adminDb.collection("atlas_casos").doc("--config-geral--").set({
+        id: "--config-geral--",
+        removidos: payload.removidos,
+        customizados: payload.customizados,
+        totalCasos: payload.totalCasos,
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      }, { merge: true });
+    } else if (tipo === "foto" && payload.casoId) {
+      const oficial = payload.casoId;
+      const fotos = payload.fotos;
+      const urlPrincipal = fotos[0]?.dataUrl || "";
+      await adminDb.collection("caso_imagens").doc(oficial).set({
+        casoId: oficial,
+        nomeArquivo: fotos[0]?.nomeArquivo || `${oficial}.jpg`,
+        tamanhoBytes: fotos[0]?.tamanhoBytes || urlPrincipal.length,
+        dataUrl: urlPrincipal,
+        storagePath: fotos[0]?.storagePath || "",
+        imagensJson: JSON.stringify(fotos),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      }, { merge: true });
+    }
+  } catch (e) {
+    console.debug("Aviso Firestore Admin sync:", e?.message || e);
+  }
+}
+function obterConfigAtlasServer() {
+  return storeEmMemoria.config;
+}
+async function salvarConfigAtlasServer(removidos, customizados) {
+  const agora = (/* @__PURE__ */ new Date()).toISOString();
+  if (Array.isArray(removidos)) {
+    const setRemovidos = /* @__PURE__ */ new Set([...storeEmMemoria.config.removidos, ...removidos]);
+    storeEmMemoria.config.removidos = Array.from(setRemovidos);
+  }
+  if (Array.isArray(customizados)) {
+    const map = /* @__PURE__ */ new Map();
+    for (const c of storeEmMemoria.config.customizados) {
+      if (c && c.id) map.set(c.id, c);
+    }
+    for (const c of customizados) {
+      if (c && c.id) map.set(c.id, c);
+    }
+    storeEmMemoria.config.customizados = Array.from(map.values());
+  }
+  const total = Math.max(0, 17 - storeEmMemoria.config.removidos.length + storeEmMemoria.config.customizados.length);
+  storeEmMemoria.config.totalCasos = total;
+  storeEmMemoria.config.updatedAt = agora;
+  salvarArquivoDisco(storeEmMemoria);
+  try {
+    const pool2 = createPool();
+    await pool2.query(
+      `INSERT INTO atlas_config (id, removidos_json, customizados_json, total_casos, updated_at)
+       VALUES ('config_geral', $1, $2, $3, $4)
+       ON CONFLICT (id) DO UPDATE SET
+         removidos_json = EXCLUDED.removidos_json,
+         customizados_json = EXCLUDED.customizados_json,
+         total_casos = EXCLUDED.total_casos,
+         updated_at = EXCLUDED.updated_at`,
+      [
+        JSON.stringify(storeEmMemoria.config.removidos),
+        JSON.stringify(storeEmMemoria.config.customizados),
+        storeEmMemoria.config.totalCasos,
+        agora
+      ]
+    );
+  } catch {
+  }
+  sincronizarComFirestoreAdmin("config", storeEmMemoria.config).catch(() => {
+  });
+  return storeEmMemoria.config;
+}
+function obterFotosAtlasServer(casoId) {
+  if (casoId) {
+    return storeEmMemoria.fotos[casoId] || [];
+  }
+  return storeEmMemoria.fotos;
+}
+async function salvarFotosCasoServer(casoId, fotos) {
+  if (!casoId || !Array.isArray(fotos)) return [];
+  storeEmMemoria.fotos[casoId] = fotos;
+  salvarArquivoDisco(storeEmMemoria);
+  try {
+    const pool2 = createPool();
+    for (const f of fotos) {
+      await pool2.query(
+        `INSERT INTO caso_imagens (id, caso_id, nome_arquivo, tamanho_bytes, data_url, storage_path, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (id) DO UPDATE SET
+           data_url = EXCLUDED.data_url,
+           storage_path = EXCLUDED.storage_path,
+           nome_arquivo = EXCLUDED.nome_arquivo,
+           tamanho_bytes = EXCLUDED.tamanho_bytes,
+           updated_at = EXCLUDED.updated_at`,
+        [
+          f.id || `${casoId}_img_${Date.now()}`,
+          casoId,
+          f.nomeArquivo || `${casoId}.jpg`,
+          f.tamanhoBytes || (f.dataUrl ? f.dataUrl.length : 0),
+          f.dataUrl || "",
+          f.storagePath || "",
+          (/* @__PURE__ */ new Date()).toISOString()
+        ]
+      );
+    }
+  } catch {
+  }
+  sincronizarComFirestoreAdmin("foto", { casoId, fotos }).catch(() => {
+  });
+  return fotos;
+}
+async function salvarLoteFotosServer(lote) {
+  let alterados = 0;
+  for (const [casoId, fotos] of Object.entries(lote)) {
+    if (casoId && Array.isArray(fotos) && fotos.length > 0) {
+      storeEmMemoria.fotos[casoId] = fotos;
+      alterados++;
+    }
+  }
+  if (alterados > 0) {
+    salvarArquivoDisco(storeEmMemoria);
+    for (const [casoId, fotos] of Object.entries(lote)) {
+      sincronizarComFirestoreAdmin("foto", { casoId, fotos }).catch(() => {
+      });
+    }
+  }
+  return alterados;
+}
+async function removerFotosCasoServer(casoId) {
+  if (!casoId) return;
+  delete storeEmMemoria.fotos[casoId];
+  salvarArquivoDisco(storeEmMemoria);
+  try {
+    const pool2 = createPool();
+    await pool2.query(`DELETE FROM caso_imagens WHERE caso_id = $1`, [casoId]);
+  } catch {
+  }
+  try {
+    if (getAdminApps().length) {
+      const adminDb = getAdminFirestore();
+      await adminDb.collection("caso_imagens").doc(casoId).delete();
+    }
+  } catch {
   }
 }
 
@@ -438,11 +807,11 @@ function criarInstanciaStripe(chave) {
 }
 var stripe = criarInstanciaStripe(stripeSecretKey);
 function salvarVariaveisNoEnv(vars) {
-  const envPath = path.resolve(process.cwd(), ".env");
+  const envPath = path2.resolve(process.cwd(), ".env");
   let conteudoAtual = "";
   try {
-    if (fs.existsSync(envPath)) {
-      conteudoAtual = fs.readFileSync(envPath, "utf8");
+    if (fs2.existsSync(envPath)) {
+      conteudoAtual = fs2.readFileSync(envPath, "utf8");
     }
   } catch (err) {
     console.warn("N\xE3o foi poss\xEDvel ler .env existente, criando novo:", err);
@@ -462,12 +831,12 @@ function salvarVariaveisNoEnv(vars) {
     novasLinhas.push(`${chave}="${vars[chave]}"`);
   });
   try {
-    fs.writeFileSync(envPath, novasLinhas.join("\n").trim() + "\n", "utf8");
+    fs2.writeFileSync(envPath, novasLinhas.join("\n").trim() + "\n", "utf8");
   } catch (err) {
     console.error("Erro ao escrever arquivo .env:", err);
   }
 }
-var app = express();
+var app2 = express();
 var PORT = Number(process.env.PORT) || 3e3;
 var firebaseAdminInitialized = false;
 try {
@@ -477,7 +846,7 @@ try {
       credential: adminCert(creds)
     });
     firebaseAdminInitialized = true;
-  } else if (!getAdminApps().length) {
+  } else if (!getAdminApps2().length) {
     initAdminApp();
     firebaseAdminInitialized = true;
   } else {
@@ -486,7 +855,7 @@ try {
 } catch (e) {
   console.warn("\u26A0\uFE0F Aviso ao inicializar Firebase Admin no servidor (modo fallback ativo):", e);
 }
-app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+app2.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   const webhookSecret = stripeWebhookSecret || process.env.STRIPE_WEBHOOK_SECRET;
   if (stripe && webhookSecret) {
     const sig = req.headers["stripe-signature"];
@@ -500,7 +869,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         console.log("\u2705 Pagamento confirmado via Stripe Checkout:", session.id, { uid, planoId, ciclo });
         if (uid && firebaseAdminInitialized) {
           try {
-            const dbAdmin = getAdminFirestore();
+            const dbAdmin = getAdminFirestore2();
             await dbAdmin.collection("usuarios_profissionais").doc(uid).set({
               planoId,
               planoStatus: "ativo",
@@ -525,9 +894,9 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
   }
   return res.json({ received: true, aviso: "Modo dev/simulado sem valida\xE7\xE3o estrita" });
 });
-app.use(express.json({ limit: "25mb" }));
-app.use(express.urlencoded({ extended: true, limit: "25mb" }));
-app.get("/api/kiwify/webhook", (_req, res) => {
+app2.use(express.json({ limit: "25mb" }));
+app2.use(express.urlencoded({ extended: true, limit: "25mb" }));
+app2.get("/api/kiwify/webhook", (_req, res) => {
   return res.status(200).json({
     status: "online",
     servico: "Webhook Kiwify TricoCalazans",
@@ -538,7 +907,7 @@ app.get("/api/kiwify/webhook", (_req, res) => {
     }
   });
 });
-app.post("/api/kiwify/webhook", async (req, res) => {
+app2.post("/api/kiwify/webhook", async (req, res) => {
   try {
     const payload = req.body || {};
     const payloadStr = JSON.stringify(payload).toLowerCase();
@@ -586,7 +955,7 @@ app.post("/api/kiwify/webhook", async (req, res) => {
     };
     if (firebaseAdminInitialized) {
       try {
-        const dbAdmin = getAdminFirestore();
+        const dbAdmin = getAdminFirestore2();
         const snapshot = await dbAdmin.collection("usuarios_profissionais").where("email", "==", email).get();
         if (!snapshot.empty) {
           for (const docSnapshot of snapshot.docs) {
@@ -653,7 +1022,7 @@ async function obterUsoMensal(uid, mes) {
   const chave = `${uid}_${mes}`;
   if (firebaseAdminInitialized) {
     try {
-      const docSnap = await getAdminFirestore().collection("uso_ia").doc(uid).collection("meses").doc(mes).get();
+      const docSnap = await getAdminFirestore2().collection("uso_ia").doc(uid).collection("meses").doc(mes).get();
       if (docSnap.exists) {
         const data = docSnap.data();
         const qtd = data?.quantidade || 0;
@@ -672,7 +1041,7 @@ async function incrementarUsoMensal(uid, mes, limite) {
   cacheUsoIa[chave] = { usado: novoValor, ultimaData: (/* @__PURE__ */ new Date()).toISOString() };
   if (firebaseAdminInitialized) {
     try {
-      await getAdminFirestore().collection("uso_ia").doc(uid).collection("meses").doc(mes).set({
+      await getAdminFirestore2().collection("uso_ia").doc(uid).collection("meses").doc(mes).set({
         uid,
         mes,
         quantidade: novoValor,
@@ -685,7 +1054,7 @@ async function incrementarUsoMensal(uid, mes, limite) {
   }
   return novoValor;
 }
-app.get("/api/stripe/config", (_req, res) => {
+app2.get("/api/stripe/config", (_req, res) => {
   const isConfigured = !!stripe;
   const isLive = isConfigured && stripeSecretKey.startsWith("sk_live_");
   const appUrl = process.env.APP_URL || `http://localhost:${PORT}`;
@@ -721,7 +1090,7 @@ app.get("/api/stripe/config", (_req, res) => {
     }
   });
 });
-app.post("/api/stripe/test-connection", async (req, res) => {
+app2.post("/api/stripe/test-connection", async (req, res) => {
   try {
     const { secretKey } = req.body || {};
     const chaveParaTestar = secretKey && secretKey.trim() || stripeSecretKey;
@@ -757,7 +1126,7 @@ app.post("/api/stripe/test-connection", async (req, res) => {
     });
   }
 });
-app.post("/api/stripe/save-config", async (req, res) => {
+app2.post("/api/stripe/save-config", async (req, res) => {
   try {
     const { secretKey, publishableKey, webhookSecret } = req.body || {};
     const novaSecretKey = typeof secretKey === "string" ? secretKey.trim() : stripeSecretKey;
@@ -810,7 +1179,7 @@ app.post("/api/stripe/save-config", async (req, res) => {
     });
   }
 });
-app.post("/api/stripe/create-checkout-session", async (req, res) => {
+app2.post("/api/stripe/create-checkout-session", async (req, res) => {
   try {
     const {
       planoId,
@@ -893,7 +1262,7 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
     });
   }
 });
-app.post("/api/stripe/verify-session", async (req, res) => {
+app2.post("/api/stripe/verify-session", async (req, res) => {
   try {
     const { sessionId, usuarioUid } = req.body;
     if (!sessionId) {
@@ -907,7 +1276,7 @@ app.post("/api/stripe/verify-session", async (req, res) => {
       const uid = usuarioUid || session.metadata?.usuarioUid || session.client_reference_id;
       if (isPago && uid && firebaseAdminInitialized) {
         try {
-          const dbAdmin = getAdminFirestore();
+          const dbAdmin = getAdminFirestore2();
           await dbAdmin.collection("usuarios_profissionais").doc(uid).set({
             planoId,
             planoStatus: "ativo",
@@ -947,7 +1316,7 @@ app.post("/api/stripe/verify-session", async (req, res) => {
     });
   }
 });
-app.post("/api/stripe/create-portal-session", async (req, res) => {
+app2.post("/api/stripe/create-portal-session", async (req, res) => {
   try {
     const { customerId } = req.body;
     const appUrl = process.env.APP_URL || `http://localhost:${PORT}`;
@@ -967,7 +1336,7 @@ app.post("/api/stripe/create-portal-session", async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: err.message });
   }
 });
-app.get("/api/sessoes", async (req, res) => {
+app2.get("/api/sessoes", async (req, res) => {
   try {
     const userId = req.query.userId || void 0;
     const sessoes = await listarSessoesSql(userId);
@@ -977,7 +1346,7 @@ app.get("/api/sessoes", async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao buscar sess\xF5es." });
   }
 });
-app.get("/api/sessoes/:id", async (req, res) => {
+app2.get("/api/sessoes/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const sessao = await obterSessaoSql(id);
@@ -990,7 +1359,7 @@ app.get("/api/sessoes/:id", async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao buscar sess\xE3o." });
   }
 });
-app.post("/api/sessoes", async (req, res) => {
+app2.post("/api/sessoes", async (req, res) => {
   try {
     const payload = req.body;
     if (!payload || !payload.id || !payload.imageUrl) {
@@ -1003,7 +1372,7 @@ app.post("/api/sessoes", async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao salvar sess\xE3o." });
   }
 });
-app.delete("/api/sessoes/:id", async (req, res) => {
+app2.delete("/api/sessoes/:id", async (req, res) => {
   try {
     const { id } = req.params;
     await deletarSessaoSql(id);
@@ -1013,7 +1382,7 @@ app.delete("/api/sessoes/:id", async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao remover sess\xE3o." });
   }
 });
-app.get("/api/pacientes", async (req, res) => {
+app2.get("/api/pacientes", async (req, res) => {
   try {
     const userId = req.query.userId || void 0;
     const lista = await listarPacientesSql(userId);
@@ -1023,7 +1392,7 @@ app.get("/api/pacientes", async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao buscar pacientes." });
   }
 });
-app.post("/api/pacientes", async (req, res) => {
+app2.post("/api/pacientes", async (req, res) => {
   try {
     const payload = req.body;
     if (!payload || !payload.id || !payload.nome) {
@@ -1036,7 +1405,7 @@ app.post("/api/pacientes", async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao salvar paciente." });
   }
 });
-app.delete("/api/pacientes/:id", async (req, res) => {
+app2.delete("/api/pacientes/:id", async (req, res) => {
   try {
     const { id } = req.params;
     await deletarPacienteSql(id);
@@ -1046,7 +1415,7 @@ app.delete("/api/pacientes/:id", async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao excluir paciente." });
   }
 });
-app.post("/api/users/sync", async (req, res) => {
+app2.post("/api/users/sync", async (req, res) => {
   try {
     const { uid, email, nome } = req.body || {};
     if (!uid || !email) {
@@ -1059,7 +1428,7 @@ app.post("/api/users/sync", async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao sincronizar usu\xE1rio." });
   }
 });
-app.get("/api/users/:uid", async (req, res) => {
+app2.get("/api/users/:uid", async (req, res) => {
   try {
     const { uid } = req.params;
     const usuario = await getUserByUid(uid);
@@ -1072,7 +1441,72 @@ app.get("/api/users/:uid", async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao buscar usu\xE1rio." });
   }
 });
-app.get("/api/exames/uso-ia", async (req, res) => {
+app2.get("/api/atlas/config", (_req, res) => {
+  try {
+    const config = obterConfigAtlasServer();
+    return res.json({ sucesso: true, ...config });
+  } catch (error) {
+    console.error("Erro na rota GET /api/atlas/config:", error);
+    return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao buscar configura\xE7\xE3o do Atlas." });
+  }
+});
+app2.post("/api/atlas/config", async (req, res) => {
+  try {
+    const { removidos, customizados } = req.body || {};
+    const atualizado = await salvarConfigAtlasServer(removidos, customizados);
+    return res.json({ sucesso: true, config: atualizado });
+  } catch (error) {
+    console.error("Erro na rota POST /api/atlas/config:", error);
+    return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao salvar configura\xE7\xE3o do Atlas." });
+  }
+});
+app2.get("/api/atlas/fotos", (_req, res) => {
+  try {
+    const fotos = obterFotosAtlasServer();
+    return res.json({ sucesso: true, fotos });
+  } catch (error) {
+    console.error("Erro na rota GET /api/atlas/fotos:", error);
+    return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao buscar fotos do Atlas." });
+  }
+});
+app2.get("/api/atlas/fotos/:casoId", (req, res) => {
+  try {
+    const { casoId } = req.params;
+    const fotos = obterFotosAtlasServer(casoId);
+    return res.json({ sucesso: true, casoId, fotos });
+  } catch (error) {
+    console.error(`Erro na rota GET /api/atlas/fotos/${req.params.casoId}:`, error);
+    return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao buscar fotos do caso." });
+  }
+});
+app2.post("/api/atlas/fotos", async (req, res) => {
+  try {
+    const { casoId, fotos, lote } = req.body || {};
+    if (lote && typeof lote === "object") {
+      const qtd = await salvarLoteFotosServer(lote);
+      return res.json({ sucesso: true, casosAtualizados: qtd });
+    }
+    if (!casoId || !Array.isArray(fotos)) {
+      return res.status(400).json({ sucesso: false, erro: "casoId e array de fotos s\xE3o obrigat\xF3rios." });
+    }
+    const salvas = await salvarFotosCasoServer(casoId, fotos);
+    return res.json({ sucesso: true, casoId, fotos: salvas });
+  } catch (error) {
+    console.error("Erro na rota POST /api/atlas/fotos:", error);
+    return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao salvar fotos do Atlas." });
+  }
+});
+app2.delete("/api/atlas/fotos/:casoId", async (req, res) => {
+  try {
+    const { casoId } = req.params;
+    await removerFotosCasoServer(casoId);
+    return res.json({ sucesso: true, casoId });
+  } catch (error) {
+    console.error(`Erro na rota DELETE /api/atlas/fotos/${req.params.casoId}:`, error);
+    return res.status(500).json({ sucesso: false, erro: error.message || "Falha ao remover fotos do caso." });
+  }
+});
+app2.get("/api/exames/uso-ia", async (req, res) => {
   try {
     const usuario = await autenticarUsuario(req);
     if (!usuario) {
@@ -1092,7 +1526,7 @@ app.get("/api/exames/uso-ia", async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: err.message || "Falha ao consultar uso da IA" });
   }
 });
-app.post("/api/exames/transcrever-laudo", async (req, res) => {
+app2.post("/api/exames/transcrever-laudo", async (req, res) => {
   try {
     const usuario = await autenticarUsuario(req);
     if (!usuario) {
@@ -1105,7 +1539,7 @@ app.post("/api/exames/transcrever-laudo", async (req, res) => {
     let statusUsuario = req.body.planoStatus || "trial";
     if (firebaseAdminInitialized) {
       try {
-        const userDoc = await getAdminFirestore().collection("usuarios_profissionais").doc(usuario.uid).get();
+        const userDoc = await getAdminFirestore2().collection("usuarios_profissionais").doc(usuario.uid).get();
         if (userDoc.exists) {
           const uData = userDoc.data();
           if (uData?.planoId) planoUsuario = uData.planoId;
@@ -1115,16 +1549,21 @@ app.post("/api/exames/transcrever-laudo", async (req, res) => {
         console.warn("Aviso ao consultar perfil do usu\xE1rio no Firestore:", e);
       }
     }
-    if (!temPermissaoExamesIa(planoUsuario, statusUsuario)) {
+    const ehAdmin = ehAdminEmail(usuario.email);
+    if (ehAdmin) {
+      planoUsuario = "master";
+      statusUsuario = "ativo";
+    }
+    if (!ehAdmin && !temPermissaoExamesIa(planoUsuario, statusUsuario, usuario.email)) {
       return res.status(403).json({
         sucesso: false,
         erro: "A transcri\xE7\xE3o autom\xE1tica por IA \xE9 exclusiva a partir do Plano Master. Fa\xE7a upgrade para desbloquear."
       });
     }
     const mesAtual = (/* @__PURE__ */ new Date()).toISOString().substring(0, 7);
-    const limite = obterLimiteMensalIa(planoUsuario, statusUsuario);
+    const limite = ehAdmin ? 9999 : obterLimiteMensalIa(planoUsuario, statusUsuario, usuario.email);
     const usado = await obterUsoMensal(usuario.uid, mesAtual);
-    if (limite > 0 && usado >= limite) {
+    if (!ehAdmin && limite > 0 && usado >= limite) {
       return res.status(429).json({
         sucesso: false,
         erro: `Limite mensal de leituras de laudo por IA atingido (${usado}/${limite}). O lan\xE7amento manual continua dispon\xEDvel.`
@@ -1227,14 +1666,14 @@ async function startServer() {
       server: { middlewareMode: true },
       appType: "spa"
     });
-    app.use(vite.middlewares);
+    app2.use(vite.middlewares);
   } else {
-    app.use(express.static("dist"));
-    app.get("*", (_req, res) => {
+    app2.use(express.static("dist"));
+    app2.get("*", (_req, res) => {
       res.sendFile("dist/index.html", { root: "." });
     });
   }
-  app.listen(PORT, "0.0.0.0", () => {
+  app2.listen(PORT, "0.0.0.0", () => {
     console.log(`\u{1F680} TricoCalazans rodando em http://0.0.0.0:${PORT}`);
   });
 }
