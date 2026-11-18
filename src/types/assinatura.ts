@@ -12,6 +12,11 @@ export const LINKS_KIWIFY = {
   anual: 'https://pay.kiwify.com.br/Srqbf4k'
 } as const;
 
+export const LINKS_KIWIFY_DESCONTO = {
+  mensal: 'https://pay.kiwify.com.br/JafJtAb',
+  anual: 'https://pay.kiwify.com.br/xJvh2ab'
+} as const;
+
 export interface RecursoPlano {
   texto: string;
   incluso: boolean;

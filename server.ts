@@ -247,7 +247,7 @@ app.post('/api/kiwify/webhook', async (req: Request, res: Response) => {
       return res.status(200).json({ received: true, aviso: 'E-mail do cliente não identificado' });
     }
 
-    // Identificar plano pelo link da oferta (ltmVSfe, UzqmVk6, Srqbf4k), nome ou valor
+    // Identificar plano pelo link da oferta (ltmVSfe, UzqmVk6, Srqbf4k, JafJtAb, xJvh2ab), nome ou valor
     let planoId: 'degustacao' | 'mensal' | 'anual' = 'mensal';
     let ciclo: 'mensal' | 'anual' = 'mensal';
     let diasValidade = 30;
@@ -263,6 +263,7 @@ app.post('/api/kiwify/webhook', async (req: Request, res: Response) => {
       diasValidade = 7;
     } else if (
       payloadStr.includes('srqbf4k') ||
+      payloadStr.includes('xjvh2ab') ||
       payloadStr.includes('anual') ||
       valorCentavos > 20000
     ) {
@@ -1091,11 +1092,21 @@ app.get('/api/indicacoes/config', async (_req: Request, res: Response) => {
 // POST /api/indicacoes/config — Atualiza configuração de porcentagens e regras de influenciadores (Admin)
 app.post('/api/indicacoes/config', async (req: Request, res: Response) => {
   try {
-    const { porcentagemPadrao, cupomPadrao, diasBonusPadrao, influenciadores } = req.body || {};
+    const { 
+      porcentagemPadrao, 
+      cupomPadrao, 
+      diasBonusPadrao, 
+      linkDescontoMensal, 
+      linkDescontoAnual, 
+      influenciadores 
+    } = req.body || {};
+
     const atualizado = await salvarConfigIndicacoesServer({
       porcentagemPadrao: Number(porcentagemPadrao) || 10,
       cupomPadrao: (cupomPadrao || 'TRICO10').toUpperCase().trim(),
       diasBonusPadrao: Number(diasBonusPadrao) || 30,
+      linkDescontoMensal: (linkDescontoMensal || 'https://pay.kiwify.com.br/JafJtAb').trim(),
+      linkDescontoAnual: (linkDescontoAnual || 'https://pay.kiwify.com.br/xJvh2ab').trim(),
       influenciadores: Array.isArray(influenciadores) ? influenciadores : []
     });
     return res.json({ sucesso: true, config: atualizado });
@@ -1128,6 +1139,8 @@ app.get('/api/indicacoes/minhas', async (req: Request, res: Response) => {
         ehInfluenciador: regra.ehInfluenciador,
         porcentagemDesconto: regra.porcentagemDesconto,
         codigoCupom: regra.codigoCupom,
+        linkDescontoMensal: regra.linkDescontoMensal,
+        linkDescontoAnual: regra.linkDescontoAnual,
         historico
       }
     });

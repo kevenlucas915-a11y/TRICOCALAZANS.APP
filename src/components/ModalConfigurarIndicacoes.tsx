@@ -40,6 +40,8 @@ export const ModalConfigurarIndicacoes: React.FC<ModalConfigurarIndicacoesProps>
   const [porcentagemPadrao, setPorcentagemPadrao] = useState<number>(10);
   const [cupomPadrao, setCupomPadrao] = useState<string>('TRICO10');
   const [diasBonusPadrao, setDiasBonusPadrao] = useState<number>(30);
+  const [linkDescontoMensal, setLinkDescontoMensal] = useState<string>('https://pay.kiwify.com.br/JafJtAb');
+  const [linkDescontoAnual, setLinkDescontoAnual] = useState<string>('https://pay.kiwify.com.br/xJvh2ab');
   const [influenciadores, setInfluenciadores] = useState<RegraInfluenciador[]>([]);
   const [historico, setHistorico] = useState<ItemHistoricoIndicacao[]>([]);
 
@@ -50,6 +52,8 @@ export const ModalConfigurarIndicacoes: React.FC<ModalConfigurarIndicacoesProps>
   const [infCupom, setInfCupom] = useState('');
   const [infPorcentagem, setInfPorcentagem] = useState<number>(15);
   const [infDiasBonus, setInfDiasBonus] = useState<number>(30);
+  const [infLinkMensal, setInfLinkMensal] = useState('');
+  const [infLinkAnual, setInfLinkAnual] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,6 +70,8 @@ export const ModalConfigurarIndicacoes: React.FC<ModalConfigurarIndicacoesProps>
       setPorcentagemPadrao(config.porcentagemPadrao || 10);
       setCupomPadrao(config.cupomPadrao || 'TRICO10');
       setDiasBonusPadrao(config.diasBonusPadrao || 30);
+      setLinkDescontoMensal(config.linkDescontoMensal || 'https://pay.kiwify.com.br/JafJtAb');
+      setLinkDescontoAnual(config.linkDescontoAnual || 'https://pay.kiwify.com.br/xJvh2ab');
       setInfluenciadores(config.influenciadores || []);
 
       const hist = await buscarTodasIndicacoes();
@@ -87,6 +93,8 @@ export const ModalConfigurarIndicacoes: React.FC<ModalConfigurarIndicacoesProps>
         porcentagemPadrao: Number(porcentagemPadrao),
         cupomPadrao: cupomPadrao.trim().toUpperCase(),
         diasBonusPadrao: Number(diasBonusPadrao),
+        linkDescontoMensal: linkDescontoMensal.trim(),
+        linkDescontoAnual: linkDescontoAnual.trim(),
         influenciadores: novosInfluenciadores
       });
 
@@ -106,6 +114,8 @@ export const ModalConfigurarIndicacoes: React.FC<ModalConfigurarIndicacoesProps>
     setInfCupom('');
     setInfPorcentagem(15);
     setInfDiasBonus(30);
+    setInfLinkMensal('');
+    setInfLinkAnual('');
     setModalNovoAberto(true);
   };
 
@@ -116,6 +126,8 @@ export const ModalConfigurarIndicacoes: React.FC<ModalConfigurarIndicacoesProps>
     setInfCupom(inf.codigoCupom);
     setInfPorcentagem(inf.porcentagemDesconto);
     setInfDiasBonus(inf.diasBonusIndicador);
+    setInfLinkMensal(inf.linkDescontoMensal || '');
+    setInfLinkAnual(inf.linkDescontoAnual || '');
     setModalNovoAberto(true);
   };
 
@@ -135,7 +147,9 @@ export const ModalConfigurarIndicacoes: React.FC<ModalConfigurarIndicacoesProps>
             email: infEmail.trim().toLowerCase(),
             codigoCupom: infCupom.trim().toUpperCase(),
             porcentagemDesconto: Number(infPorcentagem),
-            diasBonusIndicador: Number(infDiasBonus)
+            diasBonusIndicador: Number(infDiasBonus),
+            linkDescontoMensal: infLinkMensal.trim() || undefined,
+            linkDescontoAnual: infLinkAnual.trim() || undefined
           };
         }
         return inf;
@@ -148,6 +162,8 @@ export const ModalConfigurarIndicacoes: React.FC<ModalConfigurarIndicacoesProps>
         codigoCupom: infCupom.trim().toUpperCase(),
         porcentagemDesconto: Number(infPorcentagem),
         diasBonusIndicador: Number(infDiasBonus),
+        linkDescontoMensal: infLinkMensal.trim() || undefined,
+        linkDescontoAnual: infLinkAnual.trim() || undefined,
         ativo: true,
         criadoEm: new Date().toISOString()
       };
@@ -332,6 +348,36 @@ export const ModalConfigurarIndicacoes: React.FC<ModalConfigurarIndicacoesProps>
                     <span className="absolute right-4 top-2.5 text-slate-400 text-xs font-medium">dias</span>
                   </div>
                   <p className="text-[11px] text-slate-500">Quando a indicação for aprovada, a validade do usuário indicador é estendida automaticamente por este período.</p>
+                </div>
+
+                <div className="space-y-2 sm:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <ExternalLink className="w-3.5 h-3.5 text-teal-600" />
+                    Link Kiwify com Desconto — Plano Mensal (R$ 62,90)
+                  </label>
+                  <input
+                    type="url"
+                    value={linkDescontoMensal}
+                    onChange={e => setLinkDescontoMensal(e.target.value)}
+                    placeholder="https://pay.kiwify.com.br/JafJtAb"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none"
+                  />
+                  <p className="text-[11px] text-slate-500">Link de checkout da oferta mensal com 10% de desconto gerado na Kiwify.</p>
+                </div>
+
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <ExternalLink className="w-3.5 h-3.5 text-teal-600" />
+                    Link Kiwify com Desconto — Plano Anual (10% OFF)
+                  </label>
+                  <input
+                    type="url"
+                    value={linkDescontoAnual}
+                    onChange={e => setLinkDescontoAnual(e.target.value)}
+                    placeholder="https://pay.kiwify.com.br/xJvh2ab"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none"
+                  />
+                  <p className="text-[11px] text-slate-500">Link de checkout da oferta anual com 10% de desconto gerado na Kiwify.</p>
                 </div>
               </div>
 
@@ -606,6 +652,32 @@ export const ModalConfigurarIndicacoes: React.FC<ModalConfigurarIndicacoesProps>
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                   />
                   <span className="text-[10px] text-slate-500">Padrão: 30 dias para cada assinatura realizada com o cupom.</span>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block">
+                    Link Personalizado Kiwify Mensal (Opcional)
+                  </label>
+                  <input
+                    type="url"
+                    value={infLinkMensal}
+                    onChange={e => setInfLinkMensal(e.target.value)}
+                    placeholder="Deixe em branco para usar a oferta padrão de 10%"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-mono text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block">
+                    Link Personalizado Kiwify Anual (Opcional)
+                  </label>
+                  <input
+                    type="url"
+                    value={infLinkAnual}
+                    onChange={e => setInfLinkAnual(e.target.value)}
+                    placeholder="Deixe em branco para usar a oferta padrão de 10%"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-mono text-slate-900 dark:text-white"
+                  />
                 </div>
               </div>
 

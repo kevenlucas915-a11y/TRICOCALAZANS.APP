@@ -22,6 +22,8 @@ const CONFIG_PADRAO: ConfigIndicacoes = {
   porcentagemPadrao: 10,
   cupomPadrao: 'TRICO10',
   diasBonusPadrao: 30,
+  linkDescontoMensal: 'https://pay.kiwify.com.br/JafJtAb',
+  linkDescontoAnual: 'https://pay.kiwify.com.br/xJvh2ab',
   influenciadores: [],
   atualizadoEm: new Date().toISOString()
 };
@@ -126,10 +128,15 @@ export function obterRegraParaUsuarioServer(email?: string | null): {
   porcentagemDesconto: number;
   codigoCupom: string;
   diasBonusIndicador: number;
+  linkDescontoMensal: string;
+  linkDescontoAnual: string;
   nomeInfluenciador?: string;
 } {
   const config = storeEmMemoria.config;
   const limpo = (email || '').toLowerCase().trim();
+
+  const linkMensalPadrao = config.linkDescontoMensal || 'https://pay.kiwify.com.br/JafJtAb';
+  const linkAnualPadrao = config.linkDescontoAnual || 'https://pay.kiwify.com.br/xJvh2ab';
 
   if (limpo && Array.isArray(config.influenciadores)) {
     const influenciador = config.influenciadores.find(
@@ -142,6 +149,8 @@ export function obterRegraParaUsuarioServer(email?: string | null): {
         porcentagemDesconto: influenciador.porcentagemDesconto || config.porcentagemPadrao,
         codigoCupom: influenciador.codigoCupom || config.cupomPadrao,
         diasBonusIndicador: influenciador.diasBonusIndicador || config.diasBonusPadrao,
+        linkDescontoMensal: influenciador.linkDescontoMensal || linkMensalPadrao,
+        linkDescontoAnual: influenciador.linkDescontoAnual || linkAnualPadrao,
         nomeInfluenciador: influenciador.nome
       };
     }
@@ -151,7 +160,9 @@ export function obterRegraParaUsuarioServer(email?: string | null): {
     ehInfluenciador: false,
     porcentagemDesconto: config.porcentagemPadrao || 10,
     codigoCupom: config.cupomPadrao || 'TRICO10',
-    diasBonusIndicador: config.diasBonusPadrao || 30
+    diasBonusIndicador: config.diasBonusPadrao || 30,
+    linkDescontoMensal: linkMensalPadrao,
+    linkDescontoAnual: linkAnualPadrao
   };
 }
 

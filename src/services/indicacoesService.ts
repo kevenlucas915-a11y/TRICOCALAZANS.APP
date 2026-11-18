@@ -1,10 +1,12 @@
 import { ConfigIndicacoes, ItemHistoricoIndicacao, MetricasIndicadorUsuario } from '../types/indicacoes.ts';
-import { LINKS_KIWIFY } from '../types/assinatura.ts';
+import { LINKS_KIWIFY_DESCONTO } from '../types/assinatura.ts';
 
 const CONFIG_PADRAO_FALLBACK: ConfigIndicacoes = {
   porcentagemPadrao: 10,
   cupomPadrao: 'TRICO10',
   diasBonusPadrao: 30,
+  linkDescontoMensal: 'https://pay.kiwify.com.br/JafJtAb',
+  linkDescontoAnual: 'https://pay.kiwify.com.br/xJvh2ab',
   influenciadores: []
 };
 
@@ -77,17 +79,21 @@ export async function buscarTodasIndicacoes(): Promise<ItemHistoricoIndicacao[]>
 }
 
 /**
- * Gera a URL oficial de checkout da Kiwify contendo o cupom de desconto e o identificador de quem indicou (src)
+ * Gera a URL oficial de checkout da Kiwify contendo a oferta com desconto e o identificador de quem indicou (src)
  */
 export function gerarLinkIndicacaoKiwify(
   planoId: 'mensal' | 'anual',
   cupom: string,
-  emailOuId: string
+  emailOuId: string,
+  linkCustomizado?: string
 ): string {
-  const urlBase = (LINKS_KIWIFY as Record<string, string>)[planoId] || LINKS_KIWIFY.mensal;
+  const urlBase = (linkCustomizado && linkCustomizado.trim()) 
+    ? linkCustomizado.trim() 
+    : (LINKS_KIWIFY_DESCONTO[planoId] || LINKS_KIWIFY_DESCONTO.mensal);
+
   try {
     const url = new URL(urlBase);
-    if (cupom && cupom.trim()) {
+    if (cupom && cupom.trim() && cupom.toUpperCase() !== 'TRICO10') {
       url.searchParams.set('cupom', cupom.trim().toUpperCase());
     }
     if (emailOuId && emailOuId.trim()) {
@@ -96,8 +102,12 @@ export function gerarLinkIndicacaoKiwify(
     return url.toString();
   } catch {
     const params = [];
-    if (cupom) params.push(`cupom=${encodeURIComponent(cupom.trim().toUpperCase())}`);
-    if (emailOuId) params.push(`src=${encodeURIComponent(emailOuId.trim().toLowerCase())}`);
+    if (cupom && cupom.trim() && cupom.toUpperCase() !== 'TRICO10') {
+      params.push(`cupom=${encodeURIComponent(cupom.trim().toUpperCase())}`);
+    }
+    if (emailOuId) {
+      params.push(`src=${encodeURIComponent(emailOuId.trim().toLowerCase())}`);
+    }
     const query = params.length > 0 ? `?${params.join('&')}` : '';
     return `${urlBase}${query}`;
   }

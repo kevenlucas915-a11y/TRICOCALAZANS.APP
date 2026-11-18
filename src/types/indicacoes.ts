@@ -5,6 +5,8 @@ export interface RegraInfluenciador {
   codigoCupom: string; // ex: CAMILA20
   porcentagemDesconto: number; // ex: 20 (%)
   diasBonusIndicador: number; // ex: 30 (dias somados à assinatura)
+  linkDescontoMensal?: string;
+  linkDescontoAnual?: string;
   ativo: boolean;
   criadoEm: string;
 }
@@ -13,6 +15,8 @@ export interface ConfigIndicacoes {
   porcentagemPadrao: number; // ex: 10 (%)
   cupomPadrao: string; // ex: TRICO10
   diasBonusPadrao: number; // ex: 30
+  linkDescontoMensal?: string; // ex: https://pay.kiwify.com.br/JafJtAb
+  linkDescontoAnual?: string; // ex: https://pay.kiwify.com.br/xJvh2ab
   influenciadores: RegraInfluenciador[];
   atualizadoEm?: string;
 }
@@ -37,6 +41,8 @@ export interface MetricasIndicadorUsuario {
   ehInfluenciador: boolean;
   porcentagemDesconto: number;
   codigoCupom: string;
+  linkDescontoMensal?: string;
+  linkDescontoAnual?: string;
   historico: ItemHistoricoIndicacao[];
 }
 

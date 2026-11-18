@@ -64,10 +64,15 @@ export const ModalIndiqueGanhe: React.FC<ModalIndiqueGanheProps> = ({
     }
   };
 
+  const linkCustomizado = planoEscolhido === 'anual' 
+    ? metricas.linkDescontoAnual 
+    : metricas.linkDescontoMensal;
+
   const linkKiwify = gerarLinkIndicacaoKiwify(
     planoEscolhido,
     metricas.codigoCupom,
-    usuarioAtual?.email || ''
+    usuarioAtual?.email || '',
+    linkCustomizado
   );
 
   const handleCopiarLink = () => {
